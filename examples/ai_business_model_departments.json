@@ -1,0 +1,124 @@
+{
+  "schema": "simo_ai",
+  "table": "ai_business_model_departments",
+  "description": "Relaciona modelos de negocio con departamentos inteligentes.",
+  "columns": [
+    {
+      "name": "id",
+      "type": "bigint",
+      "primaryKey": true,
+      "nullable": false,
+      "generated": true
+    },
+    {
+      "name": "business_model_id",
+      "type": "uuid",
+      "nullable": false,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_business_models",
+        "column": "id"
+      }
+    },
+    {
+      "name": "department_id",
+      "type": "uuid",
+      "nullable": false,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_intelligent_departments",
+        "column": "id"
+      }
+    },
+    {
+      "name": "is_required",
+      "type": "boolean",
+      "nullable": false,
+      "default": true
+    },
+    {
+      "name": "execution_order",
+      "type": "integer",
+      "nullable": false,
+      "default": 1
+    },
+    {
+      "name": "recommended_plan",
+      "type": "varchar",
+      "nullable": true,
+      "length": 30
+    },
+    {
+      "name": "configuration_json",
+      "type": "jsonb",
+      "nullable": true
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp",
+      "nullable": false,
+      "default": "CURRENT_TIMESTAMP",
+      "writable": false
+    },
+    {
+      "name": "created_by",
+      "type": "bigint",
+      "nullable": true,
+      "writable": false
+    },
+    {
+      "name": "created_from",
+      "type": "varchar",
+      "nullable": true,
+      "length": 50,
+      "writable": false
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp",
+      "nullable": true,
+      "writable": false
+    },
+    {
+      "name": "updated_by",
+      "type": "bigint",
+      "nullable": true,
+      "writable": false
+    },
+    {
+      "name": "updated_from",
+      "type": "varchar",
+      "nullable": true,
+      "length": 50,
+      "writable": false
+    },
+    {
+      "name": "deleted_at",
+      "type": "timestamp",
+      "nullable": true,
+      "writable": false
+    },
+    {
+      "name": "deleted_by",
+      "type": "bigint",
+      "nullable": true,
+      "writable": false
+    },
+    {
+      "name": "version_no",
+      "type": "integer",
+      "nullable": false,
+      "default": 1,
+      "writable": false
+    }
+  ],
+  "options": {
+    "features": [
+      "crud",
+      "query-by-business-model",
+      "reorder",
+      "bulk-load",
+      "copy-between-models"
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+'use strict';
+const service = require('./{{names.moduleName}}.service');
+function requestContext(request) { return { userId: request.user?.id, organizationId: request.user?.organization_id, source: request.headers['x-client-source'] || 'api' }; }
+async function list(request, reply) { return reply.send(await service.list(request.query, requestContext(request))); }
+async function getById(request, reply) { return reply.send(await service.getById(request.params.id, requestContext(request))); }
+async function create(request, reply) { const result=await service.create(request.body,requestContext(request)); return reply.code(201).send(result); }
+async function update(request, reply) { return reply.send(await service.update(request.params.id,request.body,requestContext(request))); }
+async function remove(request, reply) { await service.remove(request.params.id,requestContext(request)); return reply.code(204).send(); }
+module.exports={list,getById,create,update,remove};

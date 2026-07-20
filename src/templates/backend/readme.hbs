@@ -1,0 +1,33 @@
+# {{names.entityPlural}}
+
+Módulo generado por **SBN Forge {{generator.version}}** para `{{schema}}.{{table}}`.
+
+## Registro en Fastify
+
+```js
+const routes = require('./{{names.moduleName}}.routes');
+const repository = require('./{{names.moduleName}}.repository');
+repository.configure(fastify.pg);
+fastify.register(routes, { prefix: '/api' });
+```
+
+## Endpoints
+
+- `GET {{names.routeBase}}`
+- `GET {{names.routeBase}}/:id`
+- `POST {{names.routeBase}}`
+- `PATCH {{names.routeBase}}/:id`
+- `DELETE {{names.routeBase}}/:id`
+
+## Capacidades detectadas
+
+```json
+{{json capabilities}}
+```
+
+## Permisos sugeridos
+
+{{#each permissions}}- `{{this}}`
+{{/each}}
+
+> La v0.1.0 genera el backend base. La conexión JWT, autorización y decoradores de infraestructura se integran en el host Fastify de SBN.

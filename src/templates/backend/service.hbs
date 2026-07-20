@@ -1,0 +1,9 @@
+'use strict';
+const repository = require('./{{names.moduleName}}.repository');
+function notFound(id){const e=new Error('{{names.entitySingular}} no encontrado.');e.statusCode=404;e.code='{{names.permissionPrefix}}_NOT_FOUND';e.details={id};return e;}
+async function list(query,context){return repository.list(query,context);}
+async function getById(id,context){const row=await repository.getById(id,context);if(!row)throw notFound(id);return row;}
+async function create(input,context){return repository.create(input,context);}
+async function update(id,input,context){const row=await repository.update(id,input,context);if(!row)throw notFound(id);return row;}
+async function remove(id,context){const ok=await repository.remove(id,context);if(!ok)throw notFound(id);}
+module.exports={list,getById,create,update,remove};

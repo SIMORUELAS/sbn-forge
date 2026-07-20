@@ -1,0 +1,3 @@
+'use strict'; const fs=require('fs-extra'); const os=require('os'); const path=require('path'); const {FileWriter}=require('../src/core/file-writer');
+test('evita sobrescribir sin force',async()=>{const dir=await fs.mkdtemp(path.join(os.tmpdir(),'forge-'));const file=path.join(dir,'a.txt');await fs.writeFile(file,'x');await expect(new FileWriter().write(file,'y')).rejects.toThrow(/--force/);await new FileWriter({force:true}).write(file,'y');expect(await fs.readFile(file,'utf8')).toBe('y');await fs.remove(dir);});
+test('dry-run no escribe',async()=>{const dir=await fs.mkdtemp(path.join(os.tmpdir(),'forge-'));const file=path.join(dir,'a.txt');await new FileWriter({dryRun:true}).write(file,'x');expect(await fs.pathExists(file)).toBe(false);await fs.remove(dir);});
