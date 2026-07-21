@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "description": "Generador oficial de APIs y módulos para SIMO Business Networks.",
   "main": "src/index.js",
-  "bin": { "sbn-forge": "bin/sbn-forge.js" },
+  "bin": {
+    "sbn-forge": "bin/sbn-forge.js"
+  },
   "type": "commonjs",
   "scripts": {
     "start": "node bin/sbn-forge.js",
@@ -12,16 +14,25 @@
     "test:coverage": "jest --coverage --runInBand",
     "lint": "eslint ."
   },
-  "keywords": ["sbn", "fastify", "generator", "postgresql", "api"],
+  "keywords": [
+    "sbn",
+    "fastify",
+    "generator",
+    "postgresql",
+    "api"
+  ],
   "license": "UNLICENSED",
-  "engines": { "node": ">=18.18.0" },
+  "engines": {
+    "node": ">=18.18.0"
+  },
   "dependencies": {
     "chalk": "^4.1.2",
     "change-case": "^4.1.2",
     "commander": "^12.1.0",
     "fs-extra": "^11.2.0",
     "handlebars": "^4.7.8",
-    "ora": "^5.4.1"
+    "ora": "^5.4.1",
+    "pg": "^8.22.0"
   },
   "devDependencies": {
     "eslint": "^9.8.0",
