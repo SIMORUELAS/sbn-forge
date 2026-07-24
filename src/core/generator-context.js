@@ -1,27 +1,261 @@
 'use strict';
+
 const crypto = require('crypto');
-const { validateDefinition } = require('./definition-validator');
-const { buildNames } = require('./naming');
-function normalizeType(type) { const t=type.toLowerCase(); return t==='character varying'?'varchar':t==='timestamp without time zone'?'timestamp':t; }
-function jsType(type) { const t=normalizeType(type); if (['bigint','integer','smallint','numeric','decimal'].includes(t)) {return 'number';} if (t==='boolean') {return 'boolean';} if (['json','jsonb'].includes(t)) {return 'object';} return 'string'; }
-function createGeneratorContext(definition, { generatorVersion='0.1.0', generatedAt=new Date().toISOString() }={}) {
-  validateDefinition(definition);
-  const names=buildNames(definition.table);
-  const columns=definition.columns.map((c,index)=>({
-    ...c, index, type: normalizeType(c.type), jsType: jsType(c.type), nullable: c.nullable === true,
-    primaryKey: c.primaryKey === true, generated: c.generated === true, hasDefault: c.default !== undefined,
-    writable: c.writable !== false && !c.primaryKey && !c.generated && !['created_at','created_by','created_from','updated_at','updated_by','updated_from','deleted_at','deleted_by','version_no'].includes(c.name)
-  }));
-  const columnMap=Object.fromEntries(columns.map(c=>[c.name,c]));
-  const primaryKeys=columns.filter(c=>c.primaryKey);
-  const writableColumns=columns.filter(c=>c.writable);
-  const capabilities={
-    softDelete:Boolean(columnMap.deleted_at), audit:['created_at','created_by','updated_at','updated_by'].some(k=>columnMap[k]),
-    versioning:Boolean(columnMap.version_no), organizationScope:Boolean(columnMap.organization_id), branchScope:Boolean(columnMap.branch_id),
-    json:columns.some(c=>['json','jsonb'].includes(c.type)), foreignKeys:columns.some(c=>c.foreignKey), pagination:true, filtering:true, sorting:true
-  };
-  const permissions=['VIEW','CREATE','EDIT','DELETE'].map(op=>`${names.permissionPrefix}_${op}`);
-  const hash=crypto.createHash('sha256').update(JSON.stringify(definition)).digest('hex');
-  return { generator:{name:'SBN Forge',version:generatorVersion,generatedAt}, source:{type:'json',definitionHash:hash}, schema:definition.schema, table:definition.table, description:definition.description||'', names, columns, columnMap, primaryKeys, primaryKey:primaryKeys[0], writableColumns, foreignKeys:columns.filter(c=>c.foreignKey), capabilities, permissions, options:definition.options||{} };
+
+const {
+  buildJsonSchemaProperty
+} = require('./json-schema-mapper');
+
+const {
+  validateDefinition
+} = require('./definition-validator');
+
+const {
+  buildNames
+} = require('./naming');
+
+const SYSTEM_COLUMNS = Object.freeze([
+  'created_at',
+  'created_by',
+  'created_from',
+  'updated_at',
+  'updated_by',
+  'updated_from',
+  'deleted_at',
+  'deleted_by',
+  'version_no'
+]);
+
+function normalizeType(type) {
+  const normalizedType = String(type || '')
+    .trim()
+    .toLowerCase();
+
+  if (normalizedType === 'character varying') {
+    return 'varchar';
+  }
+
+  if (normalizedType === 'timestamp without time zone') {
+    return 'timestamp';
+  }
+
+  if (normalizedType === 'timestamp with time zone') {
+    return 'timestamptz';
+  }
+
+  return normalizedType;
 }
-module.exports = { createGeneratorContext, normalizeType, jsType };
+
+function jsType(type) {
+  const normalizedType = normalizeType(type);
+
+  if (
+    [
+      'bigint',
+      'integer',
+      'smallint',
+      'numeric',
+      'decimal',
+      'real',
+      'double precision'
+    ].includes(normalizedType)
+  ) {
+    return 'number';
+  }
+
+  if (normalizedType === 'boolean') {
+    return 'boolean';
+  }
+
+  if (['json', 'jsonb'].includes(normalizedType)) {
+    return 'object';
+  }
+
+  return 'string';
+}
+
+function buildPermissions(names, definition) {
+  if (
+    Array.isArray(definition.permissions) &&
+    definition.permissions.length > 0
+  ) {
+    return [...definition.permissions];
+  }
+
+  return [
+    `${names.permissionPrefix}_VIEW`,
+    `${names.permissionPrefix}_CREATE`,
+    `${names.permissionPrefix}_UPDATE`,
+    `${names.permissionPrefix}_DELETE`
+  ];
+}
+
+function createGeneratorContext(
+  definition,
+  {
+    generatorVersion = '0.1.0',
+    generatedAt = new Date().toISOString()
+  } = {}
+) {
+  validateDefinition(definition);
+
+  const names = buildNames(definition.table);
+
+  const columns = definition.columns.map((column, index) => {
+    const normalizedType = normalizeType(column.type);
+
+    const primaryKey = column.primaryKey === true;
+    const generated = column.generated === true;
+
+    return {
+      ...column,
+
+      index,
+
+      type: normalizedType,
+
+      jsType: jsType(normalizedType),
+
+      jsonSchema: buildJsonSchemaProperty({
+       ...column,
+       type: normalizedType
+      }),
+
+      nullable: column.nullable === true,
+
+      primaryKey,
+
+      generated,
+
+      hasDefault: column.default !== undefined,
+
+      writable:
+        column.writable !== false &&
+        !primaryKey &&
+        !generated &&
+        !SYSTEM_COLUMNS.includes(column.name),
+
+      foreignKey: column.foreignKey || null
+    };
+  });
+
+  const columnMap = Object.fromEntries(
+    columns.map(column => [
+      column.name,
+      column
+    ])
+  );
+
+  const primaryKeys = columns.filter(
+    column => column.primaryKey
+  );
+
+  if (primaryKeys.length === 0) {
+    throw new Error(
+      `La tabla ${definition.schema}.${definition.table} debe tener una llave primaria.`
+    );
+  }
+
+  const primaryKey = primaryKeys[0];
+
+  const writableColumns = columns.filter(
+    column => column.writable
+  );
+
+  const foreignKeys = columns.filter(
+    column => column.foreignKey
+  );
+
+  const capabilities = {
+    softDelete: Boolean(columnMap.deleted_at),
+
+    audit: [
+      'created_at',
+      'created_by',
+      'created_from',
+      'updated_at',
+      'updated_by',
+      'updated_from'
+    ].some(columnName => Boolean(columnMap[columnName])),
+
+    versioning: Boolean(columnMap.version_no),
+
+    optimisticLock: Boolean(columnMap.version_no),
+
+    organizationScope: Boolean(
+      columnMap.organization_id
+    ),
+
+    branchScope: Boolean(
+      columnMap.branch_id
+    ),
+
+    json: columns.some(column =>
+      ['json', 'jsonb'].includes(column.type)
+    ),
+
+    foreignKeys: foreignKeys.length > 0,
+
+    pagination: true,
+
+    filtering: true,
+
+    sorting: true
+  };
+
+  const permissions = buildPermissions(
+    names,
+    definition
+  );
+
+  const definitionHash = crypto
+    .createHash('sha256')
+    .update(JSON.stringify(definition))
+    .digest('hex');
+
+  return {
+    generator: {
+      name: 'SBN Forge',
+      version: generatorVersion,
+      generatedAt
+    },
+
+    source: {
+      type: 'json',
+      definitionHash
+    },
+
+    schema: definition.schema,
+
+    table: definition.table,
+
+    description: definition.description || '',
+
+    names,
+
+    columns,
+
+    columnMap,
+
+    primaryKeys,
+
+    primaryKey,
+
+    writableColumns,
+
+    foreignKeys,
+
+    capabilities,
+
+    permissions,
+
+    options: definition.options || {}
+  };
+}
+
+module.exports = {
+  createGeneratorContext,
+  normalizeType,
+  jsType,
+  buildPermissions
+};
