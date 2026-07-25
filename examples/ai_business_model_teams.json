@@ -1,0 +1,121 @@
+{
+  "source": {
+    "type": "json"
+  },
+  "schema": "simo_ai",
+  "table": "ai_business_model_teams",
+  "columns": [
+    {
+      "name": "id",
+      "type": "bigint",
+      "nullable": false,
+      "primaryKey": true,
+      "identity": true
+    },
+    {
+      "name": "business_model_id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": false,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_business_models",
+        "column": "id"
+      }
+    },
+    {
+      "name": "team_id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": false,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_business_teams",
+        "column": "id"
+      }
+    },
+    {
+      "name": "is_required",
+      "type": "boolean",
+      "nullable": false,
+      "primaryKey": false,
+      "default": true
+    },
+    {
+      "name": "execution_order",
+      "type": "integer",
+      "nullable": false,
+      "primaryKey": false,
+      "default": 1
+    },
+    {
+      "name": "recommended_plan",
+      "type": "varchar",
+      "nullable": true,
+      "primaryKey": false
+    },
+    {
+      "name": "configuration_json",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp",
+      "nullable": false,
+      "primaryKey": false,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "created_by",
+      "type": "bigint",
+      "nullable": true,
+      "primaryKey": false
+    },
+    {
+      "name": "created_from",
+      "type": "varchar",
+      "nullable": true,
+      "primaryKey": false
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp",
+      "nullable": false,
+      "primaryKey": false,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "updated_by",
+      "type": "bigint",
+      "nullable": true,
+      "primaryKey": false
+    },
+    {
+      "name": "updated_from",
+      "type": "varchar",
+      "nullable": true,
+      "primaryKey": false
+    },
+    {
+      "name": "deleted_at",
+      "type": "timestamp",
+      "nullable": true,
+      "primaryKey": false
+    },
+    {
+      "name": "deleted_by",
+      "type": "bigint",
+      "nullable": true,
+      "primaryKey": false
+    },
+    {
+      "name": "version_no",
+      "type": "integer",
+      "nullable": false,
+      "primaryKey": false,
+      "default": 1
+    }
+  ]
+}
