@@ -90,6 +90,16 @@ function buildPermissions(names, definition) {
   ];
 }
 
+function isCreateRequiredColumn(column) {
+  return (
+    column.writable === true &&
+    column.generated !== true &&
+    column.nullable === false &&
+    column.hasDefault !== true &&
+    column.primaryKey !== true
+  );
+}
+
 function createGeneratorContext(
   definition,
   {
@@ -101,43 +111,57 @@ function createGeneratorContext(
 
   const names = buildNames(definition.table);
 
-  const columns = definition.columns.map((column, index) => {
-    const normalizedType = normalizeType(column.type);
+  const columns = definition.columns.map(
+    (column, index) => {
+      const normalizedType =
+        normalizeType(column.type);
 
-    const primaryKey = column.primaryKey === true;
-    const generated = column.generated === true;
+      const primaryKey =
+        column.primaryKey === true;
 
-    return {
-      ...column,
+      const generated =
+        column.generated === true;
 
-      index,
+      const hasDefault =
+        column.default !== undefined;
 
-      type: normalizedType,
-
-      jsType: jsType(normalizedType),
-
-      jsonSchema: buildJsonSchemaProperty({
-       ...column,
-       type: normalizedType
-      }),
-
-      nullable: column.nullable === true,
-
-      primaryKey,
-
-      generated,
-
-      hasDefault: column.default !== undefined,
-
-      writable:
+      const writable =
         column.writable !== false &&
         !primaryKey &&
         !generated &&
-        !SYSTEM_COLUMNS.includes(column.name),
+        !SYSTEM_COLUMNS.includes(column.name);
 
-      foreignKey: column.foreignKey || null
-    };
-  });
+      return {
+        ...column,
+
+        index,
+
+        type: normalizedType,
+
+        jsType: jsType(normalizedType),
+
+        jsonSchema:
+          buildJsonSchemaProperty({
+            ...column,
+            type: normalizedType
+          }),
+
+        nullable:
+          column.nullable === true,
+
+        primaryKey,
+
+        generated,
+
+        hasDefault,
+
+        writable,
+
+        foreignKey:
+          column.foreignKey || null
+      };
+    }
+  );
 
   const columnMap = Object.fromEntries(
     columns.map(column => [
@@ -162,12 +186,19 @@ function createGeneratorContext(
     column => column.writable
   );
 
+  const createRequiredColumns =
+    writableColumns.filter(
+      isCreateRequiredColumn
+    );
+
   const foreignKeys = columns.filter(
     column => column.foreignKey
   );
 
   const capabilities = {
-    softDelete: Boolean(columnMap.deleted_at),
+    softDelete: Boolean(
+      columnMap.deleted_at
+    ),
 
     audit: [
       'created_at',
@@ -176,11 +207,18 @@ function createGeneratorContext(
       'updated_at',
       'updated_by',
       'updated_from'
-    ].some(columnName => Boolean(columnMap[columnName])),
+    ].some(
+      columnName =>
+        Boolean(columnMap[columnName])
+    ),
 
-    versioning: Boolean(columnMap.version_no),
+    versioning: Boolean(
+      columnMap.version_no
+    ),
 
-    optimisticLock: Boolean(columnMap.version_no),
+    optimisticLock: Boolean(
+      columnMap.version_no
+    ),
 
     organizationScope: Boolean(
       columnMap.organization_id
@@ -191,10 +229,13 @@ function createGeneratorContext(
     ),
 
     json: columns.some(column =>
-      ['json', 'jsonb'].includes(column.type)
+      ['json', 'jsonb'].includes(
+        column.type
+      )
     ),
 
-    foreignKeys: foreignKeys.length > 0,
+    foreignKeys:
+      foreignKeys.length > 0,
 
     pagination: true,
 
@@ -225,11 +266,14 @@ function createGeneratorContext(
       definitionHash
     },
 
-    schema: definition.schema,
+    schema:
+      definition.schema,
 
-    table: definition.table,
+    table:
+      definition.table,
 
-    description: definition.description || '',
+    description:
+      definition.description || '',
 
     names,
 
@@ -243,13 +287,16 @@ function createGeneratorContext(
 
     writableColumns,
 
+    createRequiredColumns,
+
     foreignKeys,
 
     capabilities,
 
     permissions,
 
-    options: definition.options || {}
+    options:
+      definition.options || {}
   };
 }
 
@@ -257,5 +304,6 @@ module.exports = {
   createGeneratorContext,
   normalizeType,
   jsType,
-  buildPermissions
+  buildPermissions,
+  isCreateRequiredColumn
 };
