@@ -1,11 +1,13 @@
 'use strict';
 
+
 const naming = require('../core/naming');
 const MetadataNormalizer = require('./metadata-normalizer');
 const CapabilityDetector = require('./capability-detector');
 const GeneratorContextValidator = require(
   './generator-context.validator'
 );
+
 
 class GeneratorContextBuilder {
   constructor(dependencies = {}) {
@@ -25,6 +27,24 @@ class GeneratorContextBuilder {
   build(input = {}) {
     const metadata =
       this.metadataNormalizer.normalize(input);
+
+    if (
+      !metadata ||
+      typeof metadata !== 'object'
+    ) {
+      throw new TypeError(
+        'MetadataNormalizer debe devolver un objeto válido'
+      );
+    }
+
+    if (
+      typeof metadata.table !== 'string' ||
+      metadata.table.trim() === ''
+    ) {
+      throw new TypeError(
+        'GeneratorContextBuilder requiere el nombre de la tabla'
+      );
+    }
 
     const capabilities =
       this.capabilityDetector.detect(metadata);
@@ -70,41 +90,50 @@ class GeneratorContextBuilder {
   }
 
   buildNames(tableName) {
-    /*
-     * En este punto usamos las funciones de naming
-     * disponibles en el proyecto.
-     *
-     * Las llamadas pueden necesitar un ajuste pequeño
-     * dependiendo de los nombres exactos exportados
-     * actualmente por src/core/naming.js.
-     */
+    if (
+      typeof tableName !== 'string' ||
+      tableName.trim() === ''
+    ) {
+      throw new TypeError(
+        'buildNames requiere un nombre de tabla válido'
+      );
+    }
+
+    const normalizedTableName = tableName.trim();
 
     const moduleName =
       typeof naming.toKebabCase === 'function'
-        ? naming.toKebabCase(tableName)
-        : tableName.replaceAll('_', '-');
+        ? naming.toKebabCase(normalizedTableName)
+        : normalizedTableName.replaceAll('_', '-');
 
     const entityName =
       typeof naming.toPascalCase === 'function'
-        ? naming.toPascalCase(tableName)
-        : this.toPascalCase(tableName);
+        ? naming.toPascalCase(normalizedTableName)
+        : this.toPascalCase(normalizedTableName);
 
     const camelName =
       typeof naming.toCamelCase === 'function'
-        ? naming.toCamelCase(tableName)
-        : this.toCamelCase(tableName);
+        ? naming.toCamelCase(normalizedTableName)
+        : this.toCamelCase(normalizedTableName);
 
     return {
-      table: tableName,
+      table: normalizedTableName,
       module: moduleName,
       entity: entityName,
       variable: camelName,
       route: moduleName,
-      permissionPrefix: tableName.toUpperCase()
+      permissionPrefix:
+        normalizedTableName.toUpperCase()
     };
   }
 
   toPascalCase(value) {
+    if (typeof value !== 'string') {
+      throw new TypeError(
+        'toPascalCase requiere una cadena de texto'
+      );
+    }
+
     return value
       .split(/[_\-\s]+/)
       .filter(Boolean)
@@ -118,6 +147,10 @@ class GeneratorContextBuilder {
 
   toCamelCase(value) {
     const pascalValue = this.toPascalCase(value);
+
+    if (pascalValue === '') {
+      return '';
+    }
 
     return (
       pascalValue.charAt(0).toLowerCase() +

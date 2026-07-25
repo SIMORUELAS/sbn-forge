@@ -6,7 +6,9 @@ class RuleEngine {
    */
   constructor(rules = []) {
     if (!Array.isArray(rules)) {
-      throw new TypeError('rules debe ser un arreglo');
+      throw new TypeError(
+        'rules debe ser un arreglo'
+      );
     }
 
     this.rules = rules;
@@ -20,24 +22,44 @@ class RuleEngine {
    */
   apply(context) {
     if (!context || typeof context !== 'object') {
-      throw new TypeError('Se requiere un Generator Context válido');
+      throw new TypeError(
+        'Se requiere un Generator Context válido'
+      );
     }
 
-    return this.rules.reduce((currentContext, rule) => {
-      if (!rule || typeof rule.matches !== 'function') {
-        throw new TypeError('La regla no implementa matches()');
-      }
+    return this.rules.reduce(
+      (currentContext, rule) => {
+        if (
+          !rule ||
+          typeof rule.matches !== 'function'
+        ) {
+          throw new TypeError(
+            'La regla no implementa matches()'
+          );
+        }
 
-      if (typeof rule.apply !== 'function') {
-        throw new TypeError('La regla no implementa apply()');
-      }
+        if (typeof rule.apply !== 'function') {
+          throw new TypeError(
+            'La regla no implementa apply()'
+          );
+        }
 
-      if (!rule.matches(currentContext)) {
-        return currentContext;
-      }
+        if (!rule.matches(currentContext)) {
+          return currentContext;
+        }
 
-      return rule.apply(currentContext);
-    }, context);
+        const result = rule.apply(currentContext);
+
+        if (!result || typeof result !== 'object') {
+          throw new TypeError(
+            'La regla debe devolver un Generator Context válido'
+          );
+        }
+
+        return result;
+      },
+      context
+    );
   }
 }
 
