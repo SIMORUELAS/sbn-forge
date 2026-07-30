@@ -46,12 +46,16 @@ class PostgreSqlInspector extends InspectorContract {
       tableName
     );
 
-    if (!exists) {
-      throw new Error(
-        `La tabla ${schemaName}.${tableName} no existe`
-      );
-    }
+        if (!exists) {
+        const error = new Error(
+          `La tabla ${schemaName}.${tableName} no existe`
+        );
 
+        error.code = 'POSTGRESQL_TABLE_NOT_FOUND';
+
+        throw error;
+      }
+      
     const [
       columns,
       primaryKey,

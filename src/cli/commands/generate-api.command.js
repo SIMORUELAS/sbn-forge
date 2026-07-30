@@ -55,14 +55,21 @@ function registerGenerateApiCommand(parent) {
       'Reduce la salida del CLI',
       false
     )
+    .option(
+      '--profile <profile>',
+      'Perfil de generación',
+      'generic'
+    )
     .action(async (table, options) => {
       const cwd = process.cwd();
 
-      const config = await loadConfig(cwd);
+      const config =
+        await loadConfig(cwd);
 
-      const logger = new Logger({
-        quiet: options.quiet
-      });
+      const logger =
+        new Logger({
+          quiet: options.quiet
+        });
 
       const definitionPath =
         options.definition ||
@@ -72,18 +79,20 @@ function registerGenerateApiCommand(parent) {
           `${table}.json`
         );
 
-      const output = path.resolve(
-        cwd,
-        options.output ||
-          config.defaultOutput ||
-          './output'
-      );
+      const output =
+        path.resolve(
+          cwd,
+          options.output ||
+            config.defaultOutput ||
+            './output'
+        );
 
-      const spinner = options.quiet
-        ? null
-        : ora(
-          'Ejecutando Generation Pipeline'
-        ).start();
+      const spinner =
+        options.quiet
+          ? null
+          : ora(
+              'Ejecutando Generation Pipeline'
+            ).start();
 
       try {
         const definition =
@@ -91,34 +100,77 @@ function registerGenerateApiCommand(parent) {
             definitionPath
           );
 
+        /*
+         * Permite sobrescribir el schema
+         * desde la línea de comandos.
+         */
         if (options.schema) {
           definition.schema =
             options.schema;
         }
 
-        if (definition.table !== table) {
+        /*
+         * Propaga el perfil seleccionado
+         * hacia la definición.
+         *
+         * Se conserva en ambas propiedades
+         * para mantener compatibilidad con:
+         *
+         * - definition.profile
+         * - definition.generation.profile
+         */
+        definition.profile =
+          options.profile;
+
+        definition.generation = {
+          ...(definition.generation || {}),
+
+          profile:
+            options.profile
+        };
+
+        /*
+         * Verifica que la tabla proporcionada
+         * en el comando coincida con la definición.
+         */
+        if (
+          definition.table !== table
+        ) {
           throw new Error(
             `La tabla del comando (${table}) ` +
-            `no coincide con la definición ` +
+            'no coincide con la definición ' +
             `(${definition.table}).`
           );
         }
 
         const pipeline =
           createGenerationPipeline({
-            generatorVersion: '0.1.0'
+            generatorVersion:
+              '0.1.0'
           });
 
         const pipelineResult =
           await pipeline.execute({
-            type: 'api',
+            type:
+              'api',
 
             definition,
 
             options: {
               output,
-              force: options.force,
-              dryRun: options.dryRun,
+
+              force:
+                options.force,
+
+              dryRun:
+                options.dryRun,
+
+              quiet:
+                options.quiet,
+
+              profile:
+                options.profile,
+
               logger
             }
           });
@@ -132,21 +184,29 @@ function registerGenerateApiCommand(parent) {
 
         logger.success(
           options.dryRun
-            ? `Dry-run completado: ` +
+            ? 'Dry-run completado: ' +
               `${result.files.length} ` +
               'archivos planificados.'
-            : `Módulo generado: ` +
+            : 'Módulo generado: ' +
               result.moduleDirectory
         );
 
         if (!options.quiet) {
           console.log(
             chalk.gray(
+              `Perfil: ${options.profile}`
+            )
+          );
+
+          console.log(
+            chalk.gray(
               `Manifest: ${result.manifestPath}`
             )
           );
 
-          for (const file of result.files) {
+          for (
+            const file of result.files
+          ) {
             const status =
               options.dryRun
                 ? '[plan]'
@@ -155,7 +215,7 @@ function registerGenerateApiCommand(parent) {
             console.log(
               chalk.gray(
                 `  ${status} ` +
-                file.relativePath
+                  file.relativePath
               )
             );
           }

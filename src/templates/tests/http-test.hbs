@@ -1,0 +1,51 @@
+@baseUrl = {{api.baseUrl}}
+@basePath = {{api.basePath}}
+
+### ============================================================
+### SBN Forge - HTTP Tests
+### Module: {{names.module}}
+### Table: {{database.schema}}.{{database.table}}
+### ============================================================
+
+### Listar registros
+GET {{api.baseUrl}}{{api.basePath}}
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### Obtener registro por ID
+GET {{api.baseUrl}}{{api.basePath}}/{{primaryKeyExample}}
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### Crear registro
+POST {{api.baseUrl}}{{api.basePath}}
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{token}}
+
+{
+{{#each columns}}
+{{#if writable}}
+  "{{name}}": null{{#unless @last}},{{/unless}}
+{{/if}}
+{{/each}}
+}
+
+### Actualizar registro
+PUT {{api.baseUrl}}{{api.basePath}}/{{primaryKeyExample}}
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{token}}
+
+{
+{{#each columns}}
+{{#if writable}}
+  "{{name}}": null{{#unless @last}},{{/unless}}
+{{/if}}
+{{/each}}
+}
+
+### Eliminar registro
+DELETE {{api.baseUrl}}{{api.basePath}}/{{primaryKeyExample}}
+Accept: application/json
+Authorization: Bearer {{token}}

@@ -1,7 +1,4 @@
 {
-  "source": {
-    "type": "json"
-  },
   "schema": "simo_ai",
   "table": "ai_business_model_teams",
   "columns": [
@@ -10,13 +7,18 @@
       "type": "bigint",
       "nullable": false,
       "primaryKey": true,
-      "identity": true
+      "generated": true,
+      "writable": false,
+      "precision": 64,
+      "scale": 0
     },
     {
       "name": "business_model_id",
       "type": "uuid",
       "nullable": false,
       "primaryKey": false,
+      "generated": false,
+      "writable": true,
       "foreignKey": {
         "schema": "simo_ai",
         "table": "ai_business_models",
@@ -28,6 +30,8 @@
       "type": "uuid",
       "nullable": false,
       "primaryKey": false,
+      "generated": false,
+      "writable": true,
       "foreignKey": {
         "schema": "simo_ai",
         "table": "ai_business_teams",
@@ -39,83 +43,127 @@
       "type": "boolean",
       "nullable": false,
       "primaryKey": false,
-      "default": true
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "true"
     },
     {
       "name": "execution_order",
       "type": "integer",
       "nullable": false,
       "primaryKey": false,
-      "default": 1
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "1",
+      "precision": 32,
+      "scale": 0
     },
     {
       "name": "recommended_plan",
-      "type": "varchar",
+      "type": "character varying",
       "nullable": true,
-      "primaryKey": false
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 30
     },
     {
       "name": "configuration_json",
       "type": "jsonb",
       "nullable": true,
-      "primaryKey": false
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
     },
     {
       "name": "created_at",
-      "type": "timestamp",
+      "type": "timestamp without time zone",
       "nullable": false,
       "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
       "default": "CURRENT_TIMESTAMP"
     },
     {
       "name": "created_by",
       "type": "bigint",
       "nullable": true,
-      "primaryKey": false
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 64,
+      "scale": 0
     },
     {
       "name": "created_from",
-      "type": "varchar",
+      "type": "character varying",
       "nullable": true,
-      "primaryKey": false
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 50
     },
     {
       "name": "updated_at",
-      "type": "timestamp",
+      "type": "timestamp without time zone",
       "nullable": false,
       "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
       "default": "CURRENT_TIMESTAMP"
     },
     {
       "name": "updated_by",
       "type": "bigint",
       "nullable": true,
-      "primaryKey": false
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 64,
+      "scale": 0
     },
     {
       "name": "updated_from",
-      "type": "varchar",
+      "type": "character varying",
       "nullable": true,
-      "primaryKey": false
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 50
     },
     {
       "name": "deleted_at",
-      "type": "timestamp",
+      "type": "timestamp without time zone",
       "nullable": true,
-      "primaryKey": false
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
     },
     {
       "name": "deleted_by",
       "type": "bigint",
       "nullable": true,
-      "primaryKey": false
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 64,
+      "scale": 0
     },
     {
       "name": "version_no",
       "type": "integer",
       "nullable": false,
       "primaryKey": false,
-      "default": 1
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "1",
+      "precision": 32,
+      "scale": 0
     }
   ]
 }

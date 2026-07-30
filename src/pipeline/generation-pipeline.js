@@ -44,10 +44,17 @@ class GenerationPipeline {
       );
     }
 
-    this.contextBuilder = contextBuilder;
-    this.intelligenceEngine = intelligenceEngine;
-    this.ruleEngine = ruleEngine;
-    this.generators = generators;
+    this.contextBuilder =
+      contextBuilder;
+
+    this.intelligenceEngine =
+      intelligenceEngine;
+
+    this.ruleEngine =
+      ruleEngine;
+
+    this.generators =
+      generators;
   }
 
   async execute({
@@ -56,13 +63,17 @@ class GenerationPipeline {
     metadata,
     options = {}
   } = {}) {
-    if (!type) {
+    if (
+      typeof type !== 'string' ||
+      type.trim() === ''
+    ) {
       throw new Error(
         'GenerationPipeline requiere el tipo de generador.'
       );
     }
 
-    const generator = this.generators[type];
+    const generator =
+      this.generators[type];
 
     if (
       !generator ||
@@ -73,7 +84,8 @@ class GenerationPipeline {
       );
     }
 
-    const builderInput = metadata || definition;
+    const builderInput =
+      metadata || definition;
 
     if (!builderInput) {
       throw new Error(
@@ -81,29 +93,96 @@ class GenerationPipeline {
       );
     }
 
-    const baseContext = await this.contextBuilder.build(
-      builderInput
-    );
+    /*
+     * Se envían las opciones al Context Builder.
+     *
+     * Aquí viajarán datos como:
+     *
+     * options.profile
+     * options.generatorVersion
+     * options.generation
+     *
+     * Los builders antiguos que solamente reciben un
+     * argumento seguirán funcionando, porque JavaScript
+     * ignora argumentos adicionales.
+     */
+    const baseContext =
+      await this.contextBuilder.build(
+        builderInput,
+        {
+          ...options,
+
+          type,
+
+          definition:
+            definition || null,
+
+          metadata:
+            metadata || null
+        }
+      );
+
+    if (
+      !baseContext ||
+      typeof baseContext !== 'object'
+    ) {
+      throw new Error(
+        'El contextBuilder no produjo un contexto válido.'
+      );
+    }
 
     const intelligentContext =
       await this.intelligenceEngine.analyze(
-        baseContext
+        baseContext,
+        {
+          ...options,
+          type
+        }
       );
 
-    const finalContext = await this.ruleEngine.apply(
-      intelligentContext
-    );
+    if (
+      !intelligentContext ||
+      typeof intelligentContext !== 'object'
+    ) {
+      throw new Error(
+        'El intelligenceEngine no produjo un contexto válido.'
+      );
+    }
 
-    const generationResult = await generator.generate(
-      finalContext,
-      options
-    );
+    const finalContext =
+      await this.ruleEngine.apply(
+        intelligentContext,
+        {
+          ...options,
+          type
+        }
+      );
+
+    if (
+      !finalContext ||
+      typeof finalContext !== 'object'
+    ) {
+      throw new Error(
+        'El ruleEngine no produjo un contexto válido.'
+      );
+    }
+
+    const generationResult =
+      await generator.generate(
+        finalContext,
+        options
+      );
 
     return {
-      context: finalContext,
+      context:
+        finalContext,
+
       intelligence:
-        finalContext.intelligence || null,
-      generation: generationResult
+        finalContext.intelligence ||
+        null,
+
+      generation:
+        generationResult
     };
   }
 }

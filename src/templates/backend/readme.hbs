@@ -1,33 +1,114 @@
-# {{names.entityPlural}}
+# {{names.entity}}
 
-Módulo generado por **SBN Forge {{generator.version}}** para `{{schema}}.{{table}}`.
+Módulo generado por **SBN Forge** para la tabla `{{database.schema}}.{{database.table}}`.
 
-## Registro en Fastify
+---
 
-```js
-const routes = require('./{{names.moduleName}}.routes');
-const repository = require('./{{names.moduleName}}.repository');
+# Información de generación
+
+| Propiedad | Valor |
+|-----------|-------|
+| Perfil | `{{profile.name}}` |
+| Estándar | `{{profile.standard}}` |
+| Versión del contexto | `{{forge.contextVersion}}` |
+| Fecha de generación | `{{forge.generatedAt}}` |
+| Ruta base | `{{api.basePath}}` |
+| URL local | `{{api.baseUrl}}{{api.basePath}}` |
+
+---
+
+# Registro en Fastify
+
+```javascript
+const routes = require('./{{names.module}}.routes');
+const repository = require('./{{names.module}}.repository');
+
 repository.configure(fastify.pg);
-fastify.register(routes, { prefix: '/api' });
+
+fastify.register(routes);
 ```
 
-## Endpoints
+---
 
-- `GET {{names.routeBase}}`
-- `GET {{names.routeBase}}/:id`
-- `POST {{names.routeBase}}`
-- `PATCH {{names.routeBase}}/:id`
-- `DELETE {{names.routeBase}}/:id`
+# Endpoints
 
-## Capacidades detectadas
+| Método | Endpoint |
+|---------|----------|
+| GET | `{{api.basePath}}` |
+| GET | `{{api.basePath}}/:id` |
+| POST | `{{api.basePath}}` |
+| PATCH | `{{api.basePath}}/:id` |
+| DELETE | `{{api.basePath}}/:id` |
+
+---
+
+# Seguridad
+
+| Característica | Estado |
+|----------------|--------|
+| JWT | `{{security.jwt}}` |
+| Permisos | `{{security.permissions}}` |
+| Organización | `{{security.organizationContext}}` |
+
+---
+
+# Capacidades detectadas
 
 ```json
 {{json capabilities}}
 ```
 
-## Permisos sugeridos
+---
 
-{{#each permissions}}- `{{this}}`
-{{/each}}
+# Permisos sugeridos
 
-> La v0.1.0 genera el backend base. La conexión JWT, autorización y decoradores de infraestructura se integran en el host Fastify de SBN.
+| Acción | Permiso |
+|--------|----------|
+| Consultar | `{{permissions.view}}` |
+| Crear | `{{permissions.create}}` |
+| Editar | `{{permissions.edit}}` |
+| Eliminar | `{{permissions.delete}}` |
+| Reordenar | `{{permissions.reorder}}` |
+| Copiar | `{{permissions.copy}}` |
+
+---
+
+# Archivos generados
+
+```text
+{{names.module}}/
+├── {{names.module}}.routes.js
+├── {{names.module}}.controller.js
+├── {{names.module}}.service.js
+├── {{names.module}}.repository.js
+├── {{names.module}}.schema.js
+├── README.md
+├── API_EXAMPLES.md
+├── DATA_DICTIONARY.md
+├── UTILS_REQUIRED.md
+├── database/
+│   ├── migrations/
+│   └── seeds/
+├── tests/
+│   └── {{names.module}}.http
+└── sbn-forge.manifest.json
+```
+
+---
+
+# Integración
+
+Este módulo fue generado para trabajar con la arquitectura **SBN API v2**.
+
+Se espera que la aplicación host tenga registrados previamente:
+
+- Fastify
+- PostgreSQL (`@fastify/postgres`)
+- JWT
+- Middleware de autenticación
+- Middleware de autorización
+- Manejo centralizado de errores
+
+---
+
+**Generado automáticamente por SBN Forge.**

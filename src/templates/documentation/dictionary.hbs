@@ -1,0 +1,15 @@
+
+### `dictionary.hbs`
+
+```handlebars
+# Data Dictionary
+
+Schema: {{schema}}
+
+Tabla: {{table}}
+
+## Columnas
+
+{{#each columns}}
+- {{name}} — {{type}}
+{{/each}}

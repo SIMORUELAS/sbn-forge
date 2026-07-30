@@ -5,8 +5,8 @@ const {
 } = require('./generation-pipeline');
 
 const {
-  createGeneratorContext
-} = require('../core/generator-context');
+  GeneratorContextBuilder
+} = require('../context');
 
 const IntelligenceEngine = require(
   '../intelligence/intelligence-engine'
@@ -18,33 +18,104 @@ const RuleEngine = require(
 
 const {
   generateApi
-} = require('../generators/backend/api-generator');
+} = require(
+  '../generators/backend/api-generator'
+);
 
 /**
  * Crea el pipeline principal de generación.
  *
- * La versión 0.1.0 utiliza un adaptador para conservar
- * compatibilidad con createGeneratorContext(), debido a
- * que ApiGenerator todavía consume el contexto original.
+ * Flujo:
+ *
+ * definition / metadata
+ *        ↓
+ * GeneratorContextBuilder
+ *        ↓
+ * IntelligenceEngine
+ *        ↓
+ * RuleEngine
+ *        ↓
+ * ApiGenerator
  *
  * @param {object} options
  * @returns {GenerationPipeline}
  */
-function createGenerationPipeline(options = {}) {
+function createGenerationPipeline(
+  options = {}
+) {
   const generatorVersion =
-    options.generatorVersion || '0.1.0';
+    options.generatorVersion ||
+    '0.1.0';
 
-  const contextBuilder =
-    options.contextBuilder || {
-      build(definition) {
-        return createGeneratorContext(
-          definition,
-          {
-            generatorVersion
-          }
-        );
-      }
-    };
+  const baseContextBuilder =
+    options.contextBuilder ||
+    new GeneratorContextBuilder();
+
+  /*
+   * Adaptador ligero.
+   *
+   * GenerationPipeline envía:
+   *
+   * build(builderInput, buildOptions)
+   *
+   * GeneratorContextBuilder recibe:
+   *
+   * build(input)
+   *
+   * Por eso se combinan ambos objetos antes
+   * de llamar al builder definitivo.
+   */
+  const contextBuilder = {
+    build(
+      builderInput,
+      buildOptions = {}
+    ) {
+      const profileName =
+        buildOptions.profile ||
+        builderInput.profile ||
+        builderInput.generation
+          ?.profile ||
+        builderInput.options
+          ?.profile ||
+        'generic';
+
+      const input = {
+        ...builderInput,
+
+        profile:
+          profileName,
+
+        generatorVersion,
+
+        generation: {
+          ...(builderInput.generation ||
+            {}),
+
+          ...(buildOptions.generation ||
+            {}),
+
+          profile:
+            profileName
+        },
+
+        options: {
+          ...(builderInput.options ||
+            {}),
+
+          ...buildOptions,
+
+          profile:
+            profileName,
+
+          generatorVersion
+        }
+      };
+
+      return baseContextBuilder.build(
+        input
+      );
+    }
+  };
 
   const intelligenceEngine =
     options.intelligenceEngine ||
@@ -58,7 +129,10 @@ function createGenerationPipeline(options = {}) {
 
   const apiGenerator =
     options.apiGenerator || {
-      generate(context, generationOptions = {}) {
+      generate(
+        context,
+        generationOptions = {}
+      ) {
         return generateApi(
           context,
           generationOptions
@@ -68,11 +142,15 @@ function createGenerationPipeline(options = {}) {
 
   return new GenerationPipeline({
     contextBuilder,
+
     intelligenceEngine,
+
     ruleEngine,
 
     generators: {
-      api: apiGenerator,
+      api:
+        apiGenerator,
+
       ...(options.generators || {})
     }
   });

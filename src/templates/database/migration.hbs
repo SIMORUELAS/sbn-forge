@@ -1,0 +1,24 @@
+-- ============================================================================
+-- SBN Forge migration
+-- Schema: {{schema}}
+-- Table: {{table}}
+-- Generated automatically by SBN Forge
+-- ============================================================================
+
+CREATE SCHEMA IF NOT EXISTS {{schema}};
+
+CREATE TABLE IF NOT EXISTS {{schema}}.{{table}}
+(
+{{#each columns}}
+    {{name}} {{nativeType}}{{#if identity}} GENERATED ALWAYS AS IDENTITY{{/if}}{{#unless nullable}} NOT NULL{{/unless}}{{#if hasDefaultValue}} DEFAULT {{{defaultValue}}}{{/if}}{{#if primaryKey}} PRIMARY KEY{{/if}}{{#unless @last}},{{/unless}}
+{{/each}}
+);
+
+{{#each foreignKeys}}
+ALTER TABLE {{../schema}}.{{../table}}
+    ADD CONSTRAINT {{#if name}}{{name}}{{else}}fk_{{../table}}_{{column}}{{/if}}
+    FOREIGN KEY ({{column}})
+    REFERENCES {{referencedSchema}}.{{referencedTable}}
+    ({{referencedColumn}});
+
+{{/each}}
