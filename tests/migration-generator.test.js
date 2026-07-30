@@ -1,7 +1,6 @@
 'use strict';
 
 const fs = require('fs-extra');
-const os = require('os');
 const path = require('path');
 
 const definition = require(
@@ -9,9 +8,9 @@ const definition = require(
 );
 
 const {
-  createGenerationPipeline
+  generateTestModule
 } = require(
-  '../src/pipeline/create-generation-pipeline'
+  './helpers/generate-test-module'
 );
 
 describe(
@@ -20,46 +19,17 @@ describe(
     test(
       'genera identity, defaults y foreign keys',
       async () => {
-        const output =
-          await fs.mkdtemp(
-            path.join(
-              os.tmpdir(),
-              'forge-migration-'
-            )
-          );
+        const generated =
+          await generateTestModule({
+            definition
+          });
 
         try {
-          const pipeline =
-            createGenerationPipeline();
-
-          const result =
-            await pipeline.execute({
-              type: 'api',
-
-              definition,
-
-              options: {
-                profile:
-                  'sbn-api-v2',
-
-                output,
-
-                force: true
-              }
-            });
-
-          expect(
-            result.generation
-          ).toBeDefined();
-
           const migrationPath =
             path.join(
-              result.generation
-                .moduleDirectory,
-
+              generated.moduleDirectory,
               'database',
               'migrations',
-
               'ai-business-model-teams.migration.sql'
             );
 
@@ -129,7 +99,7 @@ describe(
             'REFERENCES simo_ai.ai_business_teams'
           );
         } finally {
-          await fs.remove(output);
+          await generated.cleanup();
         }
       }
     );
