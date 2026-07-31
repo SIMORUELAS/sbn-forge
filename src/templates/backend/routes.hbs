@@ -1,13 +1,72 @@
 'use strict';
-const controller = require('./{{names.moduleName}}.controller');
-const schemas = require('./{{names.moduleName}}.schema');
+
+const controller =
+  require(
+    './{{names.moduleName}}.controller'
+  );
+
+const schemas =
+  require(
+    './{{names.moduleName}}.schema'
+  );
+
+const repository =
+  require(
+    './{{names.moduleName}}.repository'
+  );
 
 async function {{names.variablePlural}}Routes(fastify) {
-  const base = '{{names.routeBase}}';
-  fastify.get(base, { schema: schemas.list }, controller.list);
-  fastify.get(`${base}/:id`, { schema: schemas.getById }, controller.getById);
-  fastify.post(base, { schema: schemas.create }, controller.create);
-  fastify.patch(`${base}/:id`, { schema: schemas.update }, controller.update);
-  fastify.delete(`${base}/:id`, { schema: schemas.remove }, controller.remove);
+  /*
+   * Configura el repository con la conexión
+   * PostgreSQL registrada por dbPlugin.
+   */
+  repository.configure(
+    fastify.pg
+  );
+
+  const base =
+    '{{names.routeBase}}';
+
+  fastify.get(
+    base,
+    {
+      schema: schemas.list
+    },
+    controller.list
+  );
+
+  fastify.get(
+    `${base}/:id`,
+    {
+      schema: schemas.getById
+    },
+    controller.getById
+  );
+
+  fastify.post(
+    base,
+    {
+      schema: schemas.create
+    },
+    controller.create
+  );
+
+  fastify.patch(
+    `${base}/:id`,
+    {
+      schema: schemas.update
+    },
+    controller.update
+  );
+
+  fastify.delete(
+    `${base}/:id`,
+    {
+      schema: schemas.remove
+    },
+    controller.remove
+  );
 }
-module.exports = {{names.variablePlural}}Routes;
+
+module.exports =
+  {{names.variablePlural}}Routes;
