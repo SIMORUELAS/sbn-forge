@@ -4,29 +4,41 @@ class DefinitionBuilder {
   build(metadata) {
     this.validateMetadata(metadata);
 
-    const primaryKeyColumns = new Set(
-      metadata.primaryKey?.columns || []
-    );
+    const primaryKeyColumns =
+      new Set(
+        metadata.primaryKey?.columns ||
+        []
+      );
 
-    const foreignKeysByColumn = new Map(
-      (metadata.foreignKeys || []).map(
-        (foreignKey) => [
-          foreignKey.column,
-          foreignKey
-        ]
-      )
-    );
+    const foreignKeysByColumn =
+      new Map(
+        (metadata.foreignKeys || [])
+          .map(
+            foreignKey => [
+              foreignKey.column,
+              foreignKey
+            ]
+          )
+      );
 
     return {
-      schema: metadata.schema,
-      table: metadata.table,
+      schema:
+        metadata.schema,
 
-      columns: metadata.columns.map((column) =>
-        this.buildColumn(column, {
-          primaryKeyColumns,
-          foreignKeysByColumn
-        })
-      )
+      table:
+        metadata.table,
+
+      columns:
+        metadata.columns.map(
+          column =>
+            this.buildColumn(
+              column,
+              {
+                primaryKeyColumns,
+                foreignKeysByColumn
+              }
+            )
+        )
     };
   }
 
@@ -38,8 +50,21 @@ class DefinitionBuilder {
     }
   ) {
     const isPrimaryKey =
-      primaryKeyColumns.has(column.name);
+      primaryKeyColumns.has(
+        column.name
+      );
 
+    /*
+     * Una columna identity sí es generada
+     * por PostgreSQL.
+     *
+     * Una columna UUID con:
+     *
+     * DEFAULT gen_random_uuid()
+     *
+     * tiene un valor predeterminado, pero no
+     * es técnicamente una columna identity.
+     */
     const isGenerated =
       column.identity === true;
 
@@ -48,43 +73,70 @@ class DefinitionBuilder {
       column.defaultValue !== undefined;
 
     const foreignKeyMetadata =
-      foreignKeysByColumn.get(column.name);
+      foreignKeysByColumn.get(
+        column.name
+      );
+
+    /*
+     * Reglas para una columna escribible:
+     *
+     * 1. La metadata no debe marcarla
+     *    explícitamente como no escribible.
+     *
+     * 2. No debe ser primary key.
+     *
+     * 3. No debe ser generada.
+     *
+     * La primary key siempre tiene prioridad
+     * sobre column.writable.
+     */
+    const isWritable =
+      column.writable !== false &&
+      !isPrimaryKey &&
+      !isGenerated;
 
     const definition = {
-      name: column.name,
+      name:
+        column.name,
 
       type:
         column.type ||
         column.dataType ||
         column.nativeType,
 
-      nullable: column.nullable === true,
+      nullable:
+        column.nullable === true,
 
-      primaryKey: isPrimaryKey,
+      primaryKey:
+        isPrimaryKey,
 
-      generated: isGenerated,
+      generated:
+        isGenerated,
 
       writable:
-        column.writable !== undefined
-          ? column.writable === true
-          : !isGenerated
+        isWritable
     };
 
     if (foreignKeyMetadata) {
       definition.foreignKey = {
         schema:
-          foreignKeyMetadata.referencedSchema,
+          foreignKeyMetadata
+            .referencedSchema,
 
         table:
-          foreignKeyMetadata.referencedTable,
+          foreignKeyMetadata
+            .referencedTable,
 
         column:
-          foreignKeyMetadata.referencedColumn
+          foreignKeyMetadata
+            .referencedColumn
       };
     }
 
     if (hasDefault) {
-      definition.hasDefault = true;
+      definition.hasDefault =
+        true;
+
       definition.default =
         column.defaultValue;
     }
@@ -93,19 +145,28 @@ class DefinitionBuilder {
       column.length ??
       column.maxLength;
 
-    if (Number.isInteger(length)) {
-      definition.length = length;
+    if (
+      Number.isInteger(
+        length
+      )
+    ) {
+      definition.length =
+        length;
     }
 
     if (
-      Number.isInteger(column.precision)
+      Number.isInteger(
+        column.precision
+      )
     ) {
       definition.precision =
         column.precision;
     }
 
     if (
-      Number.isInteger(column.scale)
+      Number.isInteger(
+        column.scale
+      )
     ) {
       definition.scale =
         column.scale;
@@ -125,8 +186,10 @@ class DefinitionBuilder {
     }
 
     if (
-      typeof metadata.schema !== 'string' ||
-      metadata.schema.trim() === ''
+      typeof metadata.schema !==
+        'string' ||
+      metadata.schema.trim() ===
+        ''
     ) {
       throw new TypeError(
         'La metadata requiere schema'
@@ -134,15 +197,21 @@ class DefinitionBuilder {
     }
 
     if (
-      typeof metadata.table !== 'string' ||
-      metadata.table.trim() === ''
+      typeof metadata.table !==
+        'string' ||
+      metadata.table.trim() ===
+        ''
     ) {
       throw new TypeError(
         'La metadata requiere table'
       );
     }
 
-    if (!Array.isArray(metadata.columns)) {
+    if (
+      !Array.isArray(
+        metadata.columns
+      )
+    ) {
       throw new TypeError(
         'La metadata requiere columns'
       );
@@ -150,4 +219,5 @@ class DefinitionBuilder {
   }
 }
 
-module.exports = DefinitionBuilder;
+module.exports =
+  DefinitionBuilder;

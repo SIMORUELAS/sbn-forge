@@ -208,4 +208,125 @@ describe('DefinitionBuilder', () => {
       );
     }
   );
+
+
+
+  test(
+  'marca una primary key UUID con default como no escribible',
+  () => {
+    const builder =
+      new DefinitionBuilder();
+
+    const definition =
+      builder.build({
+        schema:
+          'simo_ai',
+
+        table:
+          'ai_business_models',
+
+        columns: [
+          {
+            name:
+              'id',
+
+            dataType:
+              'uuid',
+
+            nativeType:
+              'uuid',
+
+            nullable:
+              false,
+
+            identity:
+              false,
+
+            writable:
+              true,
+
+            defaultValue:
+              'gen_random_uuid()'
+          },
+          {
+            name:
+              'code',
+
+            dataType:
+              'character varying',
+
+            nativeType:
+              'character varying',
+
+            nullable:
+              false,
+
+            identity:
+              false,
+
+            writable:
+              true
+          }
+        ],
+
+        primaryKey: {
+          name:
+            'pk_ai_business_models',
+
+          columns: [
+            'id'
+          ]
+        },
+
+        foreignKeys:
+          []
+      });
+
+    const idColumn =
+      definition.columns.find(
+        column =>
+          column.name === 'id'
+      );
+
+    expect(
+      idColumn
+    ).toEqual({
+      name:
+        'id',
+
+      type:
+        'uuid',
+
+      nullable:
+        false,
+
+      primaryKey:
+        true,
+
+      generated:
+        false,
+
+      writable:
+        false,
+
+      hasDefault:
+        true,
+
+      default:
+        'gen_random_uuid()'
+    });
+
+    expect(
+      definition.columns.find(
+        column =>
+          column.name === 'code'
+      ).writable
+    ).toBe(true);
+  }
+);
+
+
+
+
+
 });
