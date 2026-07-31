@@ -1,19 +1,347 @@
 'use strict';
-const WRITABLE_COLUMNS = Object.freeze([{{#each writableColumns}}'{{name}}'{{#unless @last}}, {{/unless}}{{/each}}]);
-const SORTABLE_COLUMNS = Object.freeze([{{#each columns}}'{{name}}'{{#unless @last}}, {{/unless}}{{/each}}]);
+
+const TABLE_METADATA =
+  Object.freeze({
+    schema: '{{schema}}',
+    table: '{{table}}',
+    primaryKey: '{{primaryKey.name}}'
+  });
+
+const QUALIFIED_TABLE =
+  `${TABLE_METADATA.schema}.${TABLE_METADATA.table}`;
+
+const WRITABLE_COLUMNS =
+  Object.freeze([
+{{#each writableColumns}}
+    '{{name}}'{{#unless @last}},{{/unless}}
+{{/each}}
+  ]);
+
+const SORTABLE_COLUMNS =
+  Object.freeze([
+{{#each columns}}
+    '{{name}}'{{#unless @last}},{{/unless}}
+{{/each}}
+  ]);
+
 let db;
-function configure(database){db=database;}
-function connection(){if(!db)throw new Error('Repository no configurado. Ejecute configure(database).');return db;}
-function pickWritable(input){return Object.fromEntries(Object.entries(input||{}).filter(([key])=>WRITABLE_COLUMNS.includes(key)));}
-function safeSort(value){return SORTABLE_COLUMNS.includes(value)?value:'{{primaryKey.name}}';}
-async function list(query={}){
- const limit=Math.min(Math.max(Number(query.limit)||25,1),100); const offset=Math.max(Number(query.offset)||0,0); const sort=safeSort(query.sort); const direction=String(query.direction).toLowerCase()==='asc'?'ASC':'DESC';
- const where=[]; const values=[]; {{#if capabilities.softDelete}}if(!query.include_deleted)where.push('deleted_at IS NULL');{{/if}}
- const sql=`SELECT * FROM {{schema}}.{{table}} ${where.length?'WHERE '+where.join(' AND '):''} ORDER BY ${sort} ${direction} LIMIT $1 OFFSET $2`;
- const result=await connection().query(sql,[limit,offset]); return {data:result.rows,meta:{limit,offset,count:result.rowCount}};
+
+function configure(database) {
+  if (
+    !database ||
+    typeof database.query !== 'function'
+  ) {
+    throw new TypeError(
+      'El repository requiere un adaptador ' +
+      'de base de datos con query().'
+    );
+  }
+
+  db = database;
 }
-async function getById(id){const values=[id];const result=await connection().query('SELECT * FROM {{schema}}.{{table}} WHERE {{primaryKey.name}} = $1{{#if capabilities.softDelete}} AND deleted_at IS NULL{{/if}} LIMIT 1',values);return result.rows[0]||null;}
-async function create(input,context={}){const data=pickWritable(input);{{#if columnMap.created_by}}data.created_by=context.userId||null;{{/if}}{{#if columnMap.created_from}}data.created_from=context.source||'api';{{/if}}const keys=Object.keys(data);if(!keys.length)throw new Error('No hay campos escribibles.');const params=keys.map((_,i)=>`$${i+1}`).join(', ');const sql=`INSERT INTO {{schema}}.{{table}} (${keys.join(', ')}) VALUES (${params}) RETURNING *`;const result=await connection().query(sql,keys.map(k=>data[k]));return result.rows[0];}
-async function update(id,input,context={}){const data=pickWritable(input);{{#if columnMap.updated_by}}data.updated_by=context.userId||null;{{/if}}{{#if columnMap.updated_from}}data.updated_from=context.source||'api';{{/if}}{{#if capabilities.versioning}}const expectedVersion=input.expected_version_no;if(!Number.isInteger(expectedVersion))throw new Error('expected_version_no es obligatorio.');data.version_no=expectedVersion+1;{{/if}}const keys=Object.keys(data);if(!keys.length)throw new Error('No hay campos para actualizar.');const values=keys.map(k=>data[k]);values.push(id);const set=keys.map((k,i)=>`${k} = $${i+1}`).join(', ');let sql=`UPDATE {{schema}}.{{table}} SET ${set} WHERE {{primaryKey.name}} = $${values.length}`;{{#if capabilities.versioning}}values.push(input.expected_version_no);sql+=` AND version_no = $${values.length}`;{{/if}}{{#if capabilities.softDelete}}sql+=' AND deleted_at IS NULL';{{/if}}sql+=' RETURNING *';const result=await connection().query(sql,values);return result.rows[0]||null;}
-async function remove(id,context={}){ {{#if capabilities.softDelete}}const result=await connection().query('UPDATE {{schema}}.{{table}} SET deleted_at = CURRENT_TIMESTAMP{{#if columnMap.deleted_by}}, deleted_by = $2{{/if}}{{#if capabilities.versioning}}, version_no = version_no + 1{{/if}} WHERE {{primaryKey.name}} = $1 AND deleted_at IS NULL RETURNING {{primaryKey.name}}',[id{{#if columnMap.deleted_by}},context.userId||null{{/if}}]);{{else}}const result=await connection().query('DELETE FROM {{schema}}.{{table}} WHERE {{primaryKey.name}} = $1 RETURNING {{primaryKey.name}}',[id]);{{/if}}return result.rowCount>0;}
-module.exports={configure,list,getById,create,update,remove,WRITABLE_COLUMNS,SORTABLE_COLUMNS};
+
+function connection() {
+  if (!db) {
+    throw new Error(
+      'Repository no configurado. ' +
+      'Ejecute configure(database).'
+    );
+  }
+
+  return db;
+}
+
+function pickWritable(input) {
+  return Object.fromEntries(
+    Object.entries(input || {})
+      .filter(
+        ([key]) =>
+          WRITABLE_COLUMNS.includes(key)
+      )
+  );
+}
+
+function safeSort(value) {
+  return SORTABLE_COLUMNS.includes(value)
+    ? value
+    : TABLE_METADATA.primaryKey;
+}
+
+async function list(query = {}) {
+  const limit =
+    Math.min(
+      Math.max(
+        Number(query.limit) || 25,
+        1
+      ),
+      100
+    );
+
+  const offset =
+    Math.max(
+      Number(query.offset) || 0,
+      0
+    );
+
+  const sort =
+    safeSort(query.sort);
+
+  const direction =
+    String(query.direction).toLowerCase() ===
+      'asc'
+      ? 'ASC'
+      : 'DESC';
+
+  const where = [];
+
+  {{#if capabilities.softDelete}}
+  if (!query.include_deleted) {
+    where.push(
+      'deleted_at IS NULL'
+    );
+  }
+  {{/if}}
+
+  const whereClause =
+    where.length > 0
+      ? `WHERE ${where.join(' AND ')}`
+      : '';
+
+  const sql = `
+    SELECT *
+    FROM ${QUALIFIED_TABLE}
+    ${whereClause}
+    ORDER BY ${sort} ${direction}
+    LIMIT $1
+    OFFSET $2
+  `;
+
+  const result =
+    await connection().query(
+      sql,
+      [limit, offset]
+    );
+
+  return {
+    data: result.rows,
+    meta: {
+      limit,
+      offset,
+      count: result.rowCount
+    }
+  };
+}
+
+async function getById(id) {
+  const sql = `
+    SELECT *
+    FROM ${QUALIFIED_TABLE}
+    WHERE ${TABLE_METADATA.primaryKey} = $1
+    {{#if capabilities.softDelete}}AND deleted_at IS NULL{{/if}}
+    LIMIT 1
+  `;
+
+  const result =
+    await connection().query(
+      sql,
+      [id]
+    );
+
+  return result.rows[0] || null;
+}
+
+async function create(
+  input,
+  context = {}
+) {
+  const data =
+    pickWritable(input);
+
+  {{#if columnMap.created_by}}
+  data.created_by =
+    context.userId || null;
+  {{/if}}
+
+  {{#if columnMap.created_from}}
+  data.created_from =
+    context.source || 'api';
+  {{/if}}
+
+  const keys =
+    Object.keys(data);
+
+  if (keys.length === 0) {
+    throw new Error(
+      'No hay campos escribibles.'
+    );
+  }
+
+  const params =
+    keys
+      .map(
+        (_, index) =>
+          `$${index + 1}`
+      )
+      .join(', ');
+
+  const sql = `
+    INSERT INTO ${QUALIFIED_TABLE}
+      (${keys.join(', ')})
+    VALUES
+      (${params})
+    RETURNING *
+  `;
+
+  const result =
+    await connection().query(
+      sql,
+      keys.map(
+        key => data[key]
+      )
+    );
+
+  return result.rows[0];
+}
+
+async function update(
+  id,
+  input,
+  context = {}
+) {
+  const data =
+    pickWritable(input);
+
+  {{#if columnMap.updated_by}}
+  data.updated_by =
+    context.userId || null;
+  {{/if}}
+
+  {{#if columnMap.updated_from}}
+  data.updated_from =
+    context.source || 'api';
+  {{/if}}
+
+  {{#if capabilities.versioning}}
+  const expectedVersion =
+    input.expected_version_no;
+
+  if (!Number.isInteger(expectedVersion)) {
+    throw new Error(
+      'expected_version_no es obligatorio.'
+    );
+  }
+
+  data.version_no =
+    expectedVersion + 1;
+  {{/if}}
+
+  const keys =
+    Object.keys(data);
+
+  if (keys.length === 0) {
+    throw new Error(
+      'No hay campos para actualizar.'
+    );
+  }
+
+  const values =
+    keys.map(
+      key => data[key]
+    );
+
+  values.push(id);
+
+  const setClause =
+    keys
+      .map(
+        (key, index) =>
+          `${key} = $${index + 1}`
+      )
+      .join(', ');
+
+  let sql = `
+    UPDATE ${QUALIFIED_TABLE}
+    SET ${setClause}
+    WHERE ${TABLE_METADATA.primaryKey} = $${values.length}
+  `;
+
+  {{#if capabilities.versioning}}
+  values.push(
+    input.expected_version_no
+  );
+
+  sql += `
+    AND version_no = $${values.length}
+  `;
+  {{/if}}
+
+  {{#if capabilities.softDelete}}
+  sql += `
+    AND deleted_at IS NULL
+  `;
+  {{/if}}
+
+  sql += `
+    RETURNING *
+  `;
+
+  const result =
+    await connection().query(
+      sql,
+      values
+    );
+
+  return result.rows[0] || null;
+}
+
+async function remove(
+  id,
+  context = {}
+) {
+  {{#if capabilities.softDelete}}
+  const sql = `
+    UPDATE ${QUALIFIED_TABLE}
+    SET
+      deleted_at = CURRENT_TIMESTAMP{{#if columnMap.deleted_by}},
+      deleted_by = $2{{/if}}{{#if capabilities.versioning}},
+      version_no = version_no + 1{{/if}}
+    WHERE ${TABLE_METADATA.primaryKey} = $1
+      AND deleted_at IS NULL
+    RETURNING ${TABLE_METADATA.primaryKey}
+  `;
+
+  const values = [
+    id{{#if columnMap.deleted_by}},
+    context.userId || null{{/if}}
+  ];
+  {{else}}
+  const sql = `
+    DELETE FROM ${QUALIFIED_TABLE}
+    WHERE ${TABLE_METADATA.primaryKey} = $1
+    RETURNING ${TABLE_METADATA.primaryKey}
+  `;
+
+  const values = [id];
+  {{/if}}
+
+  const result =
+    await connection().query(
+      sql,
+      values
+    );
+
+  return result.rowCount > 0;
+}
+
+module.exports = {
+  configure,
+  list,
+  getById,
+  create,
+  update,
+  remove,
+  TABLE_METADATA,
+  QUALIFIED_TABLE,
+  WRITABLE_COLUMNS,
+  SORTABLE_COLUMNS
+};
