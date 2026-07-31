@@ -60,17 +60,49 @@ describe('API Generator', () => {
             'ai-business-model-departments.routes.js'
           );
 
-        const routes =
-          await fs.readFile(
-            routesPath,
-            'utf8'
+          const routes =
+            await fs.readFile(
+              routesPath,
+              'utf8'
+            );
+
+            expect(
+            routes
+          ).toContain(
+            './ai-business-model-departments.repository'
           );
 
-        expect(
-          routes
-        ).toContain(
-          'fastify.get(base'
-        );
+          expect(
+            routes
+          ).toContain(
+            'options.databaseDecorator'
+          );
+
+          expect(
+            routes
+          ).toContain(
+            'fastify[databaseDecorator]'
+          );
+
+          expect(
+            routes
+          ).toContain(
+            'repository.configure('
+          );
+
+          expect(
+            routes
+          ).toContain(
+            'fastify.get('
+          );
+
+          expect(
+            routes
+          ).toContain(
+            'controller.list'
+          );
+                  
+
 
         expect(
           await fs.pathExists(
