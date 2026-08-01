@@ -1,15 +1,156 @@
-
-### `dictionary.hbs`
-
-```handlebars
 # Data Dictionary
 
-Schema: {{schema}}
+Módulo: **{{names.module}}**
 
-Tabla: {{table}}
+Schema:
 
-## Columnas
+```text
+{{database.schema}}
+```
+
+Tabla:
+
+```text
+{{database.table}}
+```
+
+---
+
+## Resumen
+
+| Propiedad | Valor |
+|-----------|-------|
+| Columnas | {{columns.length}} |
+| Llave primaria | {{primaryKey.columns.[0]}} |
+| Llaves foráneas | {{foreignKeys.length}} |
+| Soft Delete | {{capabilities.softDelete}} |
+| Optimistic Lock | {{capabilities.optimisticLock}} |
+| Auditoría | {{capabilities.audit}} |
+| Columnas JSON | {{capabilities.jsonColumns.length}} |
+
+---
+
+# Columnas
 
 {{#each columns}}
-- {{name}} — {{type}}
+
+## {{name}}
+
+| Propiedad | Valor |
+|-----------|-------|
+| Tipo | {{nativeType}} |
+| Nullable | {{nullable}} |
+| Primary Key | {{primaryKey}} |
+| Identity | {{identity}} |
+| Generated | {{generated}} |
+| Writable | {{writable}} |
+| Default | {{#if hasDefaultValue}}{{defaultValue}}{{else}}Sin valor predeterminado{{/if}} |
+| Longitud máxima | {{#if maxLength}}{{maxLength}}{{else}}No aplica{{/if}} |
+| Precisión | {{#if precision}}{{precision}}{{else}}No aplica{{/if}} |
+| Escala | {{#if scale}}{{scale}}{{else}}No aplica{{/if}} |
+
+### JSON Schema
+
+```json
+{{{jsonSchemaText}}}
+```
+
+{{#if foreignKey}}
+
+### Llave foránea
+
+| Propiedad | Valor |
+|-----------|-------|
+| Schema destino | {{foreignKey.schema}} |
+| Tabla destino | {{foreignKey.table}} |
+| Columna destino | {{foreignKey.column}} |
+
+{{/if}}
+
+---
+
 {{/each}}
+
+# Llave primaria
+
+Nombre:
+
+```text
+{{primaryKey.name}}
+```
+
+Columnas:
+
+{{#each primaryKey.columns}}
+- `{{this}}`
+{{/each}}
+
+---
+
+# Llaves foráneas
+
+{{#if foreignKeys.length}}
+
+{{#each foreignKeys}}
+
+## {{column}}
+
+| Propiedad | Valor |
+|-----------|-------|
+| Constraint | {{#if name}}{{name}}{{else}}Generado automáticamente{{/if}} |
+| Columna local | {{column}} |
+| Schema destino | {{referencedSchema}} |
+| Tabla destino | {{referencedTable}} |
+| Columna destino | {{referencedColumn}} |
+
+{{/each}}
+
+{{else}}
+
+No se detectaron llaves foráneas.
+
+{{/if}}
+
+---
+
+# Columnas escribibles
+
+{{#each writableColumns}}
+- `{{name}}`
+{{/each}}
+
+---
+
+# Columnas obligatorias para creación
+
+{{#if requiredWritableColumns.length}}
+
+{{#each requiredWritableColumns}}
+- `{{name}}`
+{{/each}}
+
+{{else}}
+
+No hay columnas obligatorias sin valor predeterminado.
+
+{{/if}}
+
+---
+
+# Capacidades detectadas
+
+| Capacidad | Valor |
+|-----------|-------|
+| CRUD | {{capabilities.crud}} |
+| Auditoría | {{capabilities.audit}} |
+| Soft Delete | {{capabilities.softDelete}} |
+| Optimistic Lock | {{capabilities.optimisticLock}} |
+| Multi Tenant | {{capabilities.multiTenant}} |
+| Branch Security | {{capabilities.branchSecurity}} |
+| Status Management | {{capabilities.statusManagement}} |
+| Foreign Keys | {{capabilities.foreignKeys}} |
+| Has Primary Key | {{capabilities.hasPrimaryKey}} |
+
+---
+
+Generado automáticamente por **SBN Forge**

@@ -63,7 +63,9 @@ function toSqlLiteral(
     dataType === 'json'
   ) {
     const json =
-      JSON.stringify(value)
+      JSON.stringify(
+        value
+      )
         .replace(
           /'/g,
           "''"
@@ -85,17 +87,25 @@ function toSqlLiteral(
   if (
     typeof value === 'number'
   ) {
-    if (!Number.isFinite(value)) {
+    if (
+      !Number.isFinite(
+        value
+      )
+    ) {
       throw new TypeError(
         'Los valores numéricos de seeds deben ser finitos.'
       );
     }
 
-    return String(value);
+    return String(
+      value
+    );
   }
 
   const escaped =
-    String(value)
+    String(
+      value
+    )
       .replace(
         /'/g,
         "''"
@@ -117,13 +127,19 @@ function buildSeedStatements(
   columns
 ) {
   if (
-    !Array.isArray(seeds) ||
+    !Array.isArray(
+      seeds
+    ) ||
     seeds.length === 0
   ) {
     return [];
   }
 
-  if (!Array.isArray(columns)) {
+  if (
+    !Array.isArray(
+      columns
+    )
+  ) {
     throw new TypeError(
       'buildSeedStatements requiere un arreglo de columnas.'
     );
@@ -140,11 +156,17 @@ function buildSeedStatements(
     );
 
   return seeds.map(
-    (seed, seedIndex) => {
+    (
+      seed,
+      seedIndex
+    ) => {
       if (
         !seed ||
-        typeof seed !== 'object' ||
-        Array.isArray(seed)
+        typeof seed !==
+          'object' ||
+        Array.isArray(
+          seed
+        )
       ) {
         throw new TypeError(
           `El seed en la posición ${seedIndex} debe ser un objeto.`
@@ -152,7 +174,9 @@ function buildSeedStatements(
       }
 
       const unknownColumns =
-        Object.keys(seed)
+        Object.keys(
+          seed
+        )
           .filter(
             columnName =>
               !Object.prototype
@@ -163,18 +187,25 @@ function buildSeedStatements(
           );
 
       if (
-        unknownColumns.length > 0
+        unknownColumns.length >
+        0
       ) {
         throw new Error(
           'El seed contiene columnas que no existen: ' +
-          unknownColumns.join(', ')
+          unknownColumns.join(
+            ', '
+          )
         );
       }
 
       const entries =
-        Object.entries(seed);
+        Object.entries(
+          seed
+        );
 
-      if (entries.length === 0) {
+      if (
+        entries.length === 0
+      ) {
         throw new Error(
           `El seed en la posición ${seedIndex} está vacío.`
         );
@@ -183,16 +214,27 @@ function buildSeedStatements(
       return {
         columns:
           entries.map(
-            ([columnName]) =>
+            (
+              [
+                columnName
+              ]
+            ) =>
               columnName
           ),
 
         values:
           entries.map(
-            ([columnName, value]) =>
+            (
+              [
+                columnName,
+                value
+              ]
+            ) =>
               toSqlLiteral(
                 value,
-                columnMap[columnName]
+                columnMap[
+                  columnName
+                ]
               )
           )
       };
@@ -241,6 +283,11 @@ class GeneratorContextBuilder {
       metadata
     );
 
+    /*
+     * Enriquece las columnas normalizadas
+     * con información que será utilizada
+     * por los diferentes templates.
+     */
     const normalizedColumns =
       metadata.columns.map(
         column => {
@@ -259,9 +306,19 @@ class GeneratorContextBuilder {
               defaultValue !== undefined
             );
 
+          /*
+           * Una columna identity o marcada
+           * como generated no debe ser
+           * escrita directamente por la API.
+           */
           const identity =
             column.identity === true ||
             column.generated === true;
+
+          const jsonSchema =
+            this.buildJsonSchema(
+              column
+            );
 
           return {
             ...column,
@@ -272,20 +329,39 @@ class GeneratorContextBuilder {
 
             hasDefaultValue,
 
-            jsonSchema:
-              this.buildJsonSchema(
-                column
+            jsonSchema,
+
+            /*
+             * Versión serializada para los
+             * templates Markdown.
+             */
+            jsonSchemaText:
+              JSON.stringify(
+                jsonSchema,
+                null,
+                2
               )
           };
         }
       );
 
+    /*
+     * Columnas que pueden recibirse en
+     * operaciones de creación o actualización.
+     */
     const writableColumns =
       normalizedColumns.filter(
         column =>
           column.writable === true
       );
 
+    /*
+     * Columnas obligatorias:
+     *
+     * - escribibles;
+     * - NOT NULL;
+     * - sin valor predeterminado.
+     */
     const requiredWritableColumns =
       writableColumns.filter(
         column =>
@@ -294,6 +370,10 @@ class GeneratorContextBuilder {
             false
       );
 
+    /*
+     * Facilita la consulta de metadata
+     * de columnas por su nombre.
+     */
     const columnMap =
       Object.fromEntries(
         normalizedColumns.map(
@@ -305,13 +385,14 @@ class GeneratorContextBuilder {
       );
 
     /*
-     * Los seeds deben tomarse directamente
-     * de la definición original, porque no
-     * forman parte de la metadata estructural
-     * normalizada.
+     * Los seeds pertenecen a la definición
+     * funcional original y no a la metadata
+     * estructural normalizada.
      */
     const seeds =
-      Array.isArray(input.seeds)
+      Array.isArray(
+        input.seeds
+      )
         ? input.seeds
         : [];
 
@@ -343,18 +424,27 @@ class GeneratorContextBuilder {
         names.permissionPrefix
       );
 
+    /*
+     * Ejemplos reutilizables para:
+     *
+     * - API_EXAMPLES.md;
+     * - archivos HTTP;
+     * - Postman;
+     * - OpenAPI;
+     * - futuras pruebas de integración.
+     */
     const apiExamples =
-  this.buildApiExamples({
-    columns:
-      normalizedColumns,
+      this.buildApiExamples({
+        columns:
+          normalizedColumns,
 
-    writableColumns,
+        writableColumns,
 
-    primaryKey:
-      metadata.primaryKey,
+        primaryKey:
+          metadata.primaryKey,
 
-    capabilities
-  });
+        capabilities
+      });
 
     const api =
       this.buildApiContext(
@@ -398,6 +488,10 @@ class GeneratorContextBuilder {
 
       requiredWritableColumns,
 
+      /*
+       * Alias utilizado por algunos templates
+       * y generadores.
+       */
       createRequiredColumns:
         requiredWritableColumns,
 
@@ -422,8 +516,8 @@ class GeneratorContextBuilder {
         metadata.constraints || [],
 
       /*
-       * Información original y preparada
-       * para generar los archivos SQL seeds.
+       * Datos iniciales y sentencias
+       * preparadas para seeds.hbs.
        */
       seeds,
 
@@ -437,7 +531,10 @@ class GeneratorContextBuilder {
           profile.standard,
 
         files: {
-          ...(profile.files || {})
+          ...(
+            profile.files ||
+            {}
+          )
         }
       },
 
@@ -492,7 +589,10 @@ class GeneratorContextBuilder {
           ),
 
         files: {
-          ...(profile.files || {})
+          ...(
+            profile.files ||
+            {}
+          )
         }
       }
     };
@@ -503,7 +603,7 @@ class GeneratorContextBuilder {
       );
   }
 
-  resolveRequestedProfile(
+    resolveRequestedProfile(
     input
   ) {
     const profileName =
@@ -577,6 +677,10 @@ class GeneratorContextBuilder {
     return {
       /*
        * Capacidad CRUD base.
+       *
+       * Se mantiene habilitada mientras
+       * ni el perfil ni el detector la
+       * desactiven explícitamente.
        */
       crud:
         profileCapabilities.crud !==
@@ -615,8 +719,10 @@ class GeneratorContextBuilder {
         ),
 
       /*
-       * Reorder requiere que el perfil lo
-       * habilite y que exista execution_order.
+       * Reorder requiere dos condiciones:
+       *
+       * 1. Que el perfil lo habilite.
+       * 2. Que exista execution_order.
        */
       reorder:
         Boolean(
@@ -629,8 +735,8 @@ class GeneratorContextBuilder {
         ),
 
       /*
-       * Capacidades estructurales detectadas
-       * directamente desde la tabla.
+       * Capacidades estructurales
+       * detectadas desde la tabla.
        */
       audit:
         Boolean(
@@ -791,7 +897,7 @@ class GeneratorContextBuilder {
     );
   }
 
-  buildNames(
+    buildNames(
     tableName
   ) {
     if (
@@ -984,9 +1090,7 @@ class GeneratorContextBuilder {
     );
   }
 
-
-
-    buildExampleValue(
+  buildExampleValue(
     column
   ) {
     const type =
@@ -1053,9 +1157,7 @@ class GeneratorContextBuilder {
     }
   }
 
-
-
-    buildStringExample(
+  buildStringExample(
     column
   ) {
     const examples = {
@@ -1089,9 +1191,6 @@ class GeneratorContextBuilder {
       `example_${column.name}`
     );
   }
-  
-
-
 
   buildApiExamples({
     columns,
@@ -1113,13 +1212,15 @@ class GeneratorContextBuilder {
 
     /*
      * Para PATCH usamos solamente algunas
-     * columnas representativas, evitando
-     * producir un body demasiado grande.
+     * columnas representativas.
      */
     const updateExample =
       Object.fromEntries(
         writableColumns
-          .slice(0, 3)
+          .slice(
+            0,
+            3
+          )
           .map(
             column => [
               column.name,
@@ -1181,9 +1282,7 @@ class GeneratorContextBuilder {
     };
   }
 
-
-
-  buildJsonSchema(
+    buildJsonSchema(
     column
   ) {
     const dataType =
