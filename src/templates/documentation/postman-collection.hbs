@@ -1,0 +1,209 @@
+{
+  "info": {
+    "_postman_id": "{{postmanCollection.moduleName}}",
+    "name": "{{postmanCollection.collectionName}}",
+    "description": "Colección generada automáticamente por SBN Forge",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{postmanCollection.baseUrl}}"
+    },
+    {
+      "key": "id",
+      "value": "{{postmanCollection.idExample}}"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ],
+
+  "item": [
+    {
+      "name": "List",
+      "request": {
+        "method": "GET",
+
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+
+        "url": {
+          "raw": "{{postmanCollection.listUrl}}?limit=25&offset=0",
+
+          "host": [
+            "{{baseUrl}}"
+          ],
+
+          "path": [
+            "{{api.prefix}}",
+            "{{postmanCollection.moduleName}}"
+          ],
+
+          "query": [
+            {
+              "key": "limit",
+              "value": "25"
+            },
+            {
+              "key": "offset",
+              "value": "0"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "name": "Get By Id",
+      "request": {
+        "method": "GET",
+
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+
+        "url": {
+          "raw": "{{postmanCollection.getUrl}}",
+
+          "host": [
+            "{{baseUrl}}"
+          ],
+
+          "path": [
+            "{{api.prefix}}",
+            "{{postmanCollection.moduleName}}",
+            "{{id}}"
+          ]
+        }
+      }
+    },
+
+    {
+      "name": "Create",
+      "request": {
+        "method": "POST",
+
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+
+        "body": {
+          "mode": "raw",
+          "raw": {{{postmanCollection.bodyCreateJson}}},
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+
+        "url": {
+          "raw": "{{postmanCollection.createUrl}}",
+
+          "host": [
+            "{{baseUrl}}"
+          ],
+
+          "path": [
+            "{{api.prefix}}",
+            "{{postmanCollection.moduleName}}"
+          ]
+        }
+      }
+    },
+
+    {
+      "name": "Update",
+      "request": {
+        "method": "PATCH",
+
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+
+        "body": {
+          "mode": "raw",
+          "raw": {{{postmanCollection.bodyUpdateJson}}},
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+
+        "url": {
+          "raw": "{{postmanCollection.updateUrl}}",
+
+          "host": [
+            "{{baseUrl}}"
+          ],
+
+          "path": [
+            "{{api.prefix}}",
+            "{{postmanCollection.moduleName}}",
+            "{{id}}"
+          ]
+        }
+      }
+    },
+
+    {
+      "name": "Delete",
+      "request": {
+        "method": "DELETE",
+
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+
+        "url": {
+          "raw": "{{postmanCollection.deleteUrl}}",
+
+          "host": [
+            "{{baseUrl}}"
+          ],
+
+          "path": [
+            "{{api.prefix}}",
+            "{{postmanCollection.moduleName}}",
+            "{{id}}"
+          ]
+        }
+      }
+    }
+  ]
+}

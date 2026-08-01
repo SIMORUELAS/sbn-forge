@@ -433,25 +433,61 @@ class GeneratorContextBuilder {
      * - OpenAPI;
      * - futuras pruebas de integración.
      */
-    const apiExamples =
-      this.buildApiExamples({
-        columns:
-          normalizedColumns,
 
-        writableColumns,
 
-        primaryKey:
-          metadata.primaryKey,
+          const apiExamples =
+        this.buildApiExamples({
+          columns:
+            normalizedColumns,
 
-        capabilities
-      });
+          writableColumns,
 
-    const api =
-      this.buildApiContext(
-        input,
-        names,
-        profile
-      );
+          primaryKey:
+            metadata.primaryKey,
+
+          capabilities
+        });
+
+      const api =
+        this.buildApiContext(
+          input,
+          names,
+          profile
+        );
+
+      const security = {
+        jwt:
+          Boolean(
+            profile.security?.jwt
+          ),
+
+        permissions:
+          Boolean(
+            profile.security
+              ?.permissions
+          ),
+
+        organizationContext:
+          Boolean(
+            profile.security
+              ?.organizationContext
+          )
+      };
+
+      const postmanCollection =
+        this.buildPostmanCollection({
+          names,
+
+          api,
+
+          apiExamples,
+
+          security,
+
+          permissions
+        });
+
+
 
     const context = {
       forge: {
@@ -543,30 +579,15 @@ class GeneratorContextBuilder {
 
       capabilities,
 
-      security: {
-        jwt:
-          Boolean(
-            profile.security?.jwt
-          ),
-
-        permissions:
-          Boolean(
-            profile.security
-              ?.permissions
-          ),
-
-        organizationContext:
-          Boolean(
-            profile.security
-              ?.organizationContext
-          )
-      },
+      security,
 
       permissions,
 
       api,
 
       apiExamples,
+
+      postmanCollection,
 
       generation: {
         profile:
@@ -876,13 +897,14 @@ class GeneratorContextBuilder {
     const files =
       profile.files || {};
 
-    return Boolean(
+      return Boolean(
       files.readme ||
       files.apiExamples ||
       files.dictionary ||
       files.migration ||
       files.seeds ||
-      files.utilsRequired
+      files.utilsRequired ||
+      files.postmanCollection
     );
   }
 
@@ -1192,6 +1214,8 @@ class GeneratorContextBuilder {
     );
   }
 
+
+
   buildApiExamples({
     columns,
     writableColumns,
@@ -1281,6 +1305,108 @@ class GeneratorContextBuilder {
         )
     };
   }
+
+
+    buildPostmanCollection({
+    names,
+    api,
+    apiExamples,
+    security,
+    permissions
+      }) {
+        const headers = [
+          {
+            key:
+              'Content-Type',
+
+            value:
+              'application/json',
+
+            type:
+              'text'
+          }
+        ];
+
+        if (
+          security?.jwt === true
+        ) {
+          headers.push({
+            key:
+              'Authorization',
+
+            value:
+              'Bearer {{token}}',
+
+            type:
+              'text'
+          });
+        }
+
+        return {
+          collectionName:
+            `${names.entity} API`,
+
+          moduleName:
+            names.module,
+
+          baseUrl:
+            api.baseUrl,
+
+          basePath:
+            api.basePath,
+
+          listUrl:
+            `{{baseUrl}}${api.basePath}`,
+
+          getUrl:
+            `{{baseUrl}}${api.basePath}/{{id}}`,
+
+          createUrl:
+            `{{baseUrl}}${api.basePath}`,
+
+          updateUrl:
+            `{{baseUrl}}${api.basePath}/{{id}}`,
+
+          deleteUrl:
+            `{{baseUrl}}${api.basePath}/{{id}}`,
+
+          headers,
+
+          bodyCreate:
+            apiExamples.createBody,
+
+          bodyUpdate:
+            apiExamples.updateBody,
+
+          /*
+          * JSON.stringify convierte el body JSON
+          * en una cadena válida para body.raw
+          * dentro de la colección Postman.
+          */
+          bodyCreateJson:
+            JSON.stringify(
+              apiExamples.createBody
+            ),
+
+          bodyUpdateJson:
+            JSON.stringify(
+              apiExamples.updateBody
+            ),
+
+          idExample:
+            apiExamples.idExample,
+
+          jwt:
+            security?.jwt === true,
+
+          permissions: {
+            ...permissions
+          }
+        };
+      }
+
+  
+
 
     buildJsonSchema(
     column

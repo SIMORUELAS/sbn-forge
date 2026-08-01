@@ -193,7 +193,8 @@ describe(
             migration: true,
             seeds: true,
             httpTest: true,
-            utilsRequired: true
+            utilsRequired: true,
+            postmanCollection: true,
           });
 
           const fileKeys =
@@ -201,7 +202,7 @@ describe(
               file => file.key
             );
 
-          expect(
+         expect(
             fileKeys
           ).toEqual([
             'routes',
@@ -216,9 +217,10 @@ describe(
             'seeds',
             'httpTest',
             'utilsRequired',
+            'postmanCollection',
             'manifest'
           ]);
-
+          
           expect(
             manifest.files
           ).toEqual(

@@ -81,5 +81,16 @@ module.exports = {
     template: null,
     output: 'sbn-forge.manifest.json',
     category: 'metadata'
+  },
+
+  postmanCollection: {
+    template:
+        'documentation/postman-collection.hbs',
+
+    output:
+        '{module}.postman_collection.json'
   }
+
+
+
 };
