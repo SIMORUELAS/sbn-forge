@@ -1,18 +1,22 @@
 'use strict';
 
-const naming = require('../core/naming');
+const naming =
+  require('../core/naming');
 
-const MetadataNormalizer = require(
-  './metadata-normalizer'
-);
+const MetadataNormalizer =
+  require(
+    './metadata-normalizer'
+  );
 
-const CapabilityDetector = require(
-  './capability-detector'
-);
+const CapabilityDetector =
+  require(
+    './capability-detector'
+  );
 
-const GeneratorContextValidator = require(
-  './generator-context.validator'
-);
+const GeneratorContextValidator =
+  require(
+    './generator-context.validator'
+  );
 
 const {
   resolveProfile
@@ -20,8 +24,186 @@ const {
   '../profiles/profile-resolver'
 );
 
+/**
+ * Convierte un valor JavaScript en un
+ * literal SQL seguro para archivos seeds.
+ *
+ * Soporta:
+ *
+ * - NULL
+ * - boolean
+ * - number
+ * - string
+ * - json
+ * - jsonb
+ */
+function toSqlLiteral(
+  value,
+  column = {}
+) {
+  if (
+    value === null ||
+    value === undefined
+  ) {
+    return 'NULL';
+  }
+
+  const dataType =
+    String(
+      column.dataType ||
+      column.type ||
+      column.nativeType ||
+      ''
+    )
+      .trim()
+      .toLowerCase();
+
+  if (
+    dataType === 'jsonb' ||
+    dataType === 'json'
+  ) {
+    const json =
+      JSON.stringify(value)
+        .replace(
+          /'/g,
+          "''"
+        );
+
+    return (
+      `'${json}'::${dataType}`
+    );
+  }
+
+  if (
+    typeof value === 'boolean'
+  ) {
+    return value
+      ? 'true'
+      : 'false';
+  }
+
+  if (
+    typeof value === 'number'
+  ) {
+    if (!Number.isFinite(value)) {
+      throw new TypeError(
+        'Los valores numéricos de seeds deben ser finitos.'
+      );
+    }
+
+    return String(value);
+  }
+
+  const escaped =
+    String(value)
+      .replace(
+        /'/g,
+        "''"
+      );
+
+  return `'${escaped}'`;
+}
+
+/**
+ * Convierte los objetos definidos en:
+ *
+ * definition.seeds
+ *
+ * en una estructura sencilla que puede
+ * consumir el template database/seeds.hbs.
+ */
+function buildSeedStatements(
+  seeds,
+  columns
+) {
+  if (
+    !Array.isArray(seeds) ||
+    seeds.length === 0
+  ) {
+    return [];
+  }
+
+  if (!Array.isArray(columns)) {
+    throw new TypeError(
+      'buildSeedStatements requiere un arreglo de columnas.'
+    );
+  }
+
+  const columnMap =
+    Object.fromEntries(
+      columns.map(
+        column => [
+          column.name,
+          column
+        ]
+      )
+    );
+
+  return seeds.map(
+    (seed, seedIndex) => {
+      if (
+        !seed ||
+        typeof seed !== 'object' ||
+        Array.isArray(seed)
+      ) {
+        throw new TypeError(
+          `El seed en la posición ${seedIndex} debe ser un objeto.`
+        );
+      }
+
+      const unknownColumns =
+        Object.keys(seed)
+          .filter(
+            columnName =>
+              !Object.prototype
+                .hasOwnProperty.call(
+                  columnMap,
+                  columnName
+                )
+          );
+
+      if (
+        unknownColumns.length > 0
+      ) {
+        throw new Error(
+          'El seed contiene columnas que no existen: ' +
+          unknownColumns.join(', ')
+        );
+      }
+
+      const entries =
+        Object.entries(seed);
+
+      if (entries.length === 0) {
+        throw new Error(
+          `El seed en la posición ${seedIndex} está vacío.`
+        );
+      }
+
+      return {
+        columns:
+          entries.map(
+            ([columnName]) =>
+              columnName
+          ),
+
+        values:
+          entries.map(
+            ([columnName, value]) =>
+              toSqlLiteral(
+                value,
+                columnMap[columnName]
+              )
+          )
+      };
+    }
+  );
+}
+
 class GeneratorContextBuilder {
-  constructor(dependencies = {}) {
+  constructor(
+    dependencies = {}
+  ) {
     this.metadataNormalizer =
       dependencies.metadataNormalizer ||
       new MetadataNormalizer();
@@ -41,7 +223,9 @@ class GeneratorContextBuilder {
 
   build(input = {}) {
     const requestedProfile =
-      this.resolveRequestedProfile(input);
+      this.resolveRequestedProfile(
+        input
+      );
 
     const profile =
       this.profileResolver(
@@ -53,62 +237,89 @@ class GeneratorContextBuilder {
         input
       );
 
-     this.validateMetadata(metadata);
+    this.validateMetadata(
+      metadata
+    );
 
-        const normalizedColumns =
-      metadata.columns.map(column => {
-        const defaultValue =
-          column.defaultValue ??
-          column.default ??
-          null;
+    const normalizedColumns =
+      metadata.columns.map(
+        column => {
+          const defaultValue =
+            column.defaultValue ??
+            column.default ??
+            null;
 
-        const hasDefaultValue =
-          column.hasDefaultValue === true ||
-          column.hasDefault === true ||
-          (
-            defaultValue !== null &&
-            defaultValue !== undefined
-          );
+          const hasDefaultValue =
+            column.hasDefaultValue ===
+              true ||
+            column.hasDefault ===
+              true ||
+            (
+              defaultValue !== null &&
+              defaultValue !== undefined
+            );
 
-        const identity =
-          column.identity === true ||
-          column.generated === true;
+          const identity =
+            column.identity === true ||
+            column.generated === true;
 
-        return {
-          ...column,
+          return {
+            ...column,
 
-          identity,
+            identity,
 
-          defaultValue,
+            defaultValue,
 
-          hasDefaultValue,
+            hasDefaultValue,
 
-          jsonSchema:
-            this.buildJsonSchema(column)
-        };
-      });
-
+            jsonSchema:
+              this.buildJsonSchema(
+                column
+              )
+          };
+        }
+      );
 
     const writableColumns =
-      normalizedColumns
-        .filter(column => column.writable);
+      normalizedColumns.filter(
+        column =>
+          column.writable === true
+      );
 
     const requiredWritableColumns =
       writableColumns.filter(
         column =>
           column.nullable === false &&
-          column.hasDefaultValue === false
+          column.hasDefaultValue ===
+            false
       );
 
     const columnMap =
       Object.fromEntries(
-        normalizedColumns.map(column => [
-          column.name,
-          column
-        ])
+        normalizedColumns.map(
+          column => [
+            column.name,
+            column
+          ]
+        )
       );
 
-  
+    /*
+     * Los seeds deben tomarse directamente
+     * de la definición original, porque no
+     * forman parte de la metadata estructural
+     * normalizada.
+     */
+    const seeds =
+      Array.isArray(input.seeds)
+        ? input.seeds
+        : [];
+
+    const seedStatements =
+      buildSeedStatements(
+        seeds,
+        normalizedColumns
+      );
 
     const names =
       this.buildNames(
@@ -120,17 +331,30 @@ class GeneratorContextBuilder {
         metadata
       );
 
-      const capabilities =
+    const capabilities =
       this.buildCapabilities(
         detectedCapabilities,
         profile,
         normalizedColumns
       );
-      
+
     const permissions =
       this.buildPermissions(
         names.permissionPrefix
       );
+
+    const apiExamples =
+  this.buildApiExamples({
+    columns:
+      normalizedColumns,
+
+    writableColumns,
+
+    primaryKey:
+      metadata.primaryKey,
+
+    capabilities
+  });
 
     const api =
       this.buildApiContext(
@@ -141,7 +365,8 @@ class GeneratorContextBuilder {
 
     const context = {
       forge: {
-        contextVersion: '1.0.0',
+        contextVersion:
+          '1.0.0',
 
         generatedAt:
           new Date().toISOString(),
@@ -166,7 +391,8 @@ class GeneratorContextBuilder {
 
       names,
 
-      columns: normalizedColumns,
+      columns:
+        normalizedColumns,
 
       writableColumns,
 
@@ -179,8 +405,11 @@ class GeneratorContextBuilder {
 
       primaryKey:
         metadata.primaryKey || {
-          name: null,
-          columns: []
+          name:
+            null,
+
+          columns:
+            []
         },
 
       foreignKeys:
@@ -191,6 +420,14 @@ class GeneratorContextBuilder {
 
       constraints:
         metadata.constraints || [],
+
+      /*
+       * Información original y preparada
+       * para generar los archivos SQL seeds.
+       */
+      seeds,
+
+      seedStatements,
 
       profile: {
         name:
@@ -232,13 +469,17 @@ class GeneratorContextBuilder {
 
       api,
 
+      apiExamples,
+
       generation: {
         profile:
           profile.name,
 
-        backend: true,
+        backend:
+          true,
 
-        frontend: false,
+        frontend:
+          false,
 
         documentation:
           this.shouldGenerateDocumentation(
@@ -262,7 +503,9 @@ class GeneratorContextBuilder {
       );
   }
 
-  resolveRequestedProfile(input) {
+  resolveRequestedProfile(
+    input
+  ) {
     const profileName =
       input.profile ||
       input.generation?.profile ||
@@ -270,8 +513,10 @@ class GeneratorContextBuilder {
       'generic';
 
     if (
-      typeof profileName !== 'string' ||
-      profileName.trim() === ''
+      typeof profileName !==
+        'string' ||
+      profileName.trim() ===
+        ''
     ) {
       throw new TypeError(
         'El perfil de generación debe ser una cadena válida'
@@ -283,10 +528,13 @@ class GeneratorContextBuilder {
       .toLowerCase();
   }
 
-  validateMetadata(metadata) {
+  validateMetadata(
+    metadata
+  ) {
     if (
       !metadata ||
-      typeof metadata !== 'object'
+      typeof metadata !==
+        'object'
     ) {
       throw new TypeError(
         'MetadataNormalizer debe devolver un objeto válido'
@@ -296,7 +544,8 @@ class GeneratorContextBuilder {
     if (
       typeof metadata.table !==
         'string' ||
-      metadata.table.trim() === ''
+      metadata.table.trim() ===
+        ''
     ) {
       throw new TypeError(
         'GeneratorContextBuilder requiere el nombre de la tabla'
@@ -314,7 +563,7 @@ class GeneratorContextBuilder {
     }
   }
 
-    buildCapabilities(
+  buildCapabilities(
     detectedCapabilities,
     profile,
     columns = []
@@ -328,9 +577,6 @@ class GeneratorContextBuilder {
     return {
       /*
        * Capacidad CRUD base.
-       *
-       * Se mantiene habilitada mientras el detector
-       * o el perfil no la desactiven explícitamente.
        */
       crud:
         profileCapabilities.crud !==
@@ -338,8 +584,8 @@ class GeneratorContextBuilder {
         detected.crud !== false,
 
       /*
-       * Capacidades funcionales que dependen
-       * directamente del perfil de generación.
+       * Capacidades controladas por
+       * el perfil de generación.
        */
       bulk:
         Boolean(
@@ -369,10 +615,8 @@ class GeneratorContextBuilder {
         ),
 
       /*
-       * Reorder requiere dos condiciones:
-       *
-       * 1. Que el perfil lo habilite.
-       * 2. Que exista la columna execution_order.
+       * Reorder requiere que el perfil lo
+       * habilite y que exista execution_order.
        */
       reorder:
         Boolean(
@@ -385,11 +629,8 @@ class GeneratorContextBuilder {
         ),
 
       /*
-       * Capacidades estructurales.
-       *
-       * Estas capacidades se determinan mediante
-       * el análisis real de la tabla y no deben
-       * desactivarse por el perfil.
+       * Capacidades estructurales detectadas
+       * directamente desde la tabla.
        */
       audit:
         Boolean(
@@ -446,7 +687,6 @@ class GeneratorContextBuilder {
         )
     };
   }
-  
 
   buildApiContext(
     input,
@@ -551,11 +791,14 @@ class GeneratorContextBuilder {
     );
   }
 
-  buildNames(tableName) {
+  buildNames(
+    tableName
+  ) {
     if (
       typeof tableName !==
         'string' ||
-      tableName.trim() === ''
+      tableName.trim() ===
+        ''
     ) {
       throw new TypeError(
         'buildNames requiere un nombre de tabla válido'
@@ -567,7 +810,7 @@ class GeneratorContextBuilder {
 
     const moduleName =
       typeof naming.toKebabCase ===
-      'function'
+        'function'
         ? naming.toKebabCase(
             normalizedTableName
           )
@@ -579,7 +822,7 @@ class GeneratorContextBuilder {
 
     const entityName =
       typeof naming.toPascalCase ===
-      'function'
+        'function'
         ? naming.toPascalCase(
             normalizedTableName
           )
@@ -589,7 +832,7 @@ class GeneratorContextBuilder {
 
     const camelName =
       typeof naming.toCamelCase ===
-      'function'
+        'function'
         ? naming.toCamelCase(
             normalizedTableName
           )
@@ -629,10 +872,14 @@ class GeneratorContextBuilder {
     };
   }
 
-  normalizeRoutePrefix(value) {
+  normalizeRoutePrefix(
+    value
+  ) {
     if (
-      typeof value !== 'string' ||
-      value.trim() === ''
+      typeof value !==
+        'string' ||
+      value.trim() ===
+        ''
     ) {
       return '/ia';
     }
@@ -652,10 +899,14 @@ class GeneratorContextBuilder {
         )}`;
   }
 
-  normalizeRoutePath(value) {
+  normalizeRoutePath(
+    value
+  ) {
     if (
-      typeof value !== 'string' ||
-      value.trim() === ''
+      typeof value !==
+        'string' ||
+      value.trim() ===
+        ''
     ) {
       throw new TypeError(
         'La ruta de API debe ser una cadena válida'
@@ -682,9 +933,12 @@ class GeneratorContextBuilder {
         )}`;
   }
 
-  toPascalCase(value) {
+  toPascalCase(
+    value
+  ) {
     if (
-      typeof value !== 'string'
+      typeof value !==
+        'string'
     ) {
       throw new TypeError(
         'toPascalCase requiere una cadena de texto'
@@ -692,7 +946,9 @@ class GeneratorContextBuilder {
     }
 
     return value
-      .split(/[_\-\s]+/)
+      .split(
+        /[_\-\s]+/
+      )
       .filter(Boolean)
       .map(
         part =>
@@ -706,9 +962,13 @@ class GeneratorContextBuilder {
       .join('');
   }
 
-  toCamelCase(value) {
+  toCamelCase(
+    value
+  ) {
     const pascalValue =
-      this.toPascalCase(value);
+      this.toPascalCase(
+        value
+      );
 
     if (
       pascalValue === ''
@@ -724,76 +984,317 @@ class GeneratorContextBuilder {
     );
   }
 
+
+
+    buildExampleValue(
+    column
+  ) {
+    const type =
+      String(
+        column.dataType ||
+        column.type ||
+        column.nativeType ||
+        ''
+      )
+        .trim()
+        .toLowerCase();
+
+    switch (type) {
+      case 'uuid':
+        return (
+          '550e8400-e29b-41d4-' +
+          'a716-446655440000'
+        );
+
+      case 'boolean':
+      case 'bool':
+        return true;
+
+      case 'integer':
+      case 'int':
+      case 'int2':
+      case 'int4':
+      case 'smallint':
+      case 'bigint':
+      case 'int8':
+        return 1;
+
+      case 'numeric':
+      case 'decimal':
+      case 'real':
+      case 'float':
+      case 'float4':
+      case 'float8':
+      case 'double':
+      case 'double precision':
+        return 1.5;
+
+      case 'json':
+      case 'jsonb':
+        return {
+          enabled: true
+        };
+
+      case 'date':
+        return '2026-07-31';
+
+      case 'timestamp':
+      case 'timestamptz':
+      case 'timestamp without time zone':
+      case 'timestamp with time zone':
+        return (
+          '2026-07-31T12:00:00.000Z'
+        );
+
+      default:
+        return this.buildStringExample(
+          column
+        );
+    }
+  }
+
+
+
+    buildStringExample(
+    column
+  ) {
+    const examples = {
+      code:
+        'SBN-EXAMPLE',
+
+      name:
+        'Registro de ejemplo',
+
+      description:
+        'Descripción de ejemplo generada por SBN Forge.',
+
+      status:
+        'active',
+
+      lifecycle_stage:
+        'development',
+
+      model_scope:
+        'global_template',
+
+      default_update_strategy:
+        'manual_approval',
+
+      current_version:
+        '1.0.0'
+    };
+
+    return (
+      examples[column.name] ||
+      `example_${column.name}`
+    );
+  }
   
-buildJsonSchema(column) {
-  switch (column.dataType) {
-    case 'uuid':
-      return {
-        type: 'string',
-        format: 'uuid'
-      };
 
-    case 'boolean':
-      return {
-        type: 'boolean'
-      };
 
-    case 'integer':
-    case 'int':
-    case 'int4':
-    case 'smallint':
-      return {
-        type: 'integer'
-      };
 
-    case 'bigint':
-    case 'int8':
-      return {
-        type: 'integer'
-      };
+  buildApiExamples({
+    columns,
+    writableColumns,
+    primaryKey,
+    capabilities
+  }) {
+    const createExample =
+      Object.fromEntries(
+        writableColumns.map(
+          column => [
+            column.name,
+            this.buildExampleValue(
+              column
+            )
+          ]
+        )
+      );
 
-    case 'numeric':
-    case 'decimal':
-    case 'float':
-    case 'double':
-      return {
-        type: 'number'
-      };
+    /*
+     * Para PATCH usamos solamente algunas
+     * columnas representativas, evitando
+     * producir un body demasiado grande.
+     */
+    const updateExample =
+      Object.fromEntries(
+        writableColumns
+          .slice(0, 3)
+          .map(
+            column => [
+              column.name,
+              this.buildExampleValue(
+                column
+              )
+            ]
+          )
+      );
 
-    case 'json':
-    case 'jsonb':
-      return {
-        type: 'object'
-      };
+    if (
+      capabilities.optimisticLock
+    ) {
+      updateExample
+        .expected_version_no = 1;
+    }
 
-    case 'date':
-      return {
-        type: 'string',
-        format: 'date'
-      };
+    const primaryKeyName =
+      primaryKey?.columns?.[0] ||
+      primaryKey?.name ||
+      null;
 
-    case 'timestamp':
-    case 'timestamptz':
-      return {
-        type: 'string',
-        format: 'date-time'
-      };
+    const primaryKeyColumn =
+      columns.find(
+        column =>
+          column.name ===
+          primaryKeyName
+      );
 
-    default:
-      return {
-        type: 'string'
-      };
+    const idExample =
+      primaryKeyColumn
+        ? this.buildExampleValue(
+            primaryKeyColumn
+          )
+        : 1;
+
+    return {
+      idExample,
+
+      create:
+        createExample,
+
+      update:
+        updateExample,
+
+      createBody:
+        JSON.stringify(
+          createExample,
+          null,
+          2
+        ),
+
+      updateBody:
+        JSON.stringify(
+          updateExample,
+          null,
+          2
+        )
+    };
+  }
+
+
+
+  buildJsonSchema(
+    column
+  ) {
+    const dataType =
+      String(
+        column.dataType ||
+        column.type ||
+        column.nativeType ||
+        ''
+      )
+        .trim()
+        .toLowerCase();
+
+    switch (dataType) {
+      case 'uuid':
+        return {
+          type:
+            'string',
+
+          format:
+            'uuid'
+        };
+
+      case 'boolean':
+      case 'bool':
+        return {
+          type:
+            'boolean'
+        };
+
+      case 'integer':
+      case 'int':
+      case 'int2':
+      case 'int4':
+      case 'smallint':
+        return {
+          type:
+            'integer'
+        };
+
+      case 'bigint':
+      case 'int8':
+        return {
+          type:
+            'integer'
+        };
+
+      case 'numeric':
+      case 'decimal':
+      case 'real':
+      case 'float':
+      case 'float4':
+      case 'float8':
+      case 'double':
+      case 'double precision':
+        return {
+          type:
+            'number'
+        };
+
+      case 'json':
+      case 'jsonb':
+        return {
+          type:
+            'object'
+        };
+
+      case 'date':
+        return {
+          type:
+            'string',
+
+          format:
+            'date'
+        };
+
+      case 'timestamp':
+      case 'timestamptz':
+      case 'timestamp without time zone':
+      case 'timestamp with time zone':
+        return {
+          type:
+            'string',
+
+          format:
+            'date-time'
+        };
+
+      default: {
+        const jsonSchema = {
+          type:
+            'string'
+        };
+
+        const maxLength =
+          column.maxLength ??
+          column.length;
+
+        if (
+          Number.isInteger(
+            maxLength
+          )
+        ) {
+          jsonSchema.maxLength =
+            maxLength;
+        }
+
+        return jsonSchema;
+      }
+    }
   }
 }
-
-
-
-
-
-}
-
-
-
 
 module.exports =
   GeneratorContextBuilder;

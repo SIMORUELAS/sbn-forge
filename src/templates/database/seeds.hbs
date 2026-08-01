@@ -1,5 +1,26 @@
+-- ============================================================================
 -- SBN Forge seeds
 -- Schema: {{schema}}
 -- Table: {{table}}
+-- Generated automatically by SBN Forge
+-- ============================================================================
 
--- TODO: definir datos iniciales para {{schema}}.{{table}}
+{{#if seedStatements.length}}
+{{#each seedStatements}}
+INSERT INTO {{../schema}}.{{../table}}
+(
+{{#each columns}}
+    {{this}}{{#unless @last}},{{/unless}}
+{{/each}}
+)
+VALUES
+(
+{{#each values}}
+    {{{this}}}{{#unless @last}},{{/unless}}
+{{/each}}
+);
+
+{{/each}}
+{{else}}
+-- No se definieron datos iniciales para {{schema}}.{{table}}.
+{{/if}}

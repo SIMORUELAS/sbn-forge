@@ -1,8 +1,153 @@
 # API Examples
 
-Módulo: {{names.moduleName}}
+Módulo: **{{names.module}}**
+
+Perfil: **{{profile.name}}**
 
 Ruta base:
 
 ```text
-{{names.routeBase}}
+{{api.basePath}}
+```
+
+Base URL:
+
+```text
+{{api.baseUrl}}
+```
+
+---
+
+# Listar registros
+
+## Request
+
+```http
+GET {{api.baseUrl}}{{api.basePath}}
+```
+
+### Parámetros opcionales
+
+| Parámetro | Descripción |
+|-----------|-------------|
+| limit | Cantidad de registros |
+| offset | Inicio de la paginación |
+| sort | Columna para ordenar |
+| direction | asc o desc |
+
+Ejemplo:
+
+```http
+GET {{api.baseUrl}}{{api.basePath}}?limit=25&offset=0
+```
+
+---
+
+# Obtener un registro
+
+```http
+GET {{api.baseUrl}}{{api.basePath}}/{{apiExamples.idExample}}
+```
+
+---
+
+# Crear registro
+
+```http
+POST {{api.baseUrl}}{{api.basePath}}
+Content-Type: application/json
+```
+
+Body
+
+```json
+{{{apiExamples.createBody}}}
+```
+
+---
+
+# Actualizar registro
+
+```http
+PATCH {{api.baseUrl}}{{api.basePath}}/{{apiExamples.idExample}}
+Content-Type: application/json
+```
+
+Body
+
+```json
+{{{apiExamples.updateBody}}}
+```
+
+---
+
+# Eliminar registro
+
+```http
+DELETE {{api.baseUrl}}{{api.basePath}}/{{apiExamples.idExample}}
+```
+
+{{#if capabilities.softDelete}}
+
+Este módulo utiliza **Soft Delete**.
+
+{{else}}
+
+Este módulo elimina físicamente el registro.
+
+{{/if}}
+
+---
+
+# Ejemplo de respuesta
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "{{apiExamples.idExample}}"
+  }
+}
+```
+
+---
+
+# Ejemplo de error
+
+```json
+{
+  "success": false,
+  "message": "Validation error."
+}
+```
+
+---
+
+# Capacidades detectadas
+
+| Característica | Valor |
+|----------------|-------|
+| CRUD | {{capabilities.crud}} |
+| Bulk | {{capabilities.bulk}} |
+| Bulk Create | {{capabilities.bulkCreate}} |
+| Copy | {{capabilities.copy}} |
+| Summary | {{capabilities.summary}} |
+| Reorder | {{capabilities.reorder}} |
+| Soft Delete | {{capabilities.softDelete}} |
+| Optimistic Lock | {{capabilities.optimisticLock}} |
+| Foreign Keys | {{capabilities.foreignKeys}} |
+
+---
+
+# Permisos
+
+| Acción | Permiso |
+|--------|----------|
+| View | {{permissions.view}} |
+| Create | {{permissions.create}} |
+| Edit | {{permissions.edit}} |
+| Delete | {{permissions.delete}} |
+
+---
+
+Generado automáticamente por **SBN Forge**

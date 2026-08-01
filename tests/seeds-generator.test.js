@@ -4,7 +4,7 @@ const fs = require('fs-extra');
 const path = require('path');
 
 const definition = require(
-  '../examples/ai_business_model_teams.json'
+  '../examples/ai_business_models.json'
 );
 
 const {
@@ -17,11 +17,13 @@ describe(
   'PostgreSQL Seeds Generator',
   () => {
     test(
-      'genera el archivo de seeds',
+      'genera INSERTs desde los seeds de la definición',
       async () => {
         const generated =
           await generateTestModule({
-            definition
+            definition,
+            profile:
+              'sbn-api-v2'
           });
 
         try {
@@ -44,69 +46,136 @@ describe(
             );
 
           expect(
-            files.length
-          ).toBeGreaterThan(0);
+            files
+          ).toContain(
+            'ai-business-models.seeds.sql'
+          );
+
+          const seedPath =
+            path.join(
+              seedsDirectory,
+              'ai-business-models.seeds.sql'
+            );
 
           expect(
-            files.some(
-              file =>
-                file.endsWith('.sql')
+            await fs.pathExists(
+              seedPath
             )
           ).toBe(true);
 
-          
-
-            const seedFile =
-            files.find(
-                file =>
-                file.endsWith('.sql')
-            );
-
-            const seedPath =
-            path.join(
-                seedsDirectory,
-                seedFile
-            );
-
-            const seed =
+          const seed =
             await fs.readFile(
-                seedPath,
-                'utf8'
+              seedPath,
+              'utf8'
             );
 
-            expect(seed).toContain(
-              '-- SBN Forge seeds'
-            );
-
-            expect(seed).toContain(
-              '-- Schema: simo_ai'
-            );
-
-            expect(seed).toContain(
-              '-- Table: ai_business_model_teams'
-            );
-
-            expect(seed).toContain(
-              '-- TODO: definir datos iniciales para simo_ai.ai_business_model_teams'
-            );
-
-            expect(seed).toContain(
+          expect(
+            seed
+          ).toContain(
             '-- SBN Forge seeds'
-            );
+          );
 
-            expect(seed).toContain(
+          expect(
+            seed
+          ).toContain(
             '-- Schema: simo_ai'
-            );
+          );
 
-            expect(seed).toContain(
-            '-- Table: ai_business_model_teams'
-            );
+          expect(
+            seed
+          ).toContain(
+            '-- Table: ai_business_models'
+          );
 
-            expect(seed).toContain(
-            '-- TODO: definir datos iniciales'
-            );
+          expect(
+            seed
+          ).toContain(
+            'INSERT INTO simo_ai.ai_business_models'
+          );
 
+          expect(
+            seed
+          ).toContain(
+            'SBN-SMART-COLLECTIONS'
+          );
 
+          expect(
+            seed
+          ).toContain(
+            "'SBN Smart Collections'"
+          );
+
+          expect(
+            seed
+          ).toContain(
+            "'Modelo empresarial para automatización de cobranza.'"
+          );
+
+          expect(
+            seed
+          ).toContain(
+            "'Servicios empresariales'"
+          );
+
+          expect(
+            seed
+          ).toContain(
+            "'SaaS'"
+          );
+
+          expect(
+            seed
+          ).toContain(
+            "'active'"
+          );
+
+          expect(
+            seed
+          ).toContain(
+            "'development'"
+          );
+
+          expect(
+            seed
+          ).toContain(
+            '\'{"collections":true,"forecast":true}\'::jsonb'
+          );
+
+          expect(
+            seed
+          ).toContain(
+            '\'{"source":"sbn-forge"}\'::jsonb'
+          );
+
+          expect(
+            seed
+          ).toContain(
+            "'global_template'"
+          );
+
+          expect(
+            seed
+          ).toContain(
+            'true'
+          );
+
+          expect(
+            seed
+          ).toContain(
+            "'manual_approval'"
+          );
+
+          expect(
+            seed
+          ).toContain(
+            "'1.0.0'"
+          );
+
+          expect(
+            seed
+          ).not.toContain(
+            '-- TODO:'
+          );
         } finally {
           await generated.cleanup();
         }

@@ -274,5 +274,30 @@
       "precision": 64,
       "scale": 0
     }
-  ]
+  ],
+  "seeds": [
+  {
+    "code": "SBN-SMART-COLLECTIONS",
+    "name": "SBN Smart Collections",
+    "description": "Modelo empresarial para automatización de cobranza.",
+    "business_sector": "Servicios empresariales",
+    "business_type": "SaaS",
+    "status": "active",
+    "lifecycle_stage": "development",
+    "configuration_json": {
+      "collections": true,
+      "forecast": true
+    },
+    "metadata": {
+      "source": "sbn-forge"
+    },
+    "model_scope": "global_template",
+    "is_deployable": true,
+    "allow_client_customization": true,
+    "default_update_strategy": "manual_approval",
+    "current_version": "1.0.0"
+  }
+]
+
+
 }
