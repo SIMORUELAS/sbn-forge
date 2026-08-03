@@ -4,9 +4,8 @@ const fs = require('fs-extra');
 const path = require('path');
 
 const definition = require(
-  '../examples/ai_business_models.json'
+  './fixtures/ai_business_models.with-seeds.json'
 );
-
 const {
   generateTestModule
 } = require(
