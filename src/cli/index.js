@@ -2,9 +2,14 @@
 
 const {
   Command
-} = require('commander');
+} = require(
+  'commander'
+);
 
-const pkg = require('../../package.json');
+const pkg =
+  require(
+    '../../package.json'
+  );
 
 const {
   registerGenerateApiCommand
@@ -18,39 +23,63 @@ const {
   './commands/inspect-postgresql.command'
 );
 
+const registerScaffoldCommand =
+  require(
+    './commands/scaffold/scaffold.command'
+  );
+
 async function runCli(
   argv = process.argv
 ) {
-  const program = new Command();
+  const program =
+    new Command();
 
   program
-    .name('sbn-forge')
+    .name(
+      'sbn-forge'
+    )
     .description(
       'La forja oficial de software de la SBN'
     )
-    .version(pkg.version);
-
-  const generate = program
-    .command('generate')
-    .description(
-      'Genera capacidades SBN'
+    .version(
+      pkg.version
     );
 
-  registerGenerateApiCommand(generate);
+  const generate =
+    program
+      .command(
+        'generate'
+      )
+      .description(
+        'Genera capacidades SBN'
+      );
 
-  const inspect = program
-    .command('inspect')
-    .description(
-      'Inspecciona estructuras de datos'
-    );
+  registerGenerateApiCommand(
+    generate
+  );
+
+  const inspect =
+    program
+      .command(
+        'inspect'
+      )
+      .description(
+        'Inspecciona estructuras de datos'
+      );
 
   registerInspectPostgresqlCommand(
     inspect
   );
 
+  registerScaffoldCommand(
+    program
+  );
+
   program.showHelpAfterError();
 
-  await program.parseAsync(argv);
+  await program.parseAsync(
+    argv
+  );
 }
 
 module.exports = {
