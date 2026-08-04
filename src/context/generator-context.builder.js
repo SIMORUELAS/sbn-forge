@@ -487,7 +487,30 @@ class GeneratorContextBuilder {
           permissions
         });
 
+        const utilsRequired =
+        this.buildUtilsRequired({
+          names,
 
+          api,
+
+          capabilities,
+
+          columns:
+            normalizedColumns,
+
+          foreignKeys:
+            metadata.foreignKeys || [],
+
+          permissions,
+
+          profile,
+
+          schema:
+            metadata.schema,
+
+          table:
+            metadata.table
+        });
 
     const context = {
       forge: {
@@ -588,6 +611,8 @@ class GeneratorContextBuilder {
       apiExamples,
 
       postmanCollection,
+
+      utilsRequired,
 
       generation: {
         profile:
@@ -891,6 +916,315 @@ class GeneratorContextBuilder {
     };
   }
 
+
+    buildUtilsRequired({
+    names,
+    api,
+    capabilities,
+    columns,
+    foreignKeys,
+    permissions,
+    profile,
+    schema,
+    table
+  }) {
+    const safeColumns =
+      Array.isArray(
+        columns
+      )
+        ? columns
+        : [];
+
+    const safeForeignKeys =
+      Array.isArray(
+        foreignKeys
+      )
+        ? foreignKeys
+        : [];
+
+    const databaseDependencies =
+      safeForeignKeys.map(
+        foreignKey => {
+          const referencedSchema =
+            foreignKey.referencedSchema ||
+            foreignKey.schema ||
+            foreignKey.foreignSchema ||
+            'public';
+
+          const referencedTable =
+            foreignKey.referencedTable ||
+            foreignKey.table ||
+            foreignKey.foreignTable ||
+            '';
+
+          const referencedColumn =
+            foreignKey.referencedColumn ||
+            foreignKey.foreignColumn ||
+            'id';
+
+          return {
+            name:
+              foreignKey.name ||
+              null,
+
+            column:
+              foreignKey.column ||
+              foreignKey.localColumn ||
+              null,
+
+            referencedSchema,
+
+            referencedTable,
+
+            referencedColumn,
+
+            moduleName:
+              this.toKebabCase(
+                referencedTable
+              )
+          };
+        }
+      );
+
+    const requiredModules =
+      databaseDependencies
+        .filter(
+          dependency =>
+            dependency.moduleName
+        )
+        .map(
+          dependency => ({
+            name:
+              dependency.moduleName,
+
+            schema:
+              dependency.referencedSchema,
+
+            table:
+              dependency.referencedTable,
+
+            reason:
+              dependency.column
+                ? `Requerido por ${dependency.column}.`
+                : 'Requerido por una llave foránea.'
+          })
+        );
+
+    const requiresPgCrypto =
+      safeColumns.some(
+        column => {
+          const defaultValue =
+            String(
+              column.defaultValue ||
+              column.default ||
+              ''
+            ).toLowerCase();
+
+          return (
+            (
+              column.dataType === 'uuid' ||
+              column.type === 'uuid' ||
+              column.nativeType === 'uuid'
+            ) &&
+            defaultValue.includes(
+              'gen_random_uuid'
+            )
+          );
+        }
+      );
+
+    const databaseExtensions =
+      requiresPgCrypto
+        ? [
+            {
+              name:
+                'pgcrypto',
+
+              required:
+                true,
+
+              installationSql:
+                'CREATE EXTENSION IF NOT EXISTS pgcrypto;'
+            }
+          ]
+        : [];
+
+    const jsonColumns =
+      safeColumns
+        .filter(
+          column => {
+            const type =
+              String(
+                column.dataType ||
+                column.type ||
+                column.nativeType ||
+                ''
+              ).toLowerCase();
+
+            return (
+              type === 'json' ||
+              type === 'jsonb'
+            );
+          }
+        )
+        .map(
+          column =>
+            column.name
+        );
+
+    return {
+      moduleName:
+        names.module,
+
+      entityName:
+        names.entity,
+
+      profileName:
+        profile?.name ||
+        'unknown',
+
+      schema,
+
+      table,
+
+      basePath:
+        api.basePath,
+
+      nodeVersion:
+        '22+',
+
+      postgresqlVersion:
+        '14+',
+
+      npmPackages: [
+        {
+          name:
+            'fastify',
+
+          purpose:
+            'Servidor HTTP de la API.'
+        },
+        {
+          name:
+            'pg',
+
+          purpose:
+            'Conexión con PostgreSQL.'
+        },
+        {
+          name:
+            'zod',
+
+          purpose:
+            'Validación de datos y contratos.'
+        },
+        {
+          name:
+            '@fastify/jwt',
+
+          purpose:
+            'Autenticación mediante JWT.'
+        }
+      ],
+
+      environmentVariables: [
+        {
+          name:
+            'DATABASE_URL',
+
+          required:
+            true,
+
+          description:
+            'Cadena de conexión PostgreSQL.'
+        },
+        {
+          name:
+            'JWT_SECRET',
+
+          required:
+            true,
+
+          description:
+            'Secreto utilizado para validar tokens JWT.'
+        },
+        {
+          name:
+            'LOG_LEVEL',
+
+          required:
+            false,
+
+          description:
+            'Nivel de detalle de los logs.'
+        }
+      ],
+
+      databaseExtensions,
+
+      databaseDependencies,
+
+      requiredModules,
+
+      permissions: {
+        view:
+          permissions.view,
+
+        create:
+          permissions.create,
+
+        edit:
+          permissions.edit,
+
+        delete:
+          permissions.delete
+      },
+
+      capabilities: {
+        crud:
+          Boolean(
+            capabilities.crud
+          ),
+
+        softDelete:
+          Boolean(
+            capabilities.softDelete
+          ),
+
+        optimisticLock:
+          Boolean(
+            capabilities.optimisticLock
+          ),
+
+        foreignKeys:
+          safeForeignKeys.length >
+          0,
+
+        jsonColumns
+      },
+
+      artifacts: {
+        migration:
+          `database/migrations/` +
+          `${names.module}.migration.sql`,
+
+        seeds:
+          `database/seeds/` +
+          `${names.module}.seeds.sql`,
+
+        httpTest:
+          `tests/${names.module}.http`,
+
+        postman:
+          `${names.module}.postman_collection.json`,
+
+        manifest:
+          'sbn-forge.manifest.json'
+      }
+    };
+  }
+
+
   shouldGenerateDocumentation(
     profile
   ) {
@@ -932,6 +1266,7 @@ class GeneratorContextBuilder {
         'buildNames requiere un nombre de tabla válido'
       );
     }
+
 
     const normalizedTableName =
       tableName.trim();
@@ -998,6 +1333,39 @@ class GeneratorContextBuilder {
 
       permissionPrefix
     };
+  }
+
+    toKebabCase(
+    value
+  ) {
+    if (
+      typeof naming.toKebabCase ===
+        'function'
+    ) {
+      return naming.toKebabCase(
+        String(
+          value || ''
+        )
+      );
+    }
+
+    return String(
+      value || ''
+    )
+      .trim()
+      .replace(
+        /([a-z0-9])([A-Z])/g,
+        '$1-$2'
+      )
+      .replace(
+        /[^a-zA-Z0-9]+/g,
+        '-'
+      )
+      .replace(
+        /^-+|-+$/g,
+        ''
+      )
+      .toLowerCase();
   }
 
   normalizeRoutePrefix(
@@ -1403,6 +1771,8 @@ class GeneratorContextBuilder {
             ...permissions
           }
         };
+
+
       }
 
   

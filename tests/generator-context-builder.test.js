@@ -828,6 +828,58 @@ describe(
           )
         );
 
+        expect(
+          context.utilsRequired
+        ).toBeDefined();
+
+        expect(
+          context.utilsRequired.moduleName
+        ).toBe(
+          'ai-business-model-departments'
+        );
+
+        expect(
+          context.utilsRequired.schema
+        ).toBe(
+          'simo_ai'
+        );
+
+        expect(
+          context.utilsRequired.table
+        ).toBe(
+          'ai_business_model_departments'
+        );
+
+        expect(
+          context.utilsRequired.databaseDependencies
+        ).toHaveLength(
+          1
+        );
+
+        expect(
+          context.utilsRequired.databaseDependencies[0]
+        ).toEqual(
+          expect.objectContaining({
+            column:
+              'business_model_id',
+
+            referencedSchema:
+              'simo_ai',
+
+            referencedTable:
+              'ai_business_models',
+
+            referencedColumn:
+              'id'
+          })
+        );
+
+        expect(
+          context.utilsRequired.artifacts.seeds
+        ).toBe(
+          'database/seeds/ai-business-model-departments.seeds.sql'
+        );
+
 
 
       }

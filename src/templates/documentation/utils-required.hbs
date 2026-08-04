@@ -1,5 +1,164 @@
-# Utilities Required
+# Module Requirements
 
-Módulo: {{names.moduleName}}
+Módulo: **{{utilsRequired.moduleName}}**
 
-Perfil: {{generation.profile}}
+Entidad: **{{utilsRequired.entityName}}**
+
+Perfil: **{{utilsRequired.profileName}}**
+
+Base de datos:
+
+```text
+{{utilsRequired.schema}}.{{utilsRequired.table}}
+```
+
+Ruta base:
+
+```text
+{{utilsRequired.basePath}}
+```
+
+---
+
+## Runtime requerido
+
+| Componente | Versión mínima |
+|------------|----------------|
+| Node.js | {{utilsRequired.nodeVersion}} |
+| PostgreSQL | {{utilsRequired.postgresqlVersion}} |
+
+---
+
+## Paquetes de Node.js
+
+| Paquete | Uso |
+|---------|-----|
+{{#each utilsRequired.npmPackages}}
+| `{{name}}` | {{purpose}} |
+{{/each}}
+
+Instalación de referencia:
+
+```bash
+npm install{{#each utilsRequired.npmPackages}} {{name}}{{/each}}
+```
+
+---
+
+## Variables de entorno
+
+| Variable | Obligatoria | Descripción |
+|----------|-------------|-------------|
+{{#each utilsRequired.environmentVariables}}
+| `{{name}}` | {{#if required}}Sí{{else}}No{{/if}} | {{description}} |
+{{/each}}
+
+---
+
+## Extensiones de PostgreSQL
+
+{{#if utilsRequired.databaseExtensions.length}}
+{{#each utilsRequired.databaseExtensions}}
+### {{name}}
+
+Obligatoria: **{{#if required}}Sí{{else}}No{{/if}}**
+
+```sql
+{{installationSql}}
+```
+
+{{/each}}
+{{else}}
+Este módulo no requiere extensiones adicionales de PostgreSQL.
+{{/if}}
+
+---
+
+## Dependencias de base de datos
+
+{{#if utilsRequired.databaseDependencies.length}}
+| Columna local | Tabla relacionada | Columna relacionada |
+|---------------|-------------------|---------------------|
+{{#each utilsRequired.databaseDependencies}}
+| `{{column}}` | `{{referencedSchema}}.{{referencedTable}}` | `{{referencedColumn}}` |
+{{/each}}
+{{else}}
+Este módulo no tiene llaves foráneas.
+{{/if}}
+
+---
+
+## Módulos requeridos
+
+{{#if utilsRequired.requiredModules.length}}
+| Módulo | Origen | Motivo |
+|--------|--------|--------|
+{{#each utilsRequired.requiredModules}}
+| `{{name}}` | `{{schema}}.{{table}}` | {{reason}} |
+{{/each}}
+{{else}}
+No se detectaron dependencias con otros módulos.
+{{/if}}
+
+---
+
+## Permisos requeridos
+
+| Acción | Permiso |
+|--------|---------|
+| Consultar | `{{utilsRequired.permissions.view}}` |
+| Crear | `{{utilsRequired.permissions.create}}` |
+| Editar | `{{utilsRequired.permissions.edit}}` |
+| Eliminar | `{{utilsRequired.permissions.delete}}` |
+
+---
+
+## Capacidades detectadas
+
+| Capacidad | Valor |
+|-----------|-------|
+| CRUD | {{utilsRequired.capabilities.crud}} |
+| Soft Delete | {{utilsRequired.capabilities.softDelete}} |
+| Optimistic Lock | {{utilsRequired.capabilities.optimisticLock}} |
+| Foreign Keys | {{utilsRequired.capabilities.foreignKeys}} |
+
+### Columnas JSON
+
+{{#if utilsRequired.capabilities.jsonColumns.length}}
+{{#each utilsRequired.capabilities.jsonColumns}}
+- `{{this}}`
+{{/each}}
+{{else}}
+No se detectaron columnas JSON.
+{{/if}}
+
+---
+
+## Artefactos requeridos
+
+| Artefacto | Archivo |
+|-----------|---------|
+| Migración | `{{utilsRequired.artifacts.migration}}` |
+| Seeds | `{{utilsRequired.artifacts.seeds}}` |
+| Prueba HTTP | `{{utilsRequired.artifacts.httpTest}}` |
+| Colección Postman | `{{utilsRequired.artifacts.postman}}` |
+| Manifest | `{{utilsRequired.artifacts.manifest}}` |
+
+---
+
+## Orden recomendado de instalación
+
+1. Verificar las versiones de Node.js y PostgreSQL.
+2. Instalar los paquetes requeridos.
+3. Configurar las variables de entorno.
+4. Instalar las extensiones PostgreSQL necesarias.
+5. Verificar los módulos relacionados.
+6. Ejecutar la migración.
+7. Revisar y ejecutar los seeds.
+8. Registrar los permisos del módulo.
+9. Levantar la API.
+10. Ejecutar la prueba HTTP o la colección Postman.
+
+---
+
+Generado automáticamente por **SBN Forge**.
