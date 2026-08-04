@@ -512,6 +512,16 @@ class GeneratorContextBuilder {
             metadata.table
         });
 
+        const installation =
+          this.buildInstallationContext({
+            names,
+            api,
+            permissions,
+            profile
+          });
+
+
+
     const context = {
       forge: {
         contextVersion:
@@ -613,6 +623,8 @@ class GeneratorContextBuilder {
       postmanCollection,
 
       utilsRequired,
+
+      installation,
 
       generation: {
         profile:
@@ -1224,6 +1236,106 @@ class GeneratorContextBuilder {
     };
   }
 
+    buildInstallationContext({
+    names,
+    api,
+    permissions,
+    profile
+    }) {
+      const routeVariable =
+        names.variable;
+
+      const routeFile =
+        `./modules_ia/` +
+        `${names.table}/` +
+        `${names.table}.routes`;
+
+      const apiPrefix =
+        '/api';
+
+      const endpoint =
+        `${apiPrefix}${api.basePath}`;
+
+      return {
+        moduleName:
+          names.module,
+
+        entityName:
+          names.entity,
+
+        routeVariable,
+
+        routeFile,
+
+        apiPrefix,
+
+        endpoint,
+
+        profileName:
+          profile?.name ||
+          'unknown',
+
+        importCode: [
+          `const ${routeVariable} =`,
+          '  require(',
+          `    '${routeFile}'`,
+          '  );'
+        ].join(
+          '\n'
+        ),
+
+        registerCode: [
+          'await fastify.register(',
+          `  ${routeVariable},`,
+          '  {',
+          `    prefix: '${apiPrefix}'`,
+          '  }',
+          ');'
+        ].join(
+          '\n'
+        ),
+
+        permissions: {
+          view:
+            permissions.view,
+
+          create:
+            permissions.create,
+
+          edit:
+            permissions.edit,
+
+          delete:
+            permissions.delete
+        },
+
+        artifacts: {
+          routes:
+            `${names.module}.routes.js`,
+
+          migration:
+            `database/migrations/` +
+            `${names.module}.migration.sql`,
+
+          seeds:
+            `database/seeds/` +
+            `${names.module}.seeds.sql`,
+
+          postman:
+            `${names.module}` +
+            `.postman_collection.json`,
+
+          httpTest:
+            `tests/${names.module}.http`,
+
+          manifest:
+            'sbn-forge.manifest.json',
+
+          requirements:
+            'UTILS_REQUIRED.md'
+        }
+      };
+    }
 
   shouldGenerateDocumentation(
     profile
@@ -1238,7 +1350,8 @@ class GeneratorContextBuilder {
       files.migration ||
       files.seeds ||
       files.utilsRequired ||
-      files.postmanCollection
+      files.postmanCollection ||
+      files.moduleInstallation
     );
   }
 

@@ -22,7 +22,8 @@ describe(
         const generated =
           await generateTestModule({
             definition,
-            profile: 'sbn-api-v2'
+            profile:
+              'sbn-api-v2'
           });
 
         try {
@@ -38,6 +39,9 @@ describe(
             'README.md',
             'API_EXAMPLES.md',
             'DATA_DICTIONARY.md',
+            'UTILS_REQUIRED.md',
+            'MODULE_INSTALLATION.md',
+            'ai-business-model-teams.postman_collection.json',
             'sbn-forge.manifest.json',
 
             path.join(
@@ -50,11 +54,17 @@ describe(
               'database',
               'seeds',
               'ai-business-model-teams.seeds.sql'
+            ),
+
+            path.join(
+              'tests',
+              'ai-business-model-teams.http'
             )
           ];
 
           for (
-            const relativePath of expectedPaths
+            const relativePath of
+              expectedPaths
           ) {
             const absolutePath =
               path.join(
@@ -66,9 +76,12 @@ describe(
               await fs.pathExists(
                 absolutePath
               )
-            ).toBe(true);
+            ).toBe(
+              true
+            );
           }
-        } finally {
+        }
+        finally {
           await generated.cleanup();
         }
       }

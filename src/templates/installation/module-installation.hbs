@@ -1,0 +1,152 @@
+# Instalación del módulo
+
+Módulo: **{{installation.moduleName}}**
+
+Entidad: **{{installation.entityName}}**
+
+Perfil: **{{installation.profileName}}**
+
+---
+
+## 1. Importar el archivo de rutas
+
+Agrega el siguiente bloque en `app.js`, junto con los demás `require()`:
+
+```javascript
+{{{installation.importCode}}}
+```
+
+---
+
+## 2. Registrar el módulo en Fastify
+
+Agrega este bloque dentro de la función donde se registran los plugins y rutas:
+
+```javascript
+{{{installation.registerCode}}}
+```
+
+---
+
+## 3. Endpoint resultante
+
+```text
+{{installation.endpoint}}
+```
+
+El módulo utiliza:
+
+```text
+Prefijo de registro: {{installation.apiPrefix}}
+Ruta del módulo: {{api.basePath}}
+```
+
+---
+
+## 4. Archivo de rutas
+
+```text
+{{installation.artifacts.routes}}
+```
+
+Ruta esperada dentro del proyecto principal:
+
+```text
+{{installation.routeFile}}
+```
+
+---
+
+## 5. Ejecutar la migración
+
+```text
+{{installation.artifacts.migration}}
+```
+
+Revisa el script antes de ejecutarlo en producción.
+
+---
+
+## 6. Revisar y ejecutar los seeds
+
+```text
+{{installation.artifacts.seeds}}
+```
+
+Los placeholders como:
+
+```text
+{{AI_BUSINESS_MODELS_ID}}
+```
+
+deben resolverse antes de ejecutar el SQL.
+
+---
+
+## 7. Permisos requeridos
+
+| Acción | Permiso |
+|--------|---------|
+| Consultar | `{{installation.permissions.view}}` |
+| Crear | `{{installation.permissions.create}}` |
+| Editar | `{{installation.permissions.edit}}` |
+| Eliminar | `{{installation.permissions.delete}}` |
+
+---
+
+## 8. Importar la colección Postman
+
+```text
+{{installation.artifacts.postman}}
+```
+
+Configura las variables:
+
+```text
+baseUrl
+token
+id
+```
+
+---
+
+## 9. Ejecutar la prueba HTTP
+
+```text
+{{installation.artifacts.httpTest}}
+```
+
+---
+
+## 10. Revisar requisitos técnicos
+
+```text
+{{installation.artifacts.requirements}}
+```
+
+---
+
+## 11. Revisar el manifest
+
+```text
+{{installation.artifacts.manifest}}
+```
+
+---
+
+## Lista de verificación
+
+- [ ] Se copió el módulo al proyecto principal.
+- [ ] Se agregó el `require()` en `app.js`.
+- [ ] Se agregó `fastify.register()`.
+- [ ] Se ejecutó la migración.
+- [ ] Se revisaron y ejecutaron los seeds.
+- [ ] Se registraron los permisos.
+- [ ] Se configuraron las variables de entorno.
+- [ ] Se importó la colección Postman.
+- [ ] Se probó el endpoint.
+- [ ] Se revisó el manifest.
+
+---
+
+Generado automáticamente por **SBN Forge**.

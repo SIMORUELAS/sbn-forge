@@ -880,6 +880,54 @@ describe(
           'database/seeds/ai-business-model-departments.seeds.sql'
         );
 
+        expect(
+          context.installation
+        ).toBeDefined();
+
+        expect(
+          context.installation.moduleName
+        ).toBe(
+          'ai-business-model-departments'
+        );
+
+        expect(
+          context.installation.routeVariable
+        ).toBe(
+          'aiBusinessModelDepartments'
+        );
+
+        expect(
+          context.installation.routeFile
+        ).toBe(
+          './modules_ia/' +
+          'ai_business_model_departments/' +
+          'ai_business_model_departments.routes'
+        );
+
+        expect(
+          context.installation.apiPrefix
+        ).toBe(
+          '/api'
+        );
+
+        expect(
+          context.installation.endpoint
+        ).toBe(
+          '/api/ia/ai-business-model-departments'
+        );
+
+        expect(
+          context.installation.importCode
+        ).toContain(
+          'const aiBusinessModelDepartments'
+        );
+
+        expect(
+          context.installation.registerCode
+        ).toContain(
+          'await fastify.register'
+        );
+
 
 
       }

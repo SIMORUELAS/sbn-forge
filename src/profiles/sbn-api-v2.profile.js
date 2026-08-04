@@ -26,7 +26,9 @@ module.exports = {
 
     utilsRequired: true,
 
-    postmanCollection: true
+    postmanCollection: true,
+
+    moduleInstallation: true
 
   },
 

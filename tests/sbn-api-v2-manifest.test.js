@@ -42,6 +42,7 @@ describe(
             await fs.readJson(
               manifestPath
             );
+                   
 
           expect(
             manifest.manifestVersion
@@ -195,6 +196,7 @@ describe(
             httpTest: true,
             utilsRequired: true,
             postmanCollection: true,
+            moduleInstallation: true
           });
 
           const fileKeys =
@@ -218,6 +220,7 @@ describe(
             'httpTest',
             'utilsRequired',
             'postmanCollection',
+            'moduleInstallation',
             'manifest'
           ]);
           
@@ -232,6 +235,21 @@ describe(
                 category: 'database',
                 relativePath:
                   'modules/ai-business-model-teams/database/migrations/ai-business-model-teams.migration.sql'
+              }),
+
+              expect.objectContaining({
+                key:
+                  'moduleInstallation',
+
+                template:
+                  'installation/module-installation.hbs',
+
+                category:
+                    'installation',
+
+                relativePath:
+                  'modules/ai-business-model-teams/' +
+                  'MODULE_INSTALLATION.md'
               }),
 
               expect.objectContaining({
