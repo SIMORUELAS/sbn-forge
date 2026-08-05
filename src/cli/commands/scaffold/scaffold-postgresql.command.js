@@ -14,7 +14,6 @@ const PostgreSqlScaffoldService =
 function registerPostgreSqlScaffoldCommand(
   parentCommand
 ) {
-
   const command =
     new Command(
       'postgresql'
@@ -72,6 +71,32 @@ function registerPostgreSqlScaffoldCommand(
     )
 
     .option(
+      '--config <file>',
+      'Archivo de configuración de Forge.',
+      'forge.config.json'
+    )
+
+    .option(
+      '--module-root <directory>',
+      'Directorio de módulos en el proyecto destino.'
+    )
+
+    .option(
+      '--api-prefix <prefix>',
+      'Prefijo utilizado al registrar el módulo.'
+    )
+
+    .option(
+      '--route-prefix <prefix>',
+      'Prefijo funcional de las rutas del módulo.'
+    )
+
+    .option(
+      '--framework <framework>',
+      'Framework backend del proyecto destino.'
+    )
+
+    .option(
       '--definitions-dir <directory>',
       'Directorio donde se almacenan las definiciones.',
       './examples'
@@ -108,14 +133,11 @@ function registerPostgreSqlScaffoldCommand(
         table,
         options
       ) => {
-
         const service =
           new PostgreSqlScaffoldService();
 
         try {
-
           await service.execute({
-
             table,
 
             schema:
@@ -140,6 +162,21 @@ function registerPostgreSqlScaffoldCommand(
 
             profile:
               options.profile,
+
+            configFile:
+              options.config,
+
+            moduleRoot:
+              options.moduleRoot,
+
+            apiPrefix:
+              options.apiPrefix,
+
+            routePrefix:
+              options.routePrefix,
+
+            framework:
+              options.framework,
 
             definitionsDirectory:
               options.definitionsDir,
@@ -166,14 +203,11 @@ function registerPostgreSqlScaffoldCommand(
               Boolean(
                 options.quiet
               )
-
           });
-
         }
         catch (
           error
         ) {
-
           console.error(
             ''
           );
@@ -187,16 +221,13 @@ function registerPostgreSqlScaffoldCommand(
           );
 
           process.exit(1);
-
         }
-
       }
     );
 
   parentCommand.addCommand(
     command
   );
-
 }
 
 module.exports =

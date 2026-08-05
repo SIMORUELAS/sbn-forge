@@ -32,7 +32,19 @@ describe(
             definition,
 
             profile:
-              'sbn-api-v2'
+              'sbn-api-v2',
+
+            framework:
+              'fastify',
+
+            moduleRoot:
+              'modules_ia',
+
+            apiPrefix:
+              '/api',
+
+            routePrefix:
+              '/ia'
           });
 
         try {
@@ -77,6 +89,14 @@ describe(
           expect(
             contents
           ).toContain(
+            './modules_ia/' +
+            'ai-business-model-installations/' +
+            'ai-business-model-installations.routes'
+          );
+
+          expect(
+            contents
+          ).not.toContain(
             './modules_ia/' +
             'ai_business_model_installations/' +
             'ai_business_model_installations.routes'

@@ -22,11 +22,31 @@ const {
  */
 async function generateTestModule({
   definition,
-  profile = 'sbn-api-v2',
-  type = 'api',
-  force = true
+
+  profile =
+    'sbn-api-v2',
+
+  type =
+    'api',
+
+  force =
+    true,
+
+  framework =
+    'fastify',
+
+  moduleRoot =
+    'modules',
+
+  apiPrefix =
+    '/api',
+
+  routePrefix =
+    '/ia'
 } = {}) {
-  if (!definition) {
+  if (
+    !definition
+  ) {
     throw new Error(
       'generateTestModule requiere una definition.'
     );
@@ -52,8 +72,18 @@ async function generateTestModule({
 
         options: {
           profile,
+
           output,
-          force
+
+          force,
+
+          framework,
+
+          moduleRoot,
+
+          apiPrefix,
+
+          routePrefix
         }
       });
 
@@ -66,11 +96,18 @@ async function generateTestModule({
         result.generation.moduleDirectory,
 
       async cleanup() {
-        await fs.remove(output);
+        await fs.remove(
+          output
+        );
       }
     };
-  } catch (error) {
-    await fs.remove(output);
+  }
+  catch (
+    error
+  ) {
+    await fs.remove(
+      output
+    );
 
     throw error;
   }

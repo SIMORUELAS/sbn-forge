@@ -33,6 +33,13 @@ const {
 );
 
 const {
+  loadForgeConfig,
+  mergeForgeConfiguration
+} = require(
+  '../config/forge-config'
+);
+
+const {
   preparePaths
 } = require(
   './scaffold-paths'
@@ -98,22 +105,73 @@ class PostgreSqlScaffoldService {
       new ScaffoldSeedBuilder();
   }
 
-  async execute(
-    options = {}
-  ) {
-    const configuration =
-      normalizeOptions(
-        options
+     async execute(
+      options = {}
+    ) {
+
+      const normalizedOptions =
+        normalizeOptions(
+          options
+        );
+
+      const forgeConfig =
+        await loadForgeConfig({
+
+          rootDirectory:
+            this.rootDirectory,
+
+          configFile:
+            normalizedOptions.configFile
+
+        });
+
+      const projectConfiguration =
+        mergeForgeConfiguration({
+
+          fileConfig:
+            forgeConfig,
+
+          cliOptions: {
+
+            framework:
+              normalizedOptions.framework,
+
+            moduleRoot:
+              normalizedOptions.moduleRoot,
+
+            apiPrefix:
+              normalizedOptions.apiPrefix,
+
+            routePrefix:
+              normalizedOptions.routePrefix
+
+          }
+
+        });
+
+      const configuration = {
+
+        ...normalizedOptions,
+
+        ...projectConfiguration,
+
+        forgeConfigFile:
+          forgeConfig.configFile,
+
+        forgeConfigFileFound:
+          forgeConfig.configFileFound
+
+      };
+
+      validateOptions(
+        configuration
       );
 
-    validateOptions(
-      configuration
-    );
+      const logger =
+        new ScaffoldLogger(
+          configuration.quiet
+        );
 
-    const logger =
-      new ScaffoldLogger(
-        configuration.quiet
-      );
 
     const paths =
       await preparePaths(

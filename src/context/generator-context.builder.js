@@ -434,46 +434,52 @@ class GeneratorContextBuilder {
      * - futuras pruebas de integración.
      */
 
+      const apiExamples =
+      this.buildApiExamples({
+        columns:
+          normalizedColumns,
 
-          const apiExamples =
-        this.buildApiExamples({
-          columns:
-            normalizedColumns,
+        writableColumns,
 
-          writableColumns,
+        primaryKey:
+          metadata.primaryKey,
 
-          primaryKey:
-            metadata.primaryKey,
+        capabilities
+      });
 
-          capabilities
-        });
+    const project =
+      this.buildProjectContext(
+        input,
+        profile
+      );
 
-      const api =
-        this.buildApiContext(
-          input,
-          names,
-          profile
-        );
+    const api =
+      this.buildApiContext(
+        input,
+        names,
+        profile,
+        project
+      );
 
-      const security = {
-        jwt:
-          Boolean(
-            profile.security?.jwt
-          ),
+    const security = {
+      jwt:
+        Boolean(
+          profile.security?.jwt
+        ),
 
-        permissions:
-          Boolean(
-            profile.security
-              ?.permissions
-          ),
+      permissions:
+        Boolean(
+          profile.security
+            ?.permissions
+        ),
 
-        organizationContext:
-          Boolean(
-            profile.security
-              ?.organizationContext
-          )
-      };
-
+      organizationContext:
+        Boolean(
+          profile.security
+            ?.organizationContext
+        )
+    };
+   
       const postmanCollection =
         this.buildPostmanCollection({
           names,
@@ -512,14 +518,14 @@ class GeneratorContextBuilder {
             metadata.table
         });
 
-        const installation =
-          this.buildInstallationContext({
-            names,
-            api,
-            permissions,
-            profile
-          });
-
+       const installation =
+        this.buildInstallationContext({
+          names,
+          api,
+          permissions,
+          profile,
+          project
+        });
 
 
     const context = {
@@ -547,6 +553,8 @@ class GeneratorContextBuilder {
         table:
           metadata.table
       },
+
+      project,
 
       names,
 
@@ -852,57 +860,134 @@ class GeneratorContextBuilder {
     };
   }
 
-  buildApiContext(
-    input,
-    names,
-    profile
-  ) {
-    const configuredPrefix =
-      input.api?.prefix ||
-      input.apiPrefix ||
-      profile.api?.prefix ||
-      '/ia';
+    buildProjectContext(
+      input,
+      profile
+    ) {
+      const options =
+        input.options ||
+        {};
 
-    const prefix =
-      this.normalizeRoutePrefix(
-        configuredPrefix
-      );
+      const generation =
+        input.generation ||
+        {};
 
-    const configuredBasePath =
-      input.api?.basePath ||
-      input.basePath ||
-      profile.api?.basePath;
+      /*
+      * Prioridad:
+      *
+      * 1. Opciones del CLI
+      * 2. Propiedades directas de entrada
+      * 3. Metadata generation
+      * 4. Perfil
+      * 5. Valores predeterminados
+      */
+      const framework =
+        options.framework ||
+        input.framework ||
+        generation.framework ||
+        profile.framework ||
+        'fastify';
 
-    const basePath =
-      configuredBasePath
-        ? this.normalizeRoutePath(
-            configuredBasePath
+      const moduleRoot =
+        options.moduleRoot ||
+        input.moduleRoot ||
+        generation.moduleRoot ||
+        profile.moduleRoot ||
+        'modules';
+
+      const apiPrefix =
+        options.apiPrefix ||
+        input.apiPrefix ||
+        generation.apiPrefix ||
+        profile.apiPrefix ||
+        '/api';
+
+      const routePrefix =
+        options.routePrefix ||
+        input.routePrefix ||
+        generation.routePrefix ||
+        profile.routePrefix ||
+        profile.api?.prefix ||
+        '/ia';
+
+      return {
+        framework:
+          String(
+            framework
           )
-        : this.normalizeRoutePath(
-            `${prefix}/${names.route}`
-          );
+            .trim()
+            .toLowerCase(),
 
-    const configuredBaseUrl =
-      input.api?.baseUrl ||
-      input.baseUrl ||
-      profile.api?.baseUrl ||
-      'http://localhost:3500';
+        moduleRoot:
+          this.normalizeModuleRoot(
+            moduleRoot
+          ),
 
-    return {
-      standard:
-        profile.standard,
+        apiPrefix:
+          this.normalizeRoutePrefix(
+            apiPrefix
+          ),
 
-      prefix,
+        routePrefix:
+          this.normalizeRoutePrefix(
+            routePrefix
+          )
+      };
+    }
 
-      basePath,
+   buildApiContext(
+      input,
+      names,
+      profile,
+      project
+    ) {
+      /*
+      * project.routePrefix ya fue resuelto
+      * utilizando la jerarquía oficial.
+      */
+      const prefix =
+        project.routePrefix;
 
-      baseUrl:
-        configuredBaseUrl,
+      const configuredBasePath =
+        input.options?.basePath ||
+        input.basePath ||
+        input.api?.basePath ||
+        input.generation?.basePath ||
+        profile.api?.basePath;
 
-      route:
-        names.route
-    };
-  }
+      const basePath =
+        configuredBasePath
+          ? this.normalizeRoutePath(
+              configuredBasePath
+            )
+          : this.normalizeRoutePath(
+              `${prefix}/${names.route}`
+            );
+
+      const configuredBaseUrl =
+        input.options?.baseUrl ||
+        input.baseUrl ||
+        input.api?.baseUrl ||
+        input.generation?.baseUrl ||
+        profile.api?.baseUrl ||
+        'http://localhost:3500';
+
+      return {
+        standard:
+          profile.standard,
+
+        prefix,
+
+        basePath,
+
+        baseUrl:
+          configuredBaseUrl,
+
+        route:
+          names.route
+      };
+    }
+
 
   buildPermissions(
     permissionPrefix
@@ -1236,25 +1321,58 @@ class GeneratorContextBuilder {
     };
   }
 
-    buildInstallationContext({
-    names,
-    api,
-    permissions,
-    profile
+ 
+  buildInstallationContext({
+      names,
+      api,
+      permissions,
+      profile,
+      project
     }) {
+      const framework =
+        project.framework;
+
+      const moduleRoot =
+        project.moduleRoot;
+
+      const apiPrefix =
+        project.apiPrefix;
+
+      const routePrefix =
+        project.routePrefix;
+
       const routeVariable =
         names.variable;
 
-      const routeFile =
-        `./modules_ia/` +
-        `${names.table}/` +
-        `${names.table}.routes`;
+      const routeDirectory =
+        `./${moduleRoot}/` +
+        `${names.module}`;
 
-      const apiPrefix =
-        '/api';
+      const routeFile =
+        `${routeDirectory}/` +
+        `${names.module}.routes`;
 
       const endpoint =
-        `${apiPrefix}${api.basePath}`;
+        this.normalizeRoutePath(
+          `${apiPrefix}` +
+          `${api.basePath}`
+        );
+
+      const importCode =
+        this.buildImportCode({
+          framework,
+          routeVariable,
+          routeDirectory,
+          moduleName:
+            names.module
+        });
+
+      const registerCode =
+        this.buildRegisterCode({
+          framework,
+          routeVariable,
+          apiPrefix
+        });
 
       return {
         moduleName:
@@ -1263,11 +1381,19 @@ class GeneratorContextBuilder {
         entityName:
           names.entity,
 
-        routeVariable,
+        framework,
 
-        routeFile,
+        moduleRoot,
 
         apiPrefix,
+
+        routePrefix,
+
+        routeVariable,
+
+        routeDirectory,
+
+        routeFile,
 
         endpoint,
 
@@ -1275,25 +1401,9 @@ class GeneratorContextBuilder {
           profile?.name ||
           'unknown',
 
-        importCode: [
-          `const ${routeVariable} =`,
-          '  require(',
-          `    '${routeFile}'`,
-          '  );'
-        ].join(
-          '\n'
-        ),
+        importCode,
 
-        registerCode: [
-          'await fastify.register(',
-          `  ${routeVariable},`,
-          '  {',
-          `    prefix: '${apiPrefix}'`,
-          '  }',
-          ');'
-        ].join(
-          '\n'
-        ),
+        registerCode,
 
         permissions: {
           view:
@@ -1336,6 +1446,63 @@ class GeneratorContextBuilder {
         }
       };
     }
+
+    buildImportCode({
+      framework,
+      routeVariable,
+      routeDirectory,
+      moduleName
+    }) {
+      if (
+        framework !==
+        'fastify'
+      ) {
+        throw new Error(
+          `Framework no soportado: ` +
+          `${framework}`
+        );
+      }
+
+      return [
+        `const ${routeVariable} =`,
+        '  require(',
+        `    '${routeDirectory}/' +`,
+        `    '${moduleName}.routes'`,
+        '  );'
+      ].join(
+        '\n'
+      );
+    }
+  
+      
+
+    buildRegisterCode({
+      framework,
+      routeVariable,
+      apiPrefix
+    }) {
+      if (
+        framework !==
+        'fastify'
+      ) {
+        throw new Error(
+          `Framework no soportado: ` +
+          `${framework}`
+        );
+      }
+
+      return [
+        'await fastify.register(',
+        `  ${routeVariable},`,
+        '  {',
+        `    prefix: '${apiPrefix}'`,
+        '  }',
+        ');'
+      ].join(
+        '\n'
+      );
+    }
+
 
   shouldGenerateDocumentation(
     profile
@@ -1506,6 +1673,36 @@ class GeneratorContextBuilder {
           /\/+$/g,
           ''
         )}`;
+  }
+
+    normalizeModuleRoot(
+    value
+  ) {
+    const normalized =
+      String(
+        value ||
+        'modules'
+      )
+        .trim()
+        .replace(
+          /\\/g,
+          '/'
+        )
+        .replace(
+          /^\.?\//,
+          ''
+        )
+        .replace(
+          /\/+/g,
+          '/'
+        )
+        .replace(
+          /\/+$/g,
+          ''
+        );
+
+    return normalized ||
+      'modules';
   }
 
   normalizeRoutePath(

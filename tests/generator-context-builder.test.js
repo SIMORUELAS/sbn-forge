@@ -30,6 +30,20 @@ describe(
             profile:
               'sbn-api-v2',
 
+            options: {
+              framework:
+                'fastify',
+
+              moduleRoot:
+                'modules_ia',
+
+              apiPrefix:
+                '/api',
+
+              routePrefix:
+                '/ia'
+            },
+
             columns: [
               {
                 position:
@@ -880,6 +894,30 @@ describe(
           'database/seeds/ai-business-model-departments.seeds.sql'
         );
 
+        // ---------------------------------------------------------------------
+        // Configuración del proyecto destino
+        // ---------------------------------------------------------------------
+
+        expect(
+          context.project
+        ).toEqual({
+          framework:
+            'fastify',
+
+          moduleRoot:
+            'modules_ia',
+
+          apiPrefix:
+            '/api',
+
+          routePrefix:
+            '/ia'
+        });
+
+        // ---------------------------------------------------------------------
+        // Instalación del módulo
+        // ---------------------------------------------------------------------
+
         expect(
           context.installation
         ).toBeDefined();
@@ -891,17 +929,36 @@ describe(
         );
 
         expect(
+          context.installation.framework
+        ).toBe(
+          'fastify'
+        );
+
+        expect(
+          context.installation.moduleRoot
+        ).toBe(
+          'modules_ia'
+        );
+
+        expect(
           context.installation.routeVariable
         ).toBe(
           'aiBusinessModelDepartments'
         );
 
         expect(
+          context.installation.routeDirectory
+        ).toBe(
+          './modules_ia/' +
+          'ai-business-model-departments'
+        );
+
+        expect(
           context.installation.routeFile
         ).toBe(
           './modules_ia/' +
-          'ai_business_model_departments/' +
-          'ai_business_model_departments.routes'
+          'ai-business-model-departments/' +
+          'ai-business-model-departments.routes'
         );
 
         expect(
@@ -911,9 +968,16 @@ describe(
         );
 
         expect(
+          context.installation.routePrefix
+        ).toBe(
+          '/ia'
+        );
+
+        expect(
           context.installation.endpoint
         ).toBe(
-          '/api/ia/ai-business-model-departments'
+          '/api/ia/' +
+          'ai-business-model-departments'
         );
 
         expect(
@@ -923,11 +987,35 @@ describe(
         );
 
         expect(
+          context.installation.importCode
+        ).toContain(
+          './modules_ia/' +
+          'ai-business-model-departments/'
+        );
+
+        expect(
+          context.installation.importCode
+        ).toContain(
+          'ai-business-model-departments.routes'
+        );
+
+        expect(
           context.installation.registerCode
         ).toContain(
           'await fastify.register'
         );
 
+        expect(
+          context.installation.registerCode
+        ).toContain(
+          "prefix: '/api'"
+        );
+
+        expect(
+          context.installation.routeFile
+        ).not.toContain(
+          'ai_business_model_departments'
+        );
 
 
       }

@@ -26,7 +26,7 @@ function registerGenerateApiCommand(parent) {
   parent
     .command('api <table>')
     .description(
-      'Genera un módulo backend Fastify CommonJS desde una definición JSON'
+      'Genera un módulo backend desde una definición JSON'
     )
     .option(
       '-s, --schema <schema>',
@@ -59,6 +59,29 @@ function registerGenerateApiCommand(parent) {
       '--profile <profile>',
       'Perfil de generación',
       'generic'
+    )
+    .option(
+      '--framework <framework>',
+      'Framework backend.',
+      'fastify'
+    )
+
+    .option(
+      '--module-root <directory>',
+      'Directorio de módulos.',
+      'modules'
+    )
+
+    .option(
+      '--api-prefix <prefix>',
+      'Prefijo de registro de la API.',
+      '/api'
+    )
+
+    .option(
+      '--route-prefix <prefix>',
+      'Prefijo funcional de las rutas.',
+      '/ia'
     )
     .action(async (table, options) => {
       const cwd = process.cwd();
@@ -122,12 +145,26 @@ function registerGenerateApiCommand(parent) {
         definition.profile =
           options.profile;
 
-        definition.generation = {
+         definition.generation = {
           ...(definition.generation || {}),
 
           profile:
-            options.profile
-        };
+            options.profile,
+
+          framework:
+            options.framework,
+
+          moduleRoot:
+            options.moduleRoot,
+
+          apiPrefix:
+            options.apiPrefix,
+
+          routePrefix:
+            options.routePrefix
+        };      
+
+
 
         /*
          * Verifica que la tabla proporcionada
@@ -157,22 +194,35 @@ function registerGenerateApiCommand(parent) {
             definition,
 
             options: {
-              output,
+          output,
 
-              force:
-                options.force,
+          force:
+            options.force,
 
-              dryRun:
-                options.dryRun,
+          dryRun:
+            options.dryRun,
 
-              quiet:
-                options.quiet,
+          quiet:
+            options.quiet,
 
-              profile:
-                options.profile,
+          profile:
+            options.profile,
 
-              logger
-            }
+          framework:
+            options.framework,
+
+          moduleRoot:
+            options.moduleRoot,
+
+          apiPrefix:
+            options.apiPrefix,
+
+          routePrefix:
+            options.routePrefix,
+
+          logger
+        }
+
           });
 
         spinner?.succeed(
@@ -195,6 +245,30 @@ function registerGenerateApiCommand(parent) {
           console.log(
             chalk.gray(
               `Perfil: ${options.profile}`
+            )
+          );
+
+          console.log(
+            chalk.gray(
+              `Framework: ${options.framework}`
+            )
+          );
+
+          console.log(
+            chalk.gray(
+              `Módulos: ${options.moduleRoot}`
+            )
+          );
+
+          console.log(
+            chalk.gray(
+              `Prefijo API: ${options.apiPrefix}`
+            )
+          );
+
+          console.log(
+            chalk.gray(
+              `Prefijo funcional: ${options.routePrefix}`
             )
           );
 

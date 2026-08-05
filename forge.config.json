@@ -1,0 +1,6 @@
+{
+  "framework": "fastify",
+  "moduleRoot": "modules_ia",
+  "apiPrefix": "/api",
+  "routePrefix": "/ia"
+}
