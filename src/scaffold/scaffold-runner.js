@@ -54,38 +54,73 @@ class ScaffoldRunner {
     });
   }
 
-  async generateModule(options, paths) {
-    const argumentsList = [
-      this.getCliFile(),
-      'generate',
-      'api',
-      options.table,
-      '--profile',
-      options.profile,
-      '--definition',
-      paths.definitionFile,
-      '--output',
-      paths.outputDirectory,
-      '--framework',
-      configuration.framework,
-      '--module-root',
-      configuration.moduleRoot,
-      '--api-prefix',
-      configuration.apiPrefix,
-      '--route-prefix',
-      configuration.routePrefix,
-    ];
 
-    if (options.force) {
-      argumentsList.push('--force');
+  async generateModule(
+      options,
+      paths
+    ) {
+      const argumentsList = [
+        this.getCliFile(),
+
+        'generate',
+        'api',
+
+        options.table,
+
+        '--profile',
+        options.profile,
+
+        '--definition',
+        paths.definitionFile,
+
+        '--output',
+        paths.outputDirectory,
+
+        '--framework',
+        options.framework,
+
+        '--module-root',
+        options.moduleRoot,
+
+        '--api-prefix',
+        options.apiPrefix,
+
+        '--route-prefix',
+        options.routePrefix
+      ];
+
+      if (
+        options.force
+      ) {
+        argumentsList.push(
+          '--force'
+        );
+      }
+
+      if (
+        options.quiet
+      ) {
+        argumentsList.push(
+          '--quiet'
+        );
+      }
+
+      return this.runCommand(
+        this.nodeExecutable,
+        argumentsList,
+        {
+          cwd:
+            this.rootDirectory,
+
+          quiet:
+            options.quiet,
+
+          errorMessage:
+            'Falló la generación del módulo.'
+        }
+      );
     }
 
-    return this.runCommand(this.nodeExecutable, argumentsList, {
-      cwd: this.rootDirectory,
-      quiet: options.quiet,
-      errorMessage: 'Falló la generación del módulo.'
-    });
-  }
 
   async runNpmCommand(argumentsList, options) {
     return this.runCommand(this.npmExecutable, argumentsList, {

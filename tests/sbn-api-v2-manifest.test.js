@@ -77,6 +77,30 @@ describe(
           });
 
           expect(
+            manifest.project
+          ).toEqual({
+            framework:
+              'fastify',
+
+            moduleRoot:
+              'modules',
+
+            apiPrefix:
+              '/api',
+
+            routePrefix:
+              '/ia'
+          });
+
+          expect(
+            manifest.project.apiPrefix +
+            manifest.api.basePath
+          ).toBe(
+            '/api/ia/' +
+            'ai-business-model-teams'
+          );
+
+          expect(
             manifest.source.type
           ).toBe(
             'json'

@@ -411,6 +411,22 @@ function buildManifest(
     context.forge?.standard ||
     null;
 
+  const project =
+    context.project || {
+      framework:
+        'fastify',
+
+      moduleRoot:
+        'modules',
+
+      apiPrefix:
+        '/api',
+
+      routePrefix:
+        context.api?.prefix ||
+        '/ia'
+    };
+
   return {
     manifestVersion:
       '1.1',
@@ -437,6 +453,23 @@ function buildManifest(
       standard
     },
 
+   project: {
+      framework:
+        project.framework,
+
+      moduleRoot:
+        project.moduleRoot,
+
+      apiPrefix:
+        project.apiPrefix,
+
+      routePrefix:
+        project.routePrefix
+    },
+
+
+
+
     source:
       context.source,
 
@@ -450,6 +483,11 @@ function buildManifest(
 
       routeBase
     },
+
+
+
+
+
 
     api:
       context.api || null,
