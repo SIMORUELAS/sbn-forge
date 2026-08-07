@@ -33,6 +33,16 @@ const registerScaffoldTableCommand =
     './commands/scaffold-table.command'
   );
 
+const registerConfigCommand =
+  require(
+    './commands/config/config.command'
+  );
+
+const registerDoctorCommand =
+  require(
+    './commands/doctor.command'
+  );
+
 async function runCli(
   argv = process.argv
 ) {
@@ -93,6 +103,16 @@ async function runCli(
   registerScaffoldTableCommand(
     program
   );
+
+  registerConfigCommand(
+    program
+  );
+
+
+  registerDoctorCommand(
+    program
+  );
+ 
 
   program.showHelpAfterError();
 
