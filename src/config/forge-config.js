@@ -1,21 +1,65 @@
 'use strict';
 
-const path = require('path');
-const fs = require('fs-extra');
+const path =
+  require(
+    'path'
+  );
 
-const DEFAULT_FORGE_CONFIG = Object.freeze({
-  framework:
-    'fastify',
+const fs =
+  require(
+    'fs-extra'
+  );
 
-  moduleRoot:
-    'modules',
+const DEFAULT_FORGE_CONFIG =
+  Object.freeze({
+    source:
+      Object.freeze({
+        provider:
+          'postgresql',
 
-  apiPrefix:
-    '/api',
+        schema:
+          'public',
 
-  routePrefix:
-    '/ia'
-});
+        host:
+          'localhost',
+
+        port:
+          5432,
+
+        database:
+          null,
+
+        user:
+          'postgres'
+      }),
+
+    project:
+      Object.freeze({
+        framework:
+          'fastify',
+
+        moduleRoot:
+          'modules',
+
+        apiPrefix:
+          '/api',
+
+        routePrefix:
+          '/ia'
+      }),
+
+    generation:
+      Object.freeze({
+        profile:
+          'sbn-api-v2',
+
+        definitionsDirectory:
+          './examples',
+
+        output:
+          './output'
+      })
+  });
 
 function normalizePathSegment(
   value,
@@ -23,7 +67,8 @@ function normalizePathSegment(
 ) {
   const normalized =
     String(
-      value || fallback
+      value ??
+      fallback
     )
       .trim()
       .replace(
@@ -35,11 +80,16 @@ function normalizePathSegment(
         ''
       )
       .replace(
-        /\/+$/,
+        /\/+/g,
+        '/'
+      )
+      .replace(
+        /\/+$/g,
         ''
       );
 
-  return normalized || fallback;
+  return normalized ||
+    fallback;
 }
 
 function normalizeUrlPrefix(
@@ -48,7 +98,8 @@ function normalizeUrlPrefix(
 ) {
   const normalized =
     String(
-      value || fallback
+      value ??
+      fallback
     )
       .trim()
       .replace(
@@ -68,12 +119,14 @@ function normalizeUrlPrefix(
   }
 
   const withLeadingSlash =
-    normalized.startsWith('/')
+    normalized.startsWith(
+      '/'
+    )
       ? normalized
       : `/${normalized}`;
 
   return withLeadingSlash.replace(
-    /\/+$/,
+    /\/+$/g,
     ''
   );
 }
@@ -83,8 +136,10 @@ function normalizeFramework(
 ) {
   const framework =
     String(
-      value ||
-      DEFAULT_FORGE_CONFIG.framework
+      value ??
+      DEFAULT_FORGE_CONFIG
+        .project
+        .framework
     )
       .trim()
       .toLowerCase();
@@ -108,33 +163,307 @@ function normalizeFramework(
   return framework;
 }
 
-function normalizeForgeConfig(
-  configuration = {}
+function normalizeSourceConfig(
+  source = {}
+) {
+  const provider =
+    String(
+      source.provider ??
+      DEFAULT_FORGE_CONFIG
+        .source
+        .provider
+    )
+      .trim()
+      .toLowerCase();
+
+  if (
+    provider !==
+    'postgresql'
+  ) {
+    throw new Error(
+      `Proveedor no soportado: ${provider}. ` +
+      'Actualmente Forge admite: postgresql.'
+    );
+  }
+
+  const port =
+    Number(
+      source.port ??
+      DEFAULT_FORGE_CONFIG
+        .source
+        .port
+    );
+
+  if (
+    !Number.isInteger(
+      port
+    ) ||
+    port < 1 ||
+    port > 65535
+  ) {
+    throw new Error(
+      'El puerto PostgreSQL configurado no es válido.'
+    );
+  }
+
+  const databaseValue =
+    source.database;
+
+  const database =
+    databaseValue ===
+      undefined ||
+    databaseValue ===
+      null ||
+    String(
+      databaseValue
+    ).trim() === ''
+      ? null
+      : String(
+          databaseValue
+        ).trim();
+
+  return {
+    provider,
+
+    schema:
+      String(
+        source.schema ??
+        DEFAULT_FORGE_CONFIG
+          .source
+          .schema
+      )
+        .trim(),
+
+    host:
+      String(
+        source.host ??
+        DEFAULT_FORGE_CONFIG
+          .source
+          .host
+      )
+        .trim(),
+
+    port,
+
+    database,
+
+    user:
+      String(
+        source.user ??
+        DEFAULT_FORGE_CONFIG
+          .source
+          .user
+      )
+        .trim()
+  };
+}
+
+function normalizeProjectConfig(
+  project = {}
 ) {
   return {
     framework:
       normalizeFramework(
-        configuration.framework
+        project.framework
       ),
 
     moduleRoot:
       normalizePathSegment(
-        configuration.moduleRoot,
-        DEFAULT_FORGE_CONFIG.moduleRoot
+        project.moduleRoot,
+        DEFAULT_FORGE_CONFIG
+          .project
+          .moduleRoot
       ),
 
     apiPrefix:
       normalizeUrlPrefix(
-        configuration.apiPrefix,
-        DEFAULT_FORGE_CONFIG.apiPrefix
+        project.apiPrefix,
+        DEFAULT_FORGE_CONFIG
+          .project
+          .apiPrefix
       ),
 
     routePrefix:
       normalizeUrlPrefix(
-        configuration.routePrefix,
-        DEFAULT_FORGE_CONFIG.routePrefix
+        project.routePrefix,
+        DEFAULT_FORGE_CONFIG
+          .project
+          .routePrefix
       )
   };
+}
+
+function normalizeGenerationConfig(
+  generation = {}
+) {
+  const profile =
+    String(
+      generation.profile ??
+      DEFAULT_FORGE_CONFIG
+        .generation
+        .profile
+    )
+      .trim();
+
+  const definitionsDirectory =
+    String(
+      generation
+        .definitionsDirectory ??
+      DEFAULT_FORGE_CONFIG
+        .generation
+        .definitionsDirectory
+    )
+      .trim();
+
+  const output =
+    String(
+      generation.output ??
+      DEFAULT_FORGE_CONFIG
+        .generation
+        .output
+    )
+      .trim();
+
+  if (
+    profile === ''
+  ) {
+    throw new Error(
+      'El perfil de generación no puede estar vacío.'
+    );
+  }
+
+  if (
+    definitionsDirectory === ''
+  ) {
+    throw new Error(
+      'El directorio de definiciones no puede estar vacío.'
+    );
+  }
+
+  if (
+    output === ''
+  ) {
+    throw new Error(
+      'El directorio de salida no puede estar vacío.'
+    );
+  }
+
+  return {
+    profile,
+
+    definitionsDirectory,
+
+    output
+  };
+}
+
+function migrateLegacyConfig(
+  configuration = {}
+) {
+  const hasLegacyProjectConfig =
+    configuration.framework !==
+      undefined ||
+    configuration.moduleRoot !==
+      undefined ||
+    configuration.apiPrefix !==
+      undefined ||
+    configuration.routePrefix !==
+      undefined;
+
+  if (
+    !hasLegacyProjectConfig
+  ) {
+    return configuration;
+  }
+
+  return {
+    ...configuration,
+
+    project: {
+      ...(configuration.project ||
+        {}),
+
+      framework:
+        configuration.project
+          ?.framework ??
+        configuration.framework,
+
+      moduleRoot:
+        configuration.project
+          ?.moduleRoot ??
+        configuration.moduleRoot,
+
+      apiPrefix:
+        configuration.project
+          ?.apiPrefix ??
+        configuration.apiPrefix,
+
+      routePrefix:
+        configuration.project
+          ?.routePrefix ??
+        configuration.routePrefix
+    }
+  };
+}
+
+function normalizeForgeConfig(
+  configuration = {}
+) {
+  const migratedConfiguration =
+    migrateLegacyConfig(
+      configuration
+    );
+
+  return {
+    source:
+      normalizeSourceConfig(
+        migratedConfiguration.source
+      ),
+
+    project:
+      normalizeProjectConfig(
+        migratedConfiguration.project
+      ),
+
+    generation:
+      normalizeGenerationConfig(
+        migratedConfiguration
+          .generation
+      )
+  };
+}
+
+function mergeSection(
+  defaults,
+  values
+) {
+  return {
+    ...defaults,
+    ...(values ||
+      {})
+  };
+}
+
+function applyDefinedOverrides(
+  target,
+  overrides
+) {
+  for (
+    const [
+      key,
+      value
+    ] of Object.entries(
+      overrides
+    )
+  ) {
+    if (
+      value !==
+      undefined
+    ) {
+      target[key] =
+        value;
+    }
+  }
 }
 
 async function loadForgeConfig({
@@ -180,18 +509,50 @@ async function loadForgeConfig({
         resolvedConfigFile
       );
   }
-  catch (error) {
+  catch (
+    error
+  ) {
     throw new Error(
       `No fue posible leer ${resolvedConfigFile}: ` +
       `${error.message}`
     );
   }
 
+  const migratedFileConfiguration =
+    migrateLegacyConfig(
+      fileConfiguration
+    );
+
+  const mergedConfiguration = {
+    source:
+      mergeSection(
+        DEFAULT_FORGE_CONFIG
+          .source,
+        migratedFileConfiguration
+          .source
+      ),
+
+    project:
+      mergeSection(
+        DEFAULT_FORGE_CONFIG
+          .project,
+        migratedFileConfiguration
+          .project
+      ),
+
+    generation:
+      mergeSection(
+        DEFAULT_FORGE_CONFIG
+          .generation,
+        migratedFileConfiguration
+          .generation
+      )
+  };
+
   return {
-    ...normalizeForgeConfig({
-      ...DEFAULT_FORGE_CONFIG,
-      ...fileConfiguration
-    }),
+    ...normalizeForgeConfig(
+      mergedConfiguration
+    ),
 
     configFile:
       resolvedConfigFile,
@@ -202,46 +563,99 @@ async function loadForgeConfig({
 }
 
 function mergeForgeConfiguration({
-  defaults = DEFAULT_FORGE_CONFIG,
+  defaults =
+    DEFAULT_FORGE_CONFIG,
+
   fileConfig = {},
+
   cliOptions = {}
 } = {}) {
+  const normalizedDefaults =
+    normalizeForgeConfig(
+      defaults
+    );
+
+  const migratedFileConfig =
+    migrateLegacyConfig(
+      fileConfig
+    );
+
   const configuration = {
-    ...defaults,
-    ...fileConfig
+    source:
+      mergeSection(
+        normalizedDefaults.source,
+        migratedFileConfig.source
+      ),
+
+    project:
+      mergeSection(
+        normalizedDefaults.project,
+        migratedFileConfig.project
+      ),
+
+    generation:
+      mergeSection(
+        normalizedDefaults
+          .generation,
+        migratedFileConfig
+          .generation
+      )
   };
 
-  if (
-    cliOptions.framework !==
-    undefined
-  ) {
-    configuration.framework =
-      cliOptions.framework;
-  }
+  applyDefinedOverrides(
+    configuration.source,
+    {
+      provider:
+        cliOptions.provider,
 
-  if (
-    cliOptions.moduleRoot !==
-    undefined
-  ) {
-    configuration.moduleRoot =
-      cliOptions.moduleRoot;
-  }
+      schema:
+        cliOptions.schema,
 
-  if (
-    cliOptions.apiPrefix !==
-    undefined
-  ) {
-    configuration.apiPrefix =
-      cliOptions.apiPrefix;
-  }
+      host:
+        cliOptions.host,
 
-  if (
-    cliOptions.routePrefix !==
-    undefined
-  ) {
-    configuration.routePrefix =
-      cliOptions.routePrefix;
-  }
+      port:
+        cliOptions.port,
+
+      database:
+        cliOptions.database,
+
+      user:
+        cliOptions.user
+    }
+  );
+
+  applyDefinedOverrides(
+    configuration.project,
+    {
+      framework:
+        cliOptions.framework,
+
+      moduleRoot:
+        cliOptions.moduleRoot,
+
+      apiPrefix:
+        cliOptions.apiPrefix,
+
+      routePrefix:
+        cliOptions.routePrefix
+    }
+  );
+
+  applyDefinedOverrides(
+    configuration.generation,
+    {
+      profile:
+        cliOptions.profile,
+
+      definitionsDirectory:
+        cliOptions
+          .definitionsDirectory,
+
+      output:
+        cliOptions.output
+    }
+  );
 
   return normalizeForgeConfig(
     configuration
@@ -252,5 +666,9 @@ module.exports = {
   DEFAULT_FORGE_CONFIG,
   loadForgeConfig,
   mergeForgeConfiguration,
-  normalizeForgeConfig
+  migrateLegacyConfig,
+  normalizeForgeConfig,
+  normalizeGenerationConfig,
+  normalizeProjectConfig,
+  normalizeSourceConfig
 };

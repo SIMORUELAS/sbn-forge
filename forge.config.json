@@ -1,6 +1,21 @@
 {
-  "framework": "fastify",
-  "moduleRoot": "modules_ia",
-  "apiPrefix": "/api",
-  "routePrefix": "/ia"
+  "source": {
+    "provider": "postgresql",
+    "schema": "simo_ai",
+    "host": "localhost",
+    "port": 5432,
+    "database": "sbn_portal_test",
+    "user": "postgres"
+  },
+  "project": {
+    "framework": "fastify",
+    "moduleRoot": "modules_ia",
+    "apiPrefix": "/api",
+    "routePrefix": "/ia"
+  },
+  "generation": {
+    "profile": "sbn-api-v2",
+    "definitionsDirectory": "./examples",
+    "output": "./output"
+  }
 }

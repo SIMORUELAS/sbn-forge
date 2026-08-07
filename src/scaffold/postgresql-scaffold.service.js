@@ -105,72 +105,191 @@ class PostgreSqlScaffoldService {
       new ScaffoldSeedBuilder();
   }
 
+
      async execute(
-      options = {}
-    ) {
+  options = {}
+) {
+  /*
+   * 1. Cargar forge.config.json.
+   */
+  const forgeConfig =
+    await loadForgeConfig({
+      rootDirectory:
+        this.rootDirectory,
 
-      const normalizedOptions =
-        normalizeOptions(
-          options
-        );
+      configFile:
+        options.configFile ||
+        'forge.config.json'
+    });
 
-      const forgeConfig =
-        await loadForgeConfig({
+  /*
+   * 2. Aplicar prioridad:
+   *
+   * defaults
+   * → forge.config.json
+   * → CLI
+   */
+  const resolvedForgeConfig =
+    mergeForgeConfiguration({
+      fileConfig:
+        forgeConfig,
 
-          rootDirectory:
-            this.rootDirectory,
+      cliOptions: {
+        provider:
+          options.provider,
 
-          configFile:
-            normalizedOptions.configFile
+        schema:
+          options.schema,
 
-        });
+        host:
+          options.host,
 
-      const projectConfiguration =
-        mergeForgeConfiguration({
+        port:
+          options.port,
 
-          fileConfig:
-            forgeConfig,
+        database:
+          options.database,
 
-          cliOptions: {
+        user:
+          options.user,
 
-            framework:
-              normalizedOptions.framework,
+        framework:
+          options.framework,
 
-            moduleRoot:
-              normalizedOptions.moduleRoot,
+        moduleRoot:
+          options.moduleRoot,
 
-            apiPrefix:
-              normalizedOptions.apiPrefix,
+        apiPrefix:
+          options.apiPrefix,
 
-            routePrefix:
-              normalizedOptions.routePrefix
+        routePrefix:
+          options.routePrefix,
 
-          }
+        profile:
+          options.profile,
 
-        });
+        definitionsDirectory:
+          options.definitionsDirectory,
 
-      const configuration = {
+        output:
+          options.output
+      }
+    });
 
-        ...normalizedOptions,
+  /*
+   * 3. Convertir la estructura anidada
+   * a la configuración operativa plana
+   * que utiliza actualmente Scaffold.
+   */
+  const configuration =
+    normalizeOptions({
+      table:
+        options.table,
 
-        ...projectConfiguration,
+      schema:
+        resolvedForgeConfig
+          .source
+          .schema,
 
-        forgeConfigFile:
-          forgeConfig.configFile,
+      host:
+        resolvedForgeConfig
+          .source
+          .host,
 
-        forgeConfigFileFound:
-          forgeConfig.configFileFound
+      port:
+        resolvedForgeConfig
+          .source
+          .port,
 
-      };
+      database:
+        resolvedForgeConfig
+          .source
+          .database,
 
-      validateOptions(
-        configuration
-      );
+      user:
+        resolvedForgeConfig
+          .source
+          .user,
 
-      const logger =
-        new ScaffoldLogger(
-          configuration.quiet
-        );
+      password:
+        options.password ||
+        process.env
+          .SBN_POSTGRES_PASSWORD,
+
+      profile:
+        resolvedForgeConfig
+          .generation
+          .profile,
+
+      definitionsDirectory:
+        resolvedForgeConfig
+          .generation
+          .definitionsDirectory,
+
+      output:
+        resolvedForgeConfig
+          .generation
+          .output,
+
+      framework:
+        resolvedForgeConfig
+          .project
+          .framework,
+
+      moduleRoot:
+        resolvedForgeConfig
+          .project
+          .moduleRoot,
+
+      apiPrefix:
+        resolvedForgeConfig
+          .project
+          .apiPrefix,
+
+      routePrefix:
+        resolvedForgeConfig
+          .project
+          .routePrefix,
+
+      configFile:
+        options.configFile ||
+        'forge.config.json',
+
+      force:
+        options.force,
+
+      runTests:
+        options.runTests,
+
+      runLint:
+        options.runLint,
+
+      quiet:
+        options.quiet
+    });
+
+  configuration.forgeConfigFile =
+    forgeConfig.configFile;
+
+  configuration.forgeConfigFileFound =
+    forgeConfig.configFileFound;
+
+  validateOptions(
+    configuration
+  );
+
+  const logger =
+    new ScaffoldLogger(
+      configuration.quiet
+    );
+
+
+
+
+
+
+
+
 
 
     const paths =

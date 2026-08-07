@@ -4,7 +4,8 @@
   "description": "Generador oficial de APIs y módulos para SIMO Business Networks.",
   "main": "src/index.js",
   "bin": {
-    "sbn-forge": "bin/sbn-forge.js"
+    "sbn-forge": "bin/sbn-forge.js",
+    "forge": "bin/sbn-forge.js"
   },
   "type": "commonjs",
   "scripts": {

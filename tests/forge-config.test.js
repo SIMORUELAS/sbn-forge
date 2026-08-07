@@ -1,13 +1,25 @@
 'use strict';
 
-const path = require('path');
-const fs = require('fs-extra');
-const os = require('os');
+const path =
+  require(
+    'path'
+  );
+
+const fs =
+  require(
+    'fs-extra'
+  );
+
+const os =
+  require(
+    'os'
+  );
 
 const {
   DEFAULT_FORGE_CONFIG,
   loadForgeConfig,
-  mergeForgeConfiguration
+  mergeForgeConfiguration,
+  normalizeForgeConfig
 } = require(
   '../src/config/forge-config'
 );
@@ -47,33 +59,69 @@ describe(
           });
 
         expect(
-          configuration.framework
-        ).toBe(
-          'fastify'
-        );
+          configuration.source
+        ).toEqual({
+          provider:
+            'postgresql',
+
+          schema:
+            'public',
+
+          host:
+            'localhost',
+
+          port:
+            5432,
+
+          database:
+            null,
+
+          user:
+            'postgres'
+        });
 
         expect(
-          configuration.moduleRoot
-        ).toBe(
-          'modules'
-        );
+          configuration.project
+        ).toEqual({
+          framework:
+            'fastify',
+
+          moduleRoot:
+            'modules',
+
+          apiPrefix:
+            '/api',
+
+          routePrefix:
+            '/ia'
+        });
 
         expect(
-          configuration.apiPrefix
-        ).toBe(
-          '/api'
-        );
+          configuration.generation
+        ).toEqual({
+          profile:
+            'sbn-api-v2',
 
-        expect(
-          configuration.routePrefix
-        ).toBe(
-          '/ia'
-        );
+          definitionsDirectory:
+            './examples',
+
+          output:
+            './output'
+        });
 
         expect(
           configuration.configFileFound
         ).toBe(
           false
+        );
+
+        expect(
+          configuration.configFile
+        ).toBe(
+          path.join(
+            temporaryDirectory,
+            'forge.config.json'
+          )
         );
       }
     );
@@ -87,20 +135,54 @@ describe(
             'forge.config.json'
           ),
           {
-            framework:
-              'fastify',
+            source: {
+              provider:
+                'postgresql',
 
-            moduleRoot:
-              'modules_ia',
+              schema:
+                'simo_ai',
 
-            apiPrefix:
-              '/api/v1',
+              host:
+                'localhost',
 
-            routePrefix:
-              '/configuration'
+              port:
+                5432,
+
+              database:
+                'sbn_portal_test',
+
+              user:
+                'postgres'
+            },
+
+            project: {
+              framework:
+                'fastify',
+
+              moduleRoot:
+                'modules_ia',
+
+              apiPrefix:
+                '/api/v1',
+
+              routePrefix:
+                '/configuration'
+            },
+
+            generation: {
+              profile:
+                'sbn-api-v2',
+
+              definitionsDirectory:
+                './definitions',
+
+              output:
+                './generated'
+            }
           },
           {
-            spaces: 2
+            spaces:
+              2
           }
         );
 
@@ -113,17 +195,50 @@ describe(
         expect(
           configuration
         ).toMatchObject({
-          framework:
-            'fastify',
+          source: {
+            provider:
+              'postgresql',
 
-          moduleRoot:
-            'modules_ia',
+            schema:
+              'simo_ai',
 
-          apiPrefix:
-            '/api/v1',
+            host:
+              'localhost',
 
-          routePrefix:
-            '/configuration',
+            port:
+              5432,
+
+            database:
+              'sbn_portal_test',
+
+            user:
+              'postgres'
+          },
+
+          project: {
+            framework:
+              'fastify',
+
+            moduleRoot:
+              'modules_ia',
+
+            apiPrefix:
+              '/api/v1',
+
+            routePrefix:
+              '/configuration'
+          },
+
+          generation: {
+            profile:
+              'sbn-api-v2',
+
+            definitionsDirectory:
+              './definitions',
+
+            output:
+              './generated'
+          },
 
           configFileFound:
             true
@@ -140,17 +255,41 @@ describe(
               DEFAULT_FORGE_CONFIG,
 
             fileConfig: {
-              moduleRoot:
-                'modules_ia',
+              source: {
+                schema:
+                  'simo_ai',
 
-              apiPrefix:
-                '/api',
+                database:
+                  'sbn_portal_test'
+              },
 
-              routePrefix:
-                '/ia'
+              project: {
+                moduleRoot:
+                  'modules_ia',
+
+                apiPrefix:
+                  '/api',
+
+                routePrefix:
+                  '/ia'
+              },
+
+              generation: {
+                profile:
+                  'sbn-api-v2',
+
+                output:
+                  './output'
+              }
             },
 
             cliOptions: {
+              schema:
+                'public',
+
+              database:
+                'sbn_cli',
+
               moduleRoot:
                 'modules',
 
@@ -158,24 +297,60 @@ describe(
                 '/api/v2',
 
               routePrefix:
-                '/configuration'
+                '/configuration',
+
+              output:
+                './output-cli'
             }
           });
 
         expect(
           configuration
         ).toEqual({
-          framework:
-            'fastify',
+          source: {
+            provider:
+              'postgresql',
 
-          moduleRoot:
-            'modules',
+            schema:
+              'public',
 
-          apiPrefix:
-            '/api/v2',
+            host:
+              'localhost',
 
-          routePrefix:
-            '/configuration'
+            port:
+              5432,
+
+            database:
+              'sbn_cli',
+
+            user:
+              'postgres'
+          },
+
+          project: {
+            framework:
+              'fastify',
+
+            moduleRoot:
+              'modules',
+
+            apiPrefix:
+              '/api/v2',
+
+            routePrefix:
+              '/configuration'
+          },
+
+          generation: {
+            profile:
+              'sbn-api-v2',
+
+            definitionsDirectory:
+              './examples',
+
+            output:
+              './output-cli'
+          }
         });
       }
     );
@@ -186,33 +361,83 @@ describe(
         const configuration =
           mergeForgeConfiguration({
             fileConfig: {
-              moduleRoot:
-                './src\\modules_ia\\',
+              project: {
+                moduleRoot:
+                  './src\\modules_ia\\',
 
-              apiPrefix:
-                'api/v1/',
+                apiPrefix:
+                  'api/v1/',
 
-              routePrefix:
-                'ia/'
+                routePrefix:
+                  'ia/'
+              }
             }
           });
 
         expect(
-          configuration.moduleRoot
+          configuration.project.moduleRoot
         ).toBe(
           'src/modules_ia'
         );
 
         expect(
-          configuration.apiPrefix
+          configuration.project.apiPrefix
         ).toBe(
           '/api/v1'
         );
 
         expect(
-          configuration.routePrefix
+          configuration.project.routePrefix
         ).toBe(
           '/ia'
+        );
+      }
+    );
+
+    test(
+      'mantiene compatibilidad con configuración legacy',
+      () => {
+        const configuration =
+          normalizeForgeConfig({
+            framework:
+              'fastify',
+
+            moduleRoot:
+              'modules_ia',
+
+            apiPrefix:
+              '/api',
+
+            routePrefix:
+              '/ia'
+          });
+
+        expect(
+          configuration.project
+        ).toEqual({
+          framework:
+            'fastify',
+
+          moduleRoot:
+            'modules_ia',
+
+          apiPrefix:
+            '/api',
+
+          routePrefix:
+            '/ia'
+        });
+
+        expect(
+          configuration.source.provider
+        ).toBe(
+          'postgresql'
+        );
+
+        expect(
+          configuration.generation.profile
+        ).toBe(
+          'sbn-api-v2'
         );
       }
     );

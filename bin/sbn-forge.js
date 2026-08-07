@@ -9,21 +9,29 @@ const {
 
 runCli(
   process.argv
-).catch(
-  error => {
-    const message =
-      error &&
-      error.message
-        ? error.message
-        : String(
-            error
-          );
+)
+  .catch(
+    error => {
+      const message =
+        error?.stack ||
+        error?.message ||
+        String(
+          error
+        );
 
-    console.error(
-      `SBN Forge error: ${message}`
-    );
+      console.error(
+        ''
+      );
 
-    process.exitCode =
-      1;
-  }
-);
+      console.error(
+        'SBN Forge Error'
+      );
+
+      console.error(
+        message
+      );
+
+      process.exitCode =
+        1;
+    }
+  );

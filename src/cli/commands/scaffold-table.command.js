@@ -8,37 +8,40 @@ const {
 
 const PostgreSqlScaffoldService =
   require(
-    '../../../scaffold/postgresql-scaffold.service'
+    '../../scaffold/postgresql-scaffold.service'
   );
 
 /**
- * Registra el comando principal:
+ * Registra el comando corto:
  *
- * forge scaffold <table>
+ * forge scaffold-table <table>
  *
- * La configuración se obtiene de:
+ * El comando obtiene la mayor parte de la
+ * configuración desde forge.config.json.
  *
- * 1. Valores predeterminados
+ * Prioridad:
+ *
+ * 1. Valores predeterminados de Forge
  * 2. forge.config.json
  * 3. Variables de entorno
- * 4. Opciones del CLI
+ * 4. Opciones proporcionadas por CLI
  */
-function registerScaffoldCommand(
+function registerScaffoldTableCommand(
   parentCommand
 ) {
   const command =
     new Command(
-      'scaffold'
+      'scaffold-table'
     );
 
   command
     .description(
-      'Genera un módulo usando la configuración del proyecto.'
+      'Genera un módulo desde una tabla usando la configuración del proyecto.'
     )
 
     .argument(
       '<table>',
-      'Nombre de la tabla.'
+      'Nombre de la tabla PostgreSQL.'
     )
 
     .option(
@@ -48,30 +51,25 @@ function registerScaffoldCommand(
     )
 
     /*
-     * Origen de datos.
+     * Opciones del origen PostgreSQL.
      *
-     * Sin valores predeterminados aquí,
+     * No tienen valores predeterminados aquí,
      * porque forge.config.json debe poder
-     * proporcionar la configuración.
+     * proporcionar esos valores.
      */
     .option(
-      '--provider <provider>',
-      'Sobrescribe el proveedor configurado.'
-    )
-
-    .option(
       '--schema <schema>',
-      'Sobrescribe el schema configurado.'
+      'Sobrescribe el schema PostgreSQL configurado.'
     )
 
     .option(
       '--host <host>',
-      'Sobrescribe el servidor configurado.'
+      'Sobrescribe el servidor PostgreSQL configurado.'
     )
 
     .option(
       '--port <port>',
-      'Sobrescribe el puerto configurado.'
+      'Sobrescribe el puerto PostgreSQL configurado.'
     )
 
     .option(
@@ -81,7 +79,7 @@ function registerScaffoldCommand(
 
     .option(
       '--user <user>',
-      'Sobrescribe el usuario configurado.'
+      'Sobrescribe el usuario PostgreSQL configurado.'
     )
 
     .option(
@@ -90,11 +88,14 @@ function registerScaffoldCommand(
     )
 
     /*
-     * Proyecto destino.
+     * Opciones del proyecto destino.
+     *
+     * Tampoco tienen valores predeterminados
+     * para no sobrescribir forge.config.json.
      */
     .option(
       '--framework <framework>',
-      'Sobrescribe el framework configurado.'
+      'Sobrescribe el framework backend configurado.'
     )
 
     .option(
@@ -104,20 +105,20 @@ function registerScaffoldCommand(
 
     .option(
       '--api-prefix <prefix>',
-      'Sobrescribe el prefijo API configurado.'
+      'Sobrescribe el prefijo de registro de la API.'
     )
 
     .option(
       '--route-prefix <prefix>',
-      'Sobrescribe el prefijo funcional configurado.'
+      'Sobrescribe el prefijo funcional de las rutas.'
     )
 
     /*
-     * Generación.
+     * Opciones de generación.
      */
     .option(
       '--profile <profile>',
-      'Sobrescribe el perfil configurado.'
+      'Sobrescribe el perfil de generación configurado.'
     )
 
     .option(
@@ -130,9 +131,6 @@ function registerScaffoldCommand(
       'Sobrescribe el directorio de salida.'
     )
 
-    /*
-     * Ejecución.
-     */
     .option(
       '--force',
       'Sobrescribir archivos existentes.'
@@ -168,9 +166,9 @@ function registerScaffoldCommand(
             configFile:
               options.config,
 
-            provider:
-              options.provider,
-
+            /*
+             * Configuración PostgreSQL.
+             */
             schema:
               options.schema,
 
@@ -194,6 +192,9 @@ function registerScaffoldCommand(
             password:
               options.password,
 
+            /*
+             * Configuración del proyecto.
+             */
             framework:
               options.framework,
 
@@ -206,6 +207,9 @@ function registerScaffoldCommand(
             routePrefix:
               options.routePrefix,
 
+            /*
+             * Configuración de generación.
+             */
             profile:
               options.profile,
 
@@ -215,6 +219,9 @@ function registerScaffoldCommand(
             output:
               options.output,
 
+            /*
+             * Opciones operativas.
+             */
             force:
               Boolean(
                 options.force
@@ -264,4 +271,4 @@ function registerScaffoldCommand(
 }
 
 module.exports =
-  registerScaffoldCommand;
+  registerScaffoldTableCommand;

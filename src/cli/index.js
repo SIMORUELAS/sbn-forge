@@ -28,6 +28,11 @@ const registerScaffoldCommand =
     './commands/scaffold/scaffold.command'
   );
 
+const registerScaffoldTableCommand =
+  require(
+    './commands/scaffold-table.command'
+  );
+
 async function runCli(
   argv = process.argv
 ) {
@@ -71,7 +76,21 @@ async function runCli(
     inspect
   );
 
+  /*
+   * Comando tradicional:
+   *
+   * sbn-forge scaffold postgresql <table>
+   */
   registerScaffoldCommand(
+    program
+  );
+
+  /*
+   * Comando corto compatible:
+   *
+   * sbn-forge scaffold-table <table>
+   */
+  registerScaffoldTableCommand(
     program
   );
 
