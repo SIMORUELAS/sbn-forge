@@ -1,0 +1,362 @@
+{
+  "schema": "simo_ai",
+  "table": "ai_business_events",
+  "columns": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": true,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "gen_random_uuid()"
+    },
+    {
+      "name": "event_definition_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_event_definitions",
+        "column": "id"
+      }
+    },
+    {
+      "name": "event_code",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 100
+    },
+    {
+      "name": "event_key",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 180
+    },
+    {
+      "name": "idempotency_key",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 180
+    },
+    {
+      "name": "correlation_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "causation_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "organization_id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "branch_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "source_module_code",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 60
+    },
+    {
+      "name": "source_component",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 80
+    },
+    {
+      "name": "source_system",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 80
+    },
+    {
+      "name": "entity_type",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 80
+    },
+    {
+      "name": "entity_id",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 150
+    },
+    {
+      "name": "event_status",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "'received'::character varying",
+      "length": 30
+    },
+    {
+      "name": "severity",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "'info'::character varying",
+      "length": 20
+    },
+    {
+      "name": "occurred_at",
+      "type": "timestamp without time zone",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "received_at",
+      "type": "timestamp without time zone",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "processing_started_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "processed_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "payload",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "context_data",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "metadata",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "error_message",
+      "type": "text",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "error_detail",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp without time zone",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "created_by",
+      "type": "bigint",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "created_from",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "length": 50
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp without time zone",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "updated_by",
+      "type": "bigint",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "updated_from",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "length": 50
+    },
+    {
+      "name": "deleted_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false
+    },
+    {
+      "name": "deleted_by",
+      "type": "bigint",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "version_no",
+      "type": "integer",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "1",
+      "precision": 32,
+      "scale": 0
+    }
+  ],
+  "seeds": [
+    {
+      "event_definition_id": null,
+      "event_code": "EXAMPLE-CODE",
+      "event_key": null,
+      "idempotency_key": null,
+      "correlation_id": null,
+      "causation_id": null,
+      "organization_id": "{{ORGANIZATION_ID}}",
+      "branch_id": null,
+      "source_module_code": "EXAMPLE-CODE",
+      "source_component": null,
+      "source_system": null,
+      "entity_type": null,
+      "entity_id": null,
+      "event_status": "received",
+      "severity": "info",
+      "occurred_at": null,
+      "received_at": null,
+      "processing_started_at": null,
+      "processed_at": null,
+      "payload": {},
+      "context_data": {},
+      "metadata": {},
+      "error_message": null,
+      "error_detail": {}
+    }
+  ]
+}

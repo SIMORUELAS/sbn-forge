@@ -1,6 +1,6 @@
 {
   "schema": "simo_ai",
-  "table": "ai_business_models",
+  "table": "ai_event_definitions",
   "columns": [
     {
       "name": "id",
@@ -19,7 +19,7 @@
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "length": 80
+      "length": 100
     },
     {
       "name": "name",
@@ -28,7 +28,7 @@
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "length": 150
+      "length": 180
     },
     {
       "name": "description",
@@ -39,7 +39,25 @@
       "writable": true
     },
     {
-      "name": "business_sector",
+      "name": "event_category",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 60
+    },
+    {
+      "name": "source_module_code",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 60
+    },
+    {
+      "name": "source_component",
       "type": "character varying",
       "nullable": true,
       "primaryKey": false,
@@ -48,13 +66,80 @@
       "length": 80
     },
     {
-      "name": "business_type",
+      "name": "entity_type",
       "type": "character varying",
       "nullable": true,
       "primaryKey": false,
       "generated": false,
       "writable": true,
       "length": 80
+    },
+    {
+      "name": "default_severity",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "'info'::character varying",
+      "length": 20
+    },
+    {
+      "name": "requires_acknowledgement",
+      "type": "boolean",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "false"
+    },
+    {
+      "name": "allows_automation",
+      "type": "boolean",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "true"
+    },
+    {
+      "name": "retention_days",
+      "type": "integer",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "365",
+      "precision": 32,
+      "scale": 0
+    },
+    {
+      "name": "payload_schema",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "routing_config",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "metadata",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
     },
     {
       "name": "status",
@@ -75,22 +160,6 @@
       "generated": false,
       "writable": true,
       "length": 30
-    },
-    {
-      "name": "configuration_json",
-      "type": "jsonb",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true
-    },
-    {
-      "name": "metadata",
-      "type": "jsonb",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true
     },
     {
       "name": "created_at",
@@ -194,108 +263,26 @@
       "default": "1",
       "precision": 32,
       "scale": 0
-    },
-    {
-      "name": "model_scope",
-      "type": "character varying",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "'global_template'::character varying",
-      "length": 30
-    },
-    {
-      "name": "publisher_organization_id",
-      "type": "uuid",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true
-    },
-    {
-      "name": "is_deployable",
-      "type": "boolean",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "true"
-    },
-    {
-      "name": "allow_client_customization",
-      "type": "boolean",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "true"
-    },
-    {
-      "name": "default_update_strategy",
-      "type": "character varying",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "'manual_approval'::character varying",
-      "length": 30
-    },
-    {
-      "name": "current_version",
-      "type": "character varying",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "'1.0.0'::character varying",
-      "length": 30
-    },
-    {
-      "name": "published_at",
-      "type": "timestamp without time zone",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true
-    },
-    {
-      "name": "published_by",
-      "type": "bigint",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "precision": 64,
-      "scale": 0
     }
   ],
   "seeds": [
     {
-      "code": "SBN-SMART-COLLECTIONS",
-      "name": "SBN Smart Collections",
-      "description": "Modelo empresarial para automatización de cobranza.",
-      "business_sector": "Servicios empresariales",
-      "business_type": "SaaS",
+      "code": "example_code",
+      "name": "example_name",
+      "description": null,
+      "event_category": "example_event_category",
+      "source_module_code": "EXAMPLE-CODE",
+      "source_component": null,
+      "entity_type": null,
+      "default_severity": "info",
+      "requires_acknowledgement": false,
+      "allows_automation": true,
+      "retention_days": 365,
+      "payload_schema": {},
+      "routing_config": {},
+      "metadata": {},
       "status": "active",
-      "lifecycle_stage": "development",
-      "configuration_json": {
-        "collections": true,
-        "forecast": true
-      },
-      "metadata": {
-        "source": "sbn-forge"
-      },
-      "model_scope": "global_template",
-      "is_deployable": true,
-      "allow_client_customization": true,
-      "default_update_strategy": "manual_approval",
-      "current_version": "1.0.0"
+      "lifecycle_stage": null
     }
   ]
 }

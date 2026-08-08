@@ -43,6 +43,11 @@ const registerDoctorCommand =
     './commands/doctor.command'
   );
 
+const registerRoutesCommand =
+  require(
+    './commands/routes/routes.command'
+  );
+
 async function runCli(
   argv = process.argv
 ) {
@@ -112,7 +117,11 @@ async function runCli(
   registerDoctorCommand(
     program
   );
- 
+
+  registerRoutesCommand(
+    program
+  );
+
 
   program.showHelpAfterError();
 

@@ -1,0 +1,247 @@
+{
+  "schema": "simo_ai",
+  "table": "ai_prompt_templates",
+  "columns": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": true,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "gen_random_uuid()"
+    },
+    {
+      "name": "code",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 80
+    },
+    {
+      "name": "name",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 150
+    },
+    {
+      "name": "prompt_type",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 50
+    },
+    {
+      "name": "agent_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_agents",
+        "column": "id"
+      }
+    },
+    {
+      "name": "organization_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "branch_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "created_by",
+      "type": "bigint",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "version",
+      "type": "integer",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "1",
+      "precision": 32,
+      "scale": 0
+    },
+    {
+      "name": "status",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "'active'::character varying",
+      "length": 20
+    },
+    {
+      "name": "content",
+      "type": "text",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "variables_contract",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "config",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "lifecycle_stage",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 30
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp without time zone",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp without time zone",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "created_from",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "length": 50
+    },
+    {
+      "name": "updated_by",
+      "type": "bigint",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "updated_from",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "length": 50
+    },
+    {
+      "name": "deleted_by",
+      "type": "bigint",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "deleted_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false
+    },
+    {
+      "name": "version_no",
+      "type": "integer",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "1",
+      "precision": 32,
+      "scale": 0
+    }
+  ],
+  "seeds": [
+    {
+      "code": "example_code",
+      "name": "example_name",
+      "prompt_type": "example_prompt_type",
+      "agent_id": null,
+      "organization_id": null,
+      "branch_id": null,
+      "version": 1,
+      "status": "active",
+      "content": "example_content",
+      "variables_contract": {},
+      "config": {},
+      "lifecycle_stage": null
+    }
+  ]
+}

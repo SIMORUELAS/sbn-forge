@@ -1,67 +1,90 @@
 {
   "schema": "simo_ai",
-  "table": "ai_business_model_departments",
+  "table": "ai_business_teams",
   "columns": [
     {
       "name": "id",
-      "type": "bigint",
+      "type": "uuid",
       "nullable": false,
       "primaryKey": true,
-      "generated": true,
+      "generated": false,
       "writable": false,
-      "precision": 64,
-      "scale": 0
+      "hasDefault": true,
+      "default": "gen_random_uuid()"
     },
     {
-      "name": "business_model_id",
-      "type": "uuid",
+      "name": "code",
+      "type": "character varying",
       "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "foreignKey": {
-        "schema": "simo_ai",
-        "table": "ai_business_models",
-        "column": "id"
-      }
+      "length": 80
     },
     {
-      "name": "department_id",
-      "type": "uuid",
+      "name": "name",
+      "type": "character varying",
       "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "foreignKey": {
-        "schema": "simo_ai",
-        "table": "ai_intelligent_departments",
-        "column": "id"
-      }
+      "length": 150
     },
     {
-      "name": "is_required",
-      "type": "boolean",
+      "name": "description",
+      "type": "text",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "team_type",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 50
+    },
+    {
+      "name": "business_area",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 80
+    },
+    {
+      "name": "organization_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "branch_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "status",
+      "type": "character varying",
       "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
       "hasDefault": true,
-      "default": "true"
+      "default": "'active'::character varying",
+      "length": 20
     },
     {
-      "name": "execution_order",
-      "type": "integer",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "1",
-      "precision": 32,
-      "scale": 0
-    },
-    {
-      "name": "recommended_plan",
+      "name": "lifecycle_stage",
       "type": "character varying",
       "nullable": true,
       "primaryKey": false,
@@ -71,6 +94,14 @@
     },
     {
       "name": "configuration_json",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "metadata",
       "type": "jsonb",
       "nullable": true,
       "primaryKey": false,
@@ -94,6 +125,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -123,6 +159,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -150,6 +191,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -168,12 +214,17 @@
   ],
   "seeds": [
     {
-      "business_model_id": "{{AI_BUSINESS_MODELS_ID}}",
-      "department_id": "{{AI_INTELLIGENT_DEPARTMENTS_ID}}",
-      "is_required": true,
-      "execution_order": 1,
-      "recommended_plan": null,
-      "configuration_json": {}
+      "code": "example_code",
+      "name": "example_name",
+      "description": null,
+      "team_type": "example_team_type",
+      "business_area": null,
+      "organization_id": null,
+      "branch_id": null,
+      "status": "active",
+      "lifecycle_stage": null,
+      "configuration_json": {},
+      "metadata": {}
     }
   ]
 }

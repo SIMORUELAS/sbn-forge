@@ -36,12 +36,31 @@ const GENERIC_FILES = [
  * - Perfil generic.
  * - Perfil sbn-api-v2.
  */
-async function generateApi(
+  async function generateApi(
   context,
   {
     output = './output',
+
     force = false,
+
     dryRun = false,
+
+    /*
+     * Política de escritura:
+     *
+     * create:
+     *   comportamiento histórico.
+     *   No sobrescribe archivos existentes.
+     *
+     * safe:
+     *   permite regeneración controlada
+     *   desde forge scaffold.
+     *
+     * force:
+     *   sobrescritura explícita.
+     */
+    writeMode = 'create',
+
     logger = {
       info() {}
     }
@@ -75,7 +94,8 @@ async function generateApi(
   const writer =
     new FileWriter({
       force,
-      dryRun
+      dryRun,
+      writeMode
     });
 
   await manager.prepare({

@@ -1,0 +1,367 @@
+{
+  "schema": "simo_ai",
+  "table": "ai_decision_outcomes",
+  "columns": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": true,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "gen_random_uuid()"
+    },
+    {
+      "name": "organization_id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "branch_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "event_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_business_events",
+        "column": "id"
+      }
+    },
+    {
+      "name": "action_id",
+      "type": "bigint",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_event_actions",
+        "column": "id"
+      },
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "work_item_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "decision_code",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 100
+    },
+    {
+      "name": "decision_type",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 60
+    },
+    {
+      "name": "decision_summary",
+      "type": "text",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "expected_outcome",
+      "type": "text",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "actual_outcome",
+      "type": "text",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "expected_value",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "actual_value",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "variance_value",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "outcome_status",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "'pending'::character varying",
+      "length": 30
+    },
+    {
+      "name": "impact_type",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 30
+    },
+    {
+      "name": "impact_amount",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "quality_score",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 9,
+      "scale": 4
+    },
+    {
+      "name": "confidence_score",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 9,
+      "scale": 4
+    },
+    {
+      "name": "evaluated_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "evaluated_by",
+      "type": "bigint",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "evaluation_notes",
+      "type": "text",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "evidence_json",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "metadata",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp without time zone",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "created_by",
+      "type": "bigint",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "created_from",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "length": 50
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp without time zone",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "updated_by",
+      "type": "bigint",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "updated_from",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "length": 50
+    },
+    {
+      "name": "deleted_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false
+    },
+    {
+      "name": "deleted_by",
+      "type": "bigint",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "version_no",
+      "type": "integer",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "1",
+      "precision": 32,
+      "scale": 0
+    }
+  ],
+  "seeds": [
+    {
+      "organization_id": "{{ORGANIZATION_ID}}",
+      "branch_id": null,
+      "event_id": null,
+      "action_id": null,
+      "work_item_id": null,
+      "decision_code": "EXAMPLE-CODE",
+      "decision_type": "example_decision_type",
+      "decision_summary": "example_decision_summary",
+      "expected_outcome": null,
+      "actual_outcome": null,
+      "expected_value": null,
+      "actual_value": null,
+      "variance_value": null,
+      "outcome_status": "pending",
+      "impact_type": null,
+      "impact_amount": null,
+      "quality_score": null,
+      "confidence_score": null,
+      "evaluated_at": null,
+      "evaluated_by": null,
+      "evaluation_notes": null,
+      "evidence_json": {},
+      "metadata": {}
+    }
+  ]
+}

@@ -1,0 +1,280 @@
+{
+  "schema": "simo_ai",
+  "table": "ai_center_metrics",
+  "columns": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": true,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "gen_random_uuid()"
+    },
+    {
+      "name": "center_id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_intelligent_centers",
+        "column": "id"
+      }
+    },
+    {
+      "name": "organization_id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "branch_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "metric_date",
+      "type": "date",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "metric_granularity",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "'daily'::character varying",
+      "length": 20
+    },
+    {
+      "name": "events_received",
+      "type": "bigint",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "0",
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "events_completed",
+      "type": "bigint",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "0",
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "events_failed",
+      "type": "bigint",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "0",
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "actions_generated",
+      "type": "bigint",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "0",
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "automated_actions",
+      "type": "bigint",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "0",
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "work_items_generated",
+      "type": "bigint",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "0",
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "avg_response_ms",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 18,
+      "scale": 4
+    },
+    {
+      "name": "avg_resolution_ms",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 18,
+      "scale": 4
+    },
+    {
+      "name": "automation_rate",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 9,
+      "scale": 4
+    },
+    {
+      "name": "success_rate",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 9,
+      "scale": 4
+    },
+    {
+      "name": "estimated_cost",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "estimated_savings",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "estimated_roi",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "health_score",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 9,
+      "scale": 4
+    },
+    {
+      "name": "metadata",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp without time zone",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp without time zone",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "version_no",
+      "type": "integer",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "1",
+      "precision": 32,
+      "scale": 0
+    }
+  ],
+  "seeds": [
+    {
+      "center_id": "{{AI_INTELLIGENT_CENTERS_ID}}",
+      "organization_id": "{{ORGANIZATION_ID}}",
+      "branch_id": null,
+      "metric_date": "2026-01-01T00:00:00.000Z",
+      "metric_granularity": "daily",
+      "events_received": 0,
+      "events_completed": 0,
+      "events_failed": 0,
+      "actions_generated": 0,
+      "automated_actions": 0,
+      "work_items_generated": 0,
+      "avg_response_ms": null,
+      "avg_resolution_ms": null,
+      "automation_rate": null,
+      "success_rate": null,
+      "estimated_cost": null,
+      "estimated_savings": null,
+      "estimated_roi": null,
+      "health_score": null,
+      "metadata": {}
+    }
+  ]
+}

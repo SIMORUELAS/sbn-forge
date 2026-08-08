@@ -1,0 +1,130 @@
+{
+  "schema": "simo_ai",
+  "table": "ai_business_model_component_dependencies",
+  "columns": [
+    {
+      "name": "id",
+      "type": "bigint",
+      "nullable": false,
+      "primaryKey": true,
+      "generated": true,
+      "writable": false,
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "release_id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_business_model_releases",
+        "column": "id"
+      }
+    },
+    {
+      "name": "component_item_id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_business_model_release_items",
+        "column": "id"
+      }
+    },
+    {
+      "name": "depends_on_item_id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_business_model_release_items",
+        "column": "id"
+      }
+    },
+    {
+      "name": "dependency_type",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "'required'::character varying",
+      "length": 30
+    },
+    {
+      "name": "dependency_order",
+      "type": "integer",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "1",
+      "precision": 32,
+      "scale": 0
+    },
+    {
+      "name": "condition_json",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp without time zone",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "created_by",
+      "type": "bigint",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "created_from",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "length": 50
+    }
+  ],
+  "seeds": [
+    {
+      "release_id": "{{AI_BUSINESS_MODEL_RELEASES_ID}}",
+      "component_item_id": "{{AI_BUSINESS_MODEL_RELEASE_ITEMS_ID}}",
+      "depends_on_item_id": "{{AI_BUSINESS_MODEL_RELEASE_ITEMS_ID}}",
+      "dependency_type": "required",
+      "dependency_order": 1,
+      "condition_json": {}
+    }
+  ]
+}

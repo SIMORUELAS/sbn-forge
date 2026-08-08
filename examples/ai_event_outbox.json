@@ -1,6 +1,6 @@
 {
   "schema": "simo_ai",
-  "table": "ai_business_model_departments",
+  "table": "ai_event_outbox",
   "columns": [
     {
       "name": "id",
@@ -13,7 +13,7 @@
       "scale": 0
     },
     {
-      "name": "business_model_id",
+      "name": "event_id",
       "type": "uuid",
       "nullable": false,
       "primaryKey": false,
@@ -21,56 +21,107 @@
       "writable": true,
       "foreignKey": {
         "schema": "simo_ai",
-        "table": "ai_business_models",
+        "table": "ai_business_events",
         "column": "id"
       }
     },
     {
-      "name": "department_id",
-      "type": "uuid",
+      "name": "topic",
+      "type": "character varying",
       "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "foreignKey": {
-        "schema": "simo_ai",
-        "table": "ai_intelligent_departments",
-        "column": "id"
-      }
+      "length": 120
     },
     {
-      "name": "is_required",
-      "type": "boolean",
+      "name": "partition_key",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 180
+    },
+    {
+      "name": "message_payload",
+      "type": "jsonb",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "message_headers",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "publish_status",
+      "type": "character varying",
       "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
       "hasDefault": true,
-      "default": "true"
+      "default": "'pending'::character varying",
+      "length": 30
     },
     {
-      "name": "execution_order",
+      "name": "attempt_count",
       "type": "integer",
       "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
       "hasDefault": true,
-      "default": "1",
+      "default": "0",
       "precision": 32,
       "scale": 0
     },
     {
-      "name": "recommended_plan",
-      "type": "character varying",
-      "nullable": true,
+      "name": "max_attempts",
+      "type": "integer",
+      "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "length": 30
+      "hasDefault": true,
+      "default": "10",
+      "precision": 32,
+      "scale": 0
     },
     {
-      "name": "configuration_json",
+      "name": "available_at",
+      "type": "timestamp without time zone",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "published_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "error_message",
+      "type": "text",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "error_detail",
       "type": "jsonb",
       "nullable": true,
       "primaryKey": false,
@@ -88,25 +139,6 @@
       "default": "CURRENT_TIMESTAMP"
     },
     {
-      "name": "created_by",
-      "type": "bigint",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": false,
-      "precision": 64,
-      "scale": 0
-    },
-    {
-      "name": "created_from",
-      "type": "character varying",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": false,
-      "length": 50
-    },
-    {
       "name": "updated_at",
       "type": "timestamp without time zone",
       "nullable": false,
@@ -115,43 +147,6 @@
       "writable": false,
       "hasDefault": true,
       "default": "CURRENT_TIMESTAMP"
-    },
-    {
-      "name": "updated_by",
-      "type": "bigint",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": false,
-      "precision": 64,
-      "scale": 0
-    },
-    {
-      "name": "updated_from",
-      "type": "character varying",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": false,
-      "length": 50
-    },
-    {
-      "name": "deleted_at",
-      "type": "timestamp without time zone",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": false
-    },
-    {
-      "name": "deleted_by",
-      "type": "bigint",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": false,
-      "precision": 64,
-      "scale": 0
     },
     {
       "name": "version_no",
@@ -168,12 +163,18 @@
   ],
   "seeds": [
     {
-      "business_model_id": "{{AI_BUSINESS_MODELS_ID}}",
-      "department_id": "{{AI_INTELLIGENT_DEPARTMENTS_ID}}",
-      "is_required": true,
-      "execution_order": 1,
-      "recommended_plan": null,
-      "configuration_json": {}
+      "event_id": "{{AI_BUSINESS_EVENTS_ID}}",
+      "topic": "example_topic",
+      "partition_key": null,
+      "message_payload": {},
+      "message_headers": {},
+      "publish_status": "pending",
+      "attempt_count": 0,
+      "max_attempts": 10,
+      "available_at": null,
+      "published_at": null,
+      "error_message": null,
+      "error_detail": {}
     }
   ]
 }

@@ -89,6 +89,15 @@ class ScaffoldRunner {
         options.routePrefix
       ];
 
+
+      argumentsList.push(
+        '--write-mode',
+        options.force
+          ? 'force'
+          : 'safe'
+      );
+
+      
       if (
         options.force
       ) {

@@ -1,0 +1,403 @@
+{
+  "schema": "simo_ai",
+  "table": "ai_artifacts",
+  "columns": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": true,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "gen_random_uuid()"
+    },
+    {
+      "name": "task_id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_tasks",
+        "column": "id"
+      }
+    },
+    {
+      "name": "execution_id",
+      "type": "bigint",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_task_executions",
+        "column": "id"
+      },
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "agent_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_agents",
+        "column": "id"
+      }
+    },
+    {
+      "name": "artifact_code",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 80
+    },
+    {
+      "name": "parent_artifact_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_artifacts",
+        "column": "id"
+      }
+    },
+    {
+      "name": "artifact_type",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 50
+    },
+    {
+      "name": "title",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 200
+    },
+    {
+      "name": "artifact_summary",
+      "type": "text",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "version",
+      "type": "integer",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "1",
+      "precision": 32,
+      "scale": 0
+    },
+    {
+      "name": "status",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "'draft'::character varying",
+      "length": 20
+    },
+    {
+      "name": "target_module_code",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 60
+    },
+    {
+      "name": "entity_type",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 60
+    },
+    {
+      "name": "entity_id",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 120
+    },
+    {
+      "name": "work_item_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "organization_id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "branch_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "created_by",
+      "type": "bigint",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "content",
+      "type": "text",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "content_json",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "file_path",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 500
+    },
+    {
+      "name": "mime_type",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 100
+    },
+    {
+      "name": "token_estimate",
+      "type": "integer",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 32,
+      "scale": 0
+    },
+    {
+      "name": "is_final",
+      "type": "boolean",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "false"
+    },
+    {
+      "name": "is_compact_summary",
+      "type": "boolean",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "false"
+    },
+    {
+      "name": "approved_by",
+      "type": "bigint",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "approved_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "lifecycle_stage",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 30
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp without time zone",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp without time zone",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "created_from",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "length": 50
+    },
+    {
+      "name": "updated_by",
+      "type": "bigint",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "updated_from",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "length": 50
+    },
+    {
+      "name": "deleted_by",
+      "type": "bigint",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "deleted_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false
+    },
+    {
+      "name": "version_no",
+      "type": "integer",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "1",
+      "precision": 32,
+      "scale": 0
+    }
+  ],
+  "seeds": [
+    {
+      "task_id": "{{AI_TASKS_ID}}",
+      "execution_id": null,
+      "agent_id": null,
+      "artifact_code": "EXAMPLE-CODE",
+      "parent_artifact_id": null,
+      "artifact_type": "example_artifact_type",
+      "title": null,
+      "artifact_summary": null,
+      "version": 1,
+      "status": "draft",
+      "target_module_code": "EXAMPLE-CODE",
+      "entity_type": null,
+      "entity_id": null,
+      "work_item_id": null,
+      "organization_id": "{{ORGANIZATION_ID}}",
+      "branch_id": null,
+      "content": null,
+      "content_json": {},
+      "file_path": null,
+      "mime_type": null,
+      "token_estimate": null,
+      "is_final": false,
+      "is_compact_summary": false,
+      "approved_by": null,
+      "approved_at": null,
+      "lifecycle_stage": null
+    }
+  ]
+}

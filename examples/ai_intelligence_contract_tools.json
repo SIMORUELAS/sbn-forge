@@ -1,6 +1,6 @@
 {
   "schema": "simo_ai",
-  "table": "ai_business_model_departments",
+  "table": "ai_intelligence_contract_tools",
   "columns": [
     {
       "name": "id",
@@ -13,7 +13,7 @@
       "scale": 0
     },
     {
-      "name": "business_model_id",
+      "name": "contract_id",
       "type": "uuid",
       "nullable": false,
       "primaryKey": false,
@@ -21,25 +21,47 @@
       "writable": true,
       "foreignKey": {
         "schema": "simo_ai",
-        "table": "ai_business_models",
+        "table": "ai_intelligence_contracts",
         "column": "id"
       }
     },
     {
-      "name": "department_id",
-      "type": "uuid",
+      "name": "tool_code",
+      "type": "character varying",
       "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "foreignKey": {
-        "schema": "simo_ai",
-        "table": "ai_intelligent_departments",
-        "column": "id"
-      }
+      "length": 80
     },
     {
-      "name": "is_required",
+      "name": "tool_name",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 150
+    },
+    {
+      "name": "description",
+      "type": "text",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "tool_type",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 50
+    },
+    {
+      "name": "is_enabled",
       "type": "boolean",
       "nullable": false,
       "primaryKey": false,
@@ -47,27 +69,6 @@
       "writable": true,
       "hasDefault": true,
       "default": "true"
-    },
-    {
-      "name": "execution_order",
-      "type": "integer",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "1",
-      "precision": 32,
-      "scale": 0
-    },
-    {
-      "name": "recommended_plan",
-      "type": "character varying",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "length": 30
     },
     {
       "name": "configuration_json",
@@ -94,6 +95,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -123,6 +129,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -150,6 +161,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -168,11 +184,12 @@
   ],
   "seeds": [
     {
-      "business_model_id": "{{AI_BUSINESS_MODELS_ID}}",
-      "department_id": "{{AI_INTELLIGENT_DEPARTMENTS_ID}}",
-      "is_required": true,
-      "execution_order": 1,
-      "recommended_plan": null,
+      "contract_id": "{{AI_INTELLIGENCE_CONTRACTS_ID}}",
+      "tool_code": "EXAMPLE-CODE",
+      "tool_name": "example_tool_name",
+      "description": null,
+      "tool_type": null,
+      "is_enabled": true,
       "configuration_json": {}
     }
   ]

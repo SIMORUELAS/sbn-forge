@@ -1,6 +1,6 @@
 {
   "schema": "simo_ai",
-  "table": "ai_business_models",
+  "table": "ai_business_model_deployment_overrides",
   "columns": [
     {
       "name": "id",
@@ -13,16 +13,50 @@
       "default": "gen_random_uuid()"
     },
     {
-      "name": "code",
+      "name": "deployment_id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_business_model_deployments",
+        "column": "id"
+      }
+    },
+    {
+      "name": "deployment_item_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_business_model_deployment_items",
+        "column": "id"
+      }
+    },
+    {
+      "name": "component_type",
       "type": "character varying",
       "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "length": 80
+      "length": 40
     },
     {
-      "name": "name",
+      "name": "target_entity_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "override_key",
       "type": "character varying",
       "nullable": false,
       "primaryKey": false,
@@ -31,7 +65,34 @@
       "length": 150
     },
     {
-      "name": "description",
+      "name": "override_type",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "'configuration'::character varying",
+      "length": 30
+    },
+    {
+      "name": "original_value",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "override_value",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "override_reason",
       "type": "text",
       "nullable": true,
       "primaryKey": false,
@@ -39,58 +100,57 @@
       "writable": true
     },
     {
-      "name": "business_sector",
-      "type": "character varying",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "length": 80
-    },
-    {
-      "name": "business_type",
-      "type": "character varying",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "length": 80
-    },
-    {
-      "name": "status",
-      "type": "character varying",
+      "name": "preserve_on_update",
+      "type": "boolean",
       "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
       "hasDefault": true,
-      "default": "'active'::character varying",
-      "length": 20
+      "default": "true"
     },
     {
-      "name": "lifecycle_stage",
-      "type": "character varying",
+      "name": "requires_review_on_update",
+      "type": "boolean",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "true"
+    },
+    {
+      "name": "is_active",
+      "type": "boolean",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "true"
+    },
+    {
+      "name": "approved_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "approved_by",
+      "type": "bigint",
       "nullable": true,
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "length": 30
-    },
-    {
-      "name": "configuration_json",
-      "type": "jsonb",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true
-    },
-    {
-      "name": "metadata",
-      "type": "jsonb",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
+      "precision": 64,
+      "scale": 0
     },
     {
       "name": "created_at",
@@ -194,108 +254,24 @@
       "default": "1",
       "precision": 32,
       "scale": 0
-    },
-    {
-      "name": "model_scope",
-      "type": "character varying",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "'global_template'::character varying",
-      "length": 30
-    },
-    {
-      "name": "publisher_organization_id",
-      "type": "uuid",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true
-    },
-    {
-      "name": "is_deployable",
-      "type": "boolean",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "true"
-    },
-    {
-      "name": "allow_client_customization",
-      "type": "boolean",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "true"
-    },
-    {
-      "name": "default_update_strategy",
-      "type": "character varying",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "'manual_approval'::character varying",
-      "length": 30
-    },
-    {
-      "name": "current_version",
-      "type": "character varying",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "'1.0.0'::character varying",
-      "length": 30
-    },
-    {
-      "name": "published_at",
-      "type": "timestamp without time zone",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true
-    },
-    {
-      "name": "published_by",
-      "type": "bigint",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "precision": 64,
-      "scale": 0
     }
   ],
   "seeds": [
     {
-      "code": "SBN-SMART-COLLECTIONS",
-      "name": "SBN Smart Collections",
-      "description": "Modelo empresarial para automatización de cobranza.",
-      "business_sector": "Servicios empresariales",
-      "business_type": "SaaS",
-      "status": "active",
-      "lifecycle_stage": "development",
-      "configuration_json": {
-        "collections": true,
-        "forecast": true
-      },
-      "metadata": {
-        "source": "sbn-forge"
-      },
-      "model_scope": "global_template",
-      "is_deployable": true,
-      "allow_client_customization": true,
-      "default_update_strategy": "manual_approval",
-      "current_version": "1.0.0"
+      "deployment_id": "{{AI_BUSINESS_MODEL_DEPLOYMENTS_ID}}",
+      "deployment_item_id": null,
+      "component_type": "example_component_type",
+      "target_entity_id": null,
+      "override_key": "example_override_key",
+      "override_type": "configuration",
+      "original_value": {},
+      "override_value": {},
+      "override_reason": null,
+      "preserve_on_update": true,
+      "requires_review_on_update": true,
+      "is_active": true,
+      "approved_at": null,
+      "approved_by": null
     }
   ]
 }

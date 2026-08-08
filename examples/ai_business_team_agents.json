@@ -1,6 +1,6 @@
 {
   "schema": "simo_ai",
-  "table": "ai_business_model_departments",
+  "table": "ai_business_team_agents",
   "columns": [
     {
       "name": "id",
@@ -13,7 +13,7 @@
       "scale": 0
     },
     {
-      "name": "business_model_id",
+      "name": "team_id",
       "type": "uuid",
       "nullable": false,
       "primaryKey": false,
@@ -21,12 +21,12 @@
       "writable": true,
       "foreignKey": {
         "schema": "simo_ai",
-        "table": "ai_business_models",
+        "table": "ai_business_teams",
         "column": "id"
       }
     },
     {
-      "name": "department_id",
+      "name": "agent_id",
       "type": "uuid",
       "nullable": false,
       "primaryKey": false,
@@ -34,19 +34,18 @@
       "writable": true,
       "foreignKey": {
         "schema": "simo_ai",
-        "table": "ai_intelligent_departments",
+        "table": "ai_agents",
         "column": "id"
       }
     },
     {
-      "name": "is_required",
-      "type": "boolean",
-      "nullable": false,
+      "name": "role_in_team",
+      "type": "character varying",
+      "nullable": true,
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "hasDefault": true,
-      "default": "true"
+      "length": 80
     },
     {
       "name": "execution_order",
@@ -61,12 +60,44 @@
       "scale": 0
     },
     {
-      "name": "recommended_plan",
-      "type": "character varying",
-      "nullable": true,
+      "name": "is_active",
+      "type": "boolean",
+      "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
+      "hasDefault": true,
+      "default": "true"
+    },
+    {
+      "name": "is_required",
+      "type": "boolean",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "true"
+    },
+    {
+      "name": "is_lead",
+      "type": "boolean",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "false"
+    },
+    {
+      "name": "handoff_policy",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "'automatic'::character varying",
       "length": 30
     },
     {
@@ -94,6 +125,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -123,6 +159,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -150,6 +191,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -168,11 +214,14 @@
   ],
   "seeds": [
     {
-      "business_model_id": "{{AI_BUSINESS_MODELS_ID}}",
-      "department_id": "{{AI_INTELLIGENT_DEPARTMENTS_ID}}",
-      "is_required": true,
+      "team_id": "{{AI_BUSINESS_TEAMS_ID}}",
+      "agent_id": "{{AI_AGENTS_ID}}",
+      "role_in_team": null,
       "execution_order": 1,
-      "recommended_plan": null,
+      "is_active": true,
+      "is_required": true,
+      "is_lead": false,
+      "handoff_policy": "automatic",
       "configuration_json": {}
     }
   ]

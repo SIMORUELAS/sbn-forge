@@ -1,6 +1,6 @@
 {
   "schema": "simo_ai",
-  "table": "ai_business_model_departments",
+  "table": "ai_center_departments",
   "columns": [
     {
       "name": "id",
@@ -13,7 +13,7 @@
       "scale": 0
     },
     {
-      "name": "business_model_id",
+      "name": "center_id",
       "type": "uuid",
       "nullable": false,
       "primaryKey": false,
@@ -21,7 +21,7 @@
       "writable": true,
       "foreignKey": {
         "schema": "simo_ai",
-        "table": "ai_business_models",
+        "table": "ai_intelligent_centers",
         "column": "id"
       }
     },
@@ -39,14 +39,13 @@
       }
     },
     {
-      "name": "is_required",
-      "type": "boolean",
-      "nullable": false,
+      "name": "role_in_center",
+      "type": "character varying",
+      "nullable": true,
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "hasDefault": true,
-      "default": "true"
+      "length": 80
     },
     {
       "name": "execution_order",
@@ -61,13 +60,34 @@
       "scale": 0
     },
     {
-      "name": "recommended_plan",
-      "type": "character varying",
-      "nullable": true,
+      "name": "is_active",
+      "type": "boolean",
+      "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "length": 30
+      "hasDefault": true,
+      "default": "true"
+    },
+    {
+      "name": "is_required",
+      "type": "boolean",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "true"
+    },
+    {
+      "name": "is_lead",
+      "type": "boolean",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "false"
     },
     {
       "name": "configuration_json",
@@ -94,6 +114,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -123,6 +148,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -150,6 +180,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -168,11 +203,13 @@
   ],
   "seeds": [
     {
-      "business_model_id": "{{AI_BUSINESS_MODELS_ID}}",
+      "center_id": "{{AI_INTELLIGENT_CENTERS_ID}}",
       "department_id": "{{AI_INTELLIGENT_DEPARTMENTS_ID}}",
-      "is_required": true,
+      "role_in_center": null,
       "execution_order": 1,
-      "recommended_plan": null,
+      "is_active": true,
+      "is_required": true,
+      "is_lead": false,
       "configuration_json": {}
     }
   ]

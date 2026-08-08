@@ -1,0 +1,219 @@
+{
+  "schema": "simo_ai",
+  "table": "ai_business_model_update_items",
+  "columns": [
+    {
+      "name": "id",
+      "type": "bigint",
+      "nullable": false,
+      "primaryKey": true,
+      "generated": true,
+      "writable": false,
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "update_run_id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_business_model_update_runs",
+        "column": "id"
+      }
+    },
+    {
+      "name": "deployment_item_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_business_model_deployment_items",
+        "column": "id"
+      }
+    },
+    {
+      "name": "component_type",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 40
+    },
+    {
+      "name": "component_code",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 100
+    },
+    {
+      "name": "change_type",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 30
+    },
+    {
+      "name": "item_status",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "'pending'::character varying",
+      "length": 30
+    },
+    {
+      "name": "had_local_override",
+      "type": "boolean",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "false"
+    },
+    {
+      "name": "conflict_detected",
+      "type": "boolean",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "false"
+    },
+    {
+      "name": "conflict_resolution",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 30
+    },
+    {
+      "name": "before_snapshot",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "template_snapshot",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "applied_snapshot",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "started_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "completed_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "result_json",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "error_message",
+      "type": "text",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp without time zone",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "created_by",
+      "type": "bigint",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "created_from",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "length": 50
+    }
+  ],
+  "seeds": [
+    {
+      "update_run_id": "{{AI_BUSINESS_MODEL_UPDATE_RUNS_ID}}",
+      "deployment_item_id": null,
+      "component_type": "example_component_type",
+      "component_code": "EXAMPLE-CODE",
+      "change_type": "example_change_type",
+      "item_status": "pending",
+      "had_local_override": false,
+      "conflict_detected": false,
+      "conflict_resolution": null,
+      "before_snapshot": {},
+      "template_snapshot": {},
+      "applied_snapshot": {},
+      "started_at": null,
+      "completed_at": null,
+      "result_json": {},
+      "error_message": null
+    }
+  ]
+}

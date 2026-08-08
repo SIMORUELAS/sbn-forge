@@ -1,0 +1,342 @@
+{
+  "schema": "simo_ai",
+  "table": "ai_event_metrics",
+  "columns": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": true,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "gen_random_uuid()"
+    },
+    {
+      "name": "organization_id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "branch_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "event_definition_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_event_definitions",
+        "column": "id"
+      }
+    },
+    {
+      "name": "event_code",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 100
+    },
+    {
+      "name": "metric_date",
+      "type": "date",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "metric_granularity",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "'daily'::character varying",
+      "length": 20
+    },
+    {
+      "name": "total_events",
+      "type": "bigint",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "0",
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "completed_events",
+      "type": "bigint",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "0",
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "failed_events",
+      "type": "bigint",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "0",
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "ignored_events",
+      "type": "bigint",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "0",
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "total_dispatches",
+      "type": "bigint",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "0",
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "total_actions",
+      "type": "bigint",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "0",
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "automated_actions",
+      "type": "bigint",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "0",
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "human_interventions",
+      "type": "bigint",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "0",
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "retry_count",
+      "type": "bigint",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "0",
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "dead_letter_count",
+      "type": "bigint",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "0",
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "avg_processing_ms",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 18,
+      "scale": 4
+    },
+    {
+      "name": "max_processing_ms",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 18,
+      "scale": 4
+    },
+    {
+      "name": "min_processing_ms",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 18,
+      "scale": 4
+    },
+    {
+      "name": "automation_rate",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 9,
+      "scale": 4
+    },
+    {
+      "name": "human_intervention_rate",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 9,
+      "scale": 4
+    },
+    {
+      "name": "success_rate",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 9,
+      "scale": 4
+    },
+    {
+      "name": "estimated_cost",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "estimated_savings",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "metadata",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp without time zone",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp without time zone",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "version_no",
+      "type": "integer",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "1",
+      "precision": 32,
+      "scale": 0
+    }
+  ],
+  "seeds": [
+    {
+      "organization_id": "{{ORGANIZATION_ID}}",
+      "branch_id": null,
+      "event_definition_id": null,
+      "event_code": "EXAMPLE-CODE",
+      "metric_date": "2026-01-01T00:00:00.000Z",
+      "metric_granularity": "daily",
+      "total_events": 0,
+      "completed_events": 0,
+      "failed_events": 0,
+      "ignored_events": 0,
+      "total_dispatches": 0,
+      "total_actions": 0,
+      "automated_actions": 0,
+      "human_interventions": 0,
+      "retry_count": 0,
+      "dead_letter_count": 0,
+      "avg_processing_ms": null,
+      "max_processing_ms": null,
+      "min_processing_ms": null,
+      "automation_rate": null,
+      "human_intervention_rate": null,
+      "success_rate": null,
+      "estimated_cost": null,
+      "estimated_savings": null,
+      "metadata": {}
+    }
+  ]
+}

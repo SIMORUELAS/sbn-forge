@@ -1,6 +1,6 @@
 {
   "schema": "simo_ai",
-  "table": "ai_business_model_departments",
+  "table": "ai_event_dead_letters",
   "columns": [
     {
       "name": "id",
@@ -13,7 +13,7 @@
       "scale": 0
     },
     {
-      "name": "business_model_id",
+      "name": "event_id",
       "type": "uuid",
       "nullable": false,
       "primaryKey": false,
@@ -21,25 +21,69 @@
       "writable": true,
       "foreignKey": {
         "schema": "simo_ai",
-        "table": "ai_business_models",
+        "table": "ai_business_events",
         "column": "id"
       }
     },
     {
-      "name": "department_id",
-      "type": "uuid",
-      "nullable": false,
+      "name": "dispatch_id",
+      "type": "bigint",
+      "nullable": true,
       "primaryKey": false,
       "generated": false,
       "writable": true,
       "foreignKey": {
         "schema": "simo_ai",
-        "table": "ai_intelligent_departments",
+        "table": "ai_event_dispatches",
         "column": "id"
-      }
+      },
+      "precision": 64,
+      "scale": 0
     },
     {
-      "name": "is_required",
+      "name": "reason_code",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 80
+    },
+    {
+      "name": "reason_message",
+      "type": "text",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "failed_component",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 100
+    },
+    {
+      "name": "original_payload",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "error_detail",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "retry_allowed",
       "type": "boolean",
       "nullable": false,
       "primaryKey": false,
@@ -49,29 +93,42 @@
       "default": "true"
     },
     {
-      "name": "execution_order",
-      "type": "integer",
+      "name": "resolution_status",
+      "type": "character varying",
       "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
       "hasDefault": true,
-      "default": "1",
-      "precision": 32,
-      "scale": 0
+      "default": "'open'::character varying",
+      "length": 30
     },
     {
-      "name": "recommended_plan",
-      "type": "character varying",
+      "name": "resolved_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "resolved_by",
+      "type": "bigint",
       "nullable": true,
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "length": 30
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
+      "precision": 64,
+      "scale": 0
     },
     {
-      "name": "configuration_json",
-      "type": "jsonb",
+      "name": "resolution_notes",
+      "type": "text",
       "nullable": true,
       "primaryKey": false,
       "generated": false,
@@ -94,6 +151,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -123,6 +185,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -134,24 +201,6 @@
       "generated": false,
       "writable": false,
       "length": 50
-    },
-    {
-      "name": "deleted_at",
-      "type": "timestamp without time zone",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": false
-    },
-    {
-      "name": "deleted_by",
-      "type": "bigint",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": false,
-      "precision": 64,
-      "scale": 0
     },
     {
       "name": "version_no",
@@ -168,12 +217,18 @@
   ],
   "seeds": [
     {
-      "business_model_id": "{{AI_BUSINESS_MODELS_ID}}",
-      "department_id": "{{AI_INTELLIGENT_DEPARTMENTS_ID}}",
-      "is_required": true,
-      "execution_order": 1,
-      "recommended_plan": null,
-      "configuration_json": {}
+      "event_id": "{{AI_BUSINESS_EVENTS_ID}}",
+      "dispatch_id": null,
+      "reason_code": "EXAMPLE-CODE",
+      "reason_message": "example_reason_message",
+      "failed_component": null,
+      "original_payload": {},
+      "error_detail": {},
+      "retry_allowed": true,
+      "resolution_status": "open",
+      "resolved_at": null,
+      "resolved_by": null,
+      "resolution_notes": null
     }
   ]
 }

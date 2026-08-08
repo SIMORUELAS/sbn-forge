@@ -1,6 +1,6 @@
 {
   "schema": "simo_ai",
-  "table": "ai_business_model_departments",
+  "table": "ai_intelligence_contract_apis",
   "columns": [
     {
       "name": "id",
@@ -13,7 +13,7 @@
       "scale": 0
     },
     {
-      "name": "business_model_id",
+      "name": "contract_id",
       "type": "uuid",
       "nullable": false,
       "primaryKey": false,
@@ -21,25 +21,65 @@
       "writable": true,
       "foreignKey": {
         "schema": "simo_ai",
-        "table": "ai_business_models",
+        "table": "ai_intelligence_contracts",
         "column": "id"
       }
     },
     {
-      "name": "department_id",
-      "type": "uuid",
+      "name": "api_code",
+      "type": "character varying",
       "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "foreignKey": {
-        "schema": "simo_ai",
-        "table": "ai_intelligent_departments",
-        "column": "id"
-      }
+      "length": 80
     },
     {
-      "name": "is_required",
+      "name": "api_name",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 150
+    },
+    {
+      "name": "endpoint",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 300
+    },
+    {
+      "name": "http_method",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 10
+    },
+    {
+      "name": "description",
+      "type": "text",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "permission_code",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 120
+    },
+    {
+      "name": "is_enabled",
       "type": "boolean",
       "nullable": false,
       "primaryKey": false,
@@ -47,35 +87,6 @@
       "writable": true,
       "hasDefault": true,
       "default": "true"
-    },
-    {
-      "name": "execution_order",
-      "type": "integer",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "1",
-      "precision": 32,
-      "scale": 0
-    },
-    {
-      "name": "recommended_plan",
-      "type": "character varying",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "length": 30
-    },
-    {
-      "name": "configuration_json",
-      "type": "jsonb",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true
     },
     {
       "name": "created_at",
@@ -94,6 +105,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -123,6 +139,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -150,6 +171,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -168,12 +194,14 @@
   ],
   "seeds": [
     {
-      "business_model_id": "{{AI_BUSINESS_MODELS_ID}}",
-      "department_id": "{{AI_INTELLIGENT_DEPARTMENTS_ID}}",
-      "is_required": true,
-      "execution_order": 1,
-      "recommended_plan": null,
-      "configuration_json": {}
+      "contract_id": "{{AI_INTELLIGENCE_CONTRACTS_ID}}",
+      "api_code": "EXAMPLE-CODE",
+      "api_name": "example_api_name",
+      "endpoint": null,
+      "http_method": null,
+      "description": null,
+      "permission_code": "EXAMPLE-CODE",
+      "is_enabled": true
     }
   ]
 }

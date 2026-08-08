@@ -1,16 +1,16 @@
 {
   "schema": "simo_ai",
-  "table": "ai_business_model_departments",
+  "table": "ai_business_model_releases",
   "columns": [
     {
       "name": "id",
-      "type": "bigint",
+      "type": "uuid",
       "nullable": false,
       "primaryKey": true,
-      "generated": true,
+      "generated": false,
       "writable": false,
-      "precision": 64,
-      "scale": 0
+      "hasDefault": true,
+      "default": "gen_random_uuid()"
     },
     {
       "name": "business_model_id",
@@ -26,42 +26,55 @@
       }
     },
     {
-      "name": "department_id",
-      "type": "uuid",
+      "name": "version",
+      "type": "character varying",
       "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "foreignKey": {
-        "schema": "simo_ai",
-        "table": "ai_intelligent_departments",
-        "column": "id"
-      }
+      "length": 30
     },
     {
-      "name": "is_required",
-      "type": "boolean",
+      "name": "release_name",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 150
+    },
+    {
+      "name": "release_notes",
+      "type": "text",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "release_status",
+      "type": "character varying",
       "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
       "hasDefault": true,
-      "default": "true"
+      "default": "'draft'::character varying",
+      "length": 30
     },
     {
-      "name": "execution_order",
-      "type": "integer",
+      "name": "compatibility_level",
+      "type": "character varying",
       "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
       "hasDefault": true,
-      "default": "1",
-      "precision": 32,
-      "scale": 0
+      "default": "'backward_compatible'::character varying",
+      "length": 30
     },
     {
-      "name": "recommended_plan",
+      "name": "minimum_platform_version",
       "type": "character varying",
       "nullable": true,
       "primaryKey": false,
@@ -70,12 +83,53 @@
       "length": 30
     },
     {
-      "name": "configuration_json",
+      "name": "maximum_platform_version",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 30
+    },
+    {
+      "name": "manifest_json",
       "type": "jsonb",
       "nullable": true,
       "primaryKey": false,
       "generated": false,
       "writable": true
+    },
+    {
+      "name": "checksum",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 128
+    },
+    {
+      "name": "published_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "published_by",
+      "type": "bigint",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
+      "precision": 64,
+      "scale": 0
     },
     {
       "name": "created_at",
@@ -94,6 +148,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -123,6 +182,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -150,6 +214,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -169,11 +238,17 @@
   "seeds": [
     {
       "business_model_id": "{{AI_BUSINESS_MODELS_ID}}",
-      "department_id": "{{AI_INTELLIGENT_DEPARTMENTS_ID}}",
-      "is_required": true,
-      "execution_order": 1,
-      "recommended_plan": null,
-      "configuration_json": {}
+      "version": "example_version",
+      "release_name": null,
+      "release_notes": null,
+      "release_status": "draft",
+      "compatibility_level": "backward_compatible",
+      "minimum_platform_version": null,
+      "maximum_platform_version": null,
+      "manifest_json": {},
+      "checksum": null,
+      "published_at": null,
+      "published_by": null
     }
   ]
 }

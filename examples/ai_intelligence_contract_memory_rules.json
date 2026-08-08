@@ -1,6 +1,6 @@
 {
   "schema": "simo_ai",
-  "table": "ai_business_model_departments",
+  "table": "ai_intelligence_contract_memory_rules",
   "columns": [
     {
       "name": "id",
@@ -13,7 +13,7 @@
       "scale": 0
     },
     {
-      "name": "business_model_id",
+      "name": "contract_id",
       "type": "uuid",
       "nullable": false,
       "primaryKey": false,
@@ -21,25 +21,69 @@
       "writable": true,
       "foreignKey": {
         "schema": "simo_ai",
-        "table": "ai_business_models",
+        "table": "ai_intelligence_contracts",
         "column": "id"
       }
     },
     {
-      "name": "department_id",
-      "type": "uuid",
+      "name": "memory_code",
+      "type": "character varying",
       "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "foreignKey": {
-        "schema": "simo_ai",
-        "table": "ai_intelligent_departments",
-        "column": "id"
-      }
+      "length": 80
     },
     {
-      "name": "is_required",
+      "name": "memory_name",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 150
+    },
+    {
+      "name": "description",
+      "type": "text",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "memory_scope",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "'organization'::character varying",
+      "length": 30
+    },
+    {
+      "name": "retention_days",
+      "type": "integer",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 32,
+      "scale": 0
+    },
+    {
+      "name": "is_sensitive",
+      "type": "boolean",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "false"
+    },
+    {
+      "name": "is_enabled",
       "type": "boolean",
       "nullable": false,
       "primaryKey": false,
@@ -47,35 +91,6 @@
       "writable": true,
       "hasDefault": true,
       "default": "true"
-    },
-    {
-      "name": "execution_order",
-      "type": "integer",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "1",
-      "precision": 32,
-      "scale": 0
-    },
-    {
-      "name": "recommended_plan",
-      "type": "character varying",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "length": 30
-    },
-    {
-      "name": "configuration_json",
-      "type": "jsonb",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true
     },
     {
       "name": "created_at",
@@ -94,6 +109,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -123,6 +143,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -150,6 +175,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -168,12 +198,14 @@
   ],
   "seeds": [
     {
-      "business_model_id": "{{AI_BUSINESS_MODELS_ID}}",
-      "department_id": "{{AI_INTELLIGENT_DEPARTMENTS_ID}}",
-      "is_required": true,
-      "execution_order": 1,
-      "recommended_plan": null,
-      "configuration_json": {}
+      "contract_id": "{{AI_INTELLIGENCE_CONTRACTS_ID}}",
+      "memory_code": "EXAMPLE-CODE",
+      "memory_name": "example_memory_name",
+      "description": null,
+      "memory_scope": "organization",
+      "retention_days": null,
+      "is_sensitive": false,
+      "is_enabled": true
     }
   ]
 }

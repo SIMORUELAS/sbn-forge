@@ -1,6 +1,6 @@
 {
   "schema": "simo_ai",
-  "table": "ai_business_models",
+  "table": "ai_learning_observations",
   "columns": [
     {
       "name": "id",
@@ -13,25 +13,102 @@
       "default": "gen_random_uuid()"
     },
     {
-      "name": "code",
+      "name": "organization_id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "branch_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "source_type",
       "type": "character varying",
       "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "length": 80
+      "length": 30
     },
     {
-      "name": "name",
+      "name": "source_id",
       "type": "character varying",
-      "nullable": false,
+      "nullable": true,
       "primaryKey": false,
       "generated": false,
       "writable": true,
       "length": 150
     },
     {
+      "name": "event_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_business_events",
+        "column": "id"
+      }
+    },
+    {
+      "name": "decision_outcome_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_decision_outcomes",
+        "column": "id"
+      }
+    },
+    {
+      "name": "observation_code",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 100
+    },
+    {
+      "name": "observation_type",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 50
+    },
+    {
+      "name": "title",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 180
+    },
+    {
       "name": "description",
+      "type": "text",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "pattern_detected",
       "type": "text",
       "nullable": true,
       "primaryKey": false,
@@ -39,22 +116,40 @@
       "writable": true
     },
     {
-      "name": "business_sector",
-      "type": "character varying",
+      "name": "evidence_summary",
+      "type": "text",
       "nullable": true,
       "primaryKey": false,
       "generated": false,
-      "writable": true,
-      "length": 80
+      "writable": true
     },
     {
-      "name": "business_type",
-      "type": "character varying",
+      "name": "evidence_json",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "confidence_score",
+      "type": "numeric",
       "nullable": true,
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "length": 80
+      "precision": 9,
+      "scale": 4
+    },
+    {
+      "name": "business_impact_score",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 9,
+      "scale": 4
     },
     {
       "name": "status",
@@ -64,21 +159,20 @@
       "generated": false,
       "writable": true,
       "hasDefault": true,
-      "default": "'active'::character varying",
-      "length": 20
-    },
-    {
-      "name": "lifecycle_stage",
-      "type": "character varying",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
+      "default": "'detected'::character varying",
       "length": 30
     },
     {
-      "name": "configuration_json",
-      "type": "jsonb",
+      "name": "valid_from",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "valid_until",
+      "type": "timestamp without time zone",
       "nullable": true,
       "primaryKey": false,
       "generated": false,
@@ -194,108 +288,29 @@
       "default": "1",
       "precision": 32,
       "scale": 0
-    },
-    {
-      "name": "model_scope",
-      "type": "character varying",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "'global_template'::character varying",
-      "length": 30
-    },
-    {
-      "name": "publisher_organization_id",
-      "type": "uuid",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true
-    },
-    {
-      "name": "is_deployable",
-      "type": "boolean",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "true"
-    },
-    {
-      "name": "allow_client_customization",
-      "type": "boolean",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "true"
-    },
-    {
-      "name": "default_update_strategy",
-      "type": "character varying",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "'manual_approval'::character varying",
-      "length": 30
-    },
-    {
-      "name": "current_version",
-      "type": "character varying",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "'1.0.0'::character varying",
-      "length": 30
-    },
-    {
-      "name": "published_at",
-      "type": "timestamp without time zone",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true
-    },
-    {
-      "name": "published_by",
-      "type": "bigint",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "precision": 64,
-      "scale": 0
     }
   ],
   "seeds": [
     {
-      "code": "SBN-SMART-COLLECTIONS",
-      "name": "SBN Smart Collections",
-      "description": "Modelo empresarial para automatización de cobranza.",
-      "business_sector": "Servicios empresariales",
-      "business_type": "SaaS",
-      "status": "active",
-      "lifecycle_stage": "development",
-      "configuration_json": {
-        "collections": true,
-        "forecast": true
-      },
-      "metadata": {
-        "source": "sbn-forge"
-      },
-      "model_scope": "global_template",
-      "is_deployable": true,
-      "allow_client_customization": true,
-      "default_update_strategy": "manual_approval",
-      "current_version": "1.0.0"
+      "organization_id": "{{ORGANIZATION_ID}}",
+      "branch_id": null,
+      "source_type": "example_source_type",
+      "source_id": null,
+      "event_id": null,
+      "decision_outcome_id": null,
+      "observation_code": "EXAMPLE-CODE",
+      "observation_type": "example_observation_type",
+      "title": "example_title",
+      "description": "example_description",
+      "pattern_detected": null,
+      "evidence_summary": null,
+      "evidence_json": {},
+      "confidence_score": null,
+      "business_impact_score": null,
+      "status": "detected",
+      "valid_from": null,
+      "valid_until": null,
+      "metadata": {}
     }
   ]
 }

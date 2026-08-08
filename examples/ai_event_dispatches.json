@@ -1,83 +1,164 @@
 {
   "schema": "simo_ai",
-  "table": "ai_business_models",
+  "table": "ai_event_dispatches",
   "columns": [
     {
       "name": "id",
-      "type": "uuid",
+      "type": "bigint",
       "nullable": false,
       "primaryKey": true,
-      "generated": false,
+      "generated": true,
       "writable": false,
-      "hasDefault": true,
-      "default": "gen_random_uuid()"
+      "precision": 64,
+      "scale": 0
     },
     {
-      "name": "code",
-      "type": "character varying",
+      "name": "event_id",
+      "type": "uuid",
       "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "length": 80
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_business_events",
+        "column": "id"
+      }
     },
     {
-      "name": "name",
+      "name": "subscription_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_event_subscriptions",
+        "column": "id"
+      }
+    },
+    {
+      "name": "subscriber_type",
       "type": "character varying",
       "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "length": 150
-    },
-    {
-      "name": "description",
-      "type": "text",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true
-    },
-    {
-      "name": "business_sector",
-      "type": "character varying",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "length": 80
-    },
-    {
-      "name": "business_type",
-      "type": "character varying",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "length": 80
-    },
-    {
-      "name": "status",
-      "type": "character varying",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "'active'::character varying",
-      "length": 20
-    },
-    {
-      "name": "lifecycle_stage",
-      "type": "character varying",
-      "nullable": true,
       "primaryKey": false,
       "generated": false,
       "writable": true,
       "length": 30
     },
     {
-      "name": "configuration_json",
+      "name": "subscriber_id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "workflow_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_workflows",
+        "column": "id"
+      }
+    },
+    {
+      "name": "dispatch_status",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "'pending'::character varying",
+      "length": 30
+    },
+    {
+      "name": "priority",
+      "type": "integer",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "100",
+      "precision": 32,
+      "scale": 0
+    },
+    {
+      "name": "attempt_count",
+      "type": "integer",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "0",
+      "precision": 32,
+      "scale": 0
+    },
+    {
+      "name": "max_attempts",
+      "type": "integer",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "3",
+      "precision": 32,
+      "scale": 0
+    },
+    {
+      "name": "available_at",
+      "type": "timestamp without time zone",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "dispatched_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "acknowledged_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "processing_started_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "completed_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "request_payload",
       "type": "jsonb",
       "nullable": true,
       "primaryKey": false,
@@ -85,7 +166,23 @@
       "writable": true
     },
     {
-      "name": "metadata",
+      "name": "response_payload",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "error_message",
+      "type": "text",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "error_detail",
       "type": "jsonb",
       "nullable": true,
       "primaryKey": false,
@@ -194,108 +291,28 @@
       "default": "1",
       "precision": 32,
       "scale": 0
-    },
-    {
-      "name": "model_scope",
-      "type": "character varying",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "'global_template'::character varying",
-      "length": 30
-    },
-    {
-      "name": "publisher_organization_id",
-      "type": "uuid",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true
-    },
-    {
-      "name": "is_deployable",
-      "type": "boolean",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "true"
-    },
-    {
-      "name": "allow_client_customization",
-      "type": "boolean",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "true"
-    },
-    {
-      "name": "default_update_strategy",
-      "type": "character varying",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "'manual_approval'::character varying",
-      "length": 30
-    },
-    {
-      "name": "current_version",
-      "type": "character varying",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "'1.0.0'::character varying",
-      "length": 30
-    },
-    {
-      "name": "published_at",
-      "type": "timestamp without time zone",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true
-    },
-    {
-      "name": "published_by",
-      "type": "bigint",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "precision": 64,
-      "scale": 0
     }
   ],
   "seeds": [
     {
-      "code": "SBN-SMART-COLLECTIONS",
-      "name": "SBN Smart Collections",
-      "description": "Modelo empresarial para automatización de cobranza.",
-      "business_sector": "Servicios empresariales",
-      "business_type": "SaaS",
-      "status": "active",
-      "lifecycle_stage": "development",
-      "configuration_json": {
-        "collections": true,
-        "forecast": true
-      },
-      "metadata": {
-        "source": "sbn-forge"
-      },
-      "model_scope": "global_template",
-      "is_deployable": true,
-      "allow_client_customization": true,
-      "default_update_strategy": "manual_approval",
-      "current_version": "1.0.0"
+      "event_id": "{{AI_BUSINESS_EVENTS_ID}}",
+      "subscription_id": null,
+      "subscriber_type": "example_subscriber_type",
+      "subscriber_id": "{{SUBSCRIBER_ID}}",
+      "workflow_id": null,
+      "dispatch_status": "pending",
+      "priority": 100,
+      "attempt_count": 0,
+      "max_attempts": 3,
+      "available_at": null,
+      "dispatched_at": null,
+      "acknowledged_at": null,
+      "processing_started_at": null,
+      "completed_at": null,
+      "request_payload": {},
+      "response_payload": {},
+      "error_message": null,
+      "error_detail": {}
     }
   ]
 }

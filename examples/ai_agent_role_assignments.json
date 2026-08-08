@@ -1,81 +1,59 @@
 {
   "schema": "simo_ai",
-  "table": "ai_business_model_departments",
+  "table": "ai_agent_role_assignments",
   "columns": [
     {
-      "name": "id",
-      "type": "bigint",
+      "name": "agent_id",
+      "type": "uuid",
       "nullable": false,
       "primaryKey": true,
-      "generated": true,
+      "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_agents",
+        "column": "id"
+      }
+    },
+    {
+      "name": "role_id",
+      "type": "smallint",
+      "nullable": false,
+      "primaryKey": true,
+      "generated": false,
+      "writable": false,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_agent_roles",
+        "column": "id"
+      },
+      "precision": 16,
+      "scale": 0
+    },
+    {
+      "name": "assigned_at",
+      "type": "timestamp without time zone",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "created_by",
+      "type": "bigint",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
-    },
-    {
-      "name": "business_model_id",
-      "type": "uuid",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "foreignKey": {
-        "schema": "simo_ai",
-        "table": "ai_business_models",
-        "column": "id"
-      }
-    },
-    {
-      "name": "department_id",
-      "type": "uuid",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "foreignKey": {
-        "schema": "simo_ai",
-        "table": "ai_intelligent_departments",
-        "column": "id"
-      }
-    },
-    {
-      "name": "is_required",
-      "type": "boolean",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "true"
-    },
-    {
-      "name": "execution_order",
-      "type": "integer",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "1",
-      "precision": 32,
-      "scale": 0
-    },
-    {
-      "name": "recommended_plan",
-      "type": "character varying",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "length": 30
-    },
-    {
-      "name": "configuration_json",
-      "type": "jsonb",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true
     },
     {
       "name": "created_at",
@@ -88,16 +66,6 @@
       "default": "CURRENT_TIMESTAMP"
     },
     {
-      "name": "created_by",
-      "type": "bigint",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": false,
-      "precision": 64,
-      "scale": 0
-    },
-    {
       "name": "created_from",
       "type": "character varying",
       "nullable": true,
@@ -105,6 +73,21 @@
       "generated": false,
       "writable": false,
       "length": 50
+    },
+    {
+      "name": "updated_by",
+      "type": "bigint",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
+      "precision": 64,
+      "scale": 0
     },
     {
       "name": "updated_at",
@@ -117,16 +100,6 @@
       "default": "CURRENT_TIMESTAMP"
     },
     {
-      "name": "updated_by",
-      "type": "bigint",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": false,
-      "precision": 64,
-      "scale": 0
-    },
-    {
       "name": "updated_from",
       "type": "character varying",
       "nullable": true,
@@ -136,22 +109,27 @@
       "length": 50
     },
     {
-      "name": "deleted_at",
-      "type": "timestamp without time zone",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": false
-    },
-    {
       "name": "deleted_by",
       "type": "bigint",
       "nullable": true,
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
+    },
+    {
+      "name": "deleted_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false
     },
     {
       "name": "version_no",
@@ -168,12 +146,7 @@
   ],
   "seeds": [
     {
-      "business_model_id": "{{AI_BUSINESS_MODELS_ID}}",
-      "department_id": "{{AI_INTELLIGENT_DEPARTMENTS_ID}}",
-      "is_required": true,
-      "execution_order": 1,
-      "recommended_plan": null,
-      "configuration_json": {}
+      "assigned_at": null
     }
   ]
 }

@@ -1,0 +1,295 @@
+{
+  "schema": "simo_ai",
+  "table": "ai_organization_intelligence_metrics",
+  "columns": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": true,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "gen_random_uuid()"
+    },
+    {
+      "name": "intelligent_organization_id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_intelligent_organizations",
+        "column": "id"
+      }
+    },
+    {
+      "name": "organization_id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "branch_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "metric_date",
+      "type": "date",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "metric_granularity",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "'daily'::character varying",
+      "length": 20
+    },
+    {
+      "name": "active_centers",
+      "type": "integer",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "0",
+      "precision": 32,
+      "scale": 0
+    },
+    {
+      "name": "active_departments",
+      "type": "integer",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "0",
+      "precision": 32,
+      "scale": 0
+    },
+    {
+      "name": "active_teams",
+      "type": "integer",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "0",
+      "precision": 32,
+      "scale": 0
+    },
+    {
+      "name": "active_agents",
+      "type": "integer",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "0",
+      "precision": 32,
+      "scale": 0
+    },
+    {
+      "name": "events_processed",
+      "type": "bigint",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "0",
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "workflows_executed",
+      "type": "bigint",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "0",
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "tasks_executed",
+      "type": "bigint",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "0",
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "human_interventions",
+      "type": "bigint",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "0",
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "automation_percentage",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 9,
+      "scale": 4
+    },
+    {
+      "name": "success_rate",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 9,
+      "scale": 4
+    },
+    {
+      "name": "ai_cost",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "estimated_savings",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "estimated_roi",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "health_score",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 9,
+      "scale": 4
+    },
+    {
+      "name": "quality_score",
+      "type": "numeric",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 9,
+      "scale": 4
+    },
+    {
+      "name": "metadata",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp without time zone",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp without time zone",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "version_no",
+      "type": "integer",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "1",
+      "precision": 32,
+      "scale": 0
+    }
+  ],
+  "seeds": [
+    {
+      "intelligent_organization_id": "{{AI_INTELLIGENT_ORGANIZATIONS_ID}}",
+      "organization_id": "{{ORGANIZATION_ID}}",
+      "branch_id": null,
+      "metric_date": "2026-01-01T00:00:00.000Z",
+      "metric_granularity": "daily",
+      "active_centers": 0,
+      "active_departments": 0,
+      "active_teams": 0,
+      "active_agents": 0,
+      "events_processed": 0,
+      "workflows_executed": 0,
+      "tasks_executed": 0,
+      "human_interventions": 0,
+      "automation_percentage": null,
+      "success_rate": null,
+      "ai_cost": null,
+      "estimated_savings": null,
+      "estimated_roi": null,
+      "health_score": null,
+      "quality_score": null,
+      "metadata": {}
+    }
+  ]
+}

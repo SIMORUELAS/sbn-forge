@@ -83,6 +83,13 @@ function registerGenerateApiCommand(parent) {
       'Prefijo funcional de las rutas.',
       '/ia'
     )
+
+    .option(
+        '--write-mode <mode>',
+        'Política de escritura del generador.',
+        'create'
+      )
+
     .action(async (table, options) => {
       const cwd = process.cwd();
 
@@ -193,35 +200,39 @@ function registerGenerateApiCommand(parent) {
 
             definition,
 
-            options: {
-          output,
+         
+          options: {
+            output,
 
-          force:
-            options.force,
+            force:
+              options.force,
 
-          dryRun:
-            options.dryRun,
+            writeMode:
+              options.writeMode,
 
-          quiet:
-            options.quiet,
+            dryRun:
+              options.dryRun,
 
-          profile:
-            options.profile,
+            quiet:
+              options.quiet,
 
-          framework:
-            options.framework,
+            profile:
+              options.profile,
 
-          moduleRoot:
-            options.moduleRoot,
+            framework:
+              options.framework,
 
-          apiPrefix:
-            options.apiPrefix,
+            moduleRoot:
+              options.moduleRoot,
 
-          routePrefix:
-            options.routePrefix,
+            apiPrefix:
+              options.apiPrefix,
 
-          logger
-        }
+            routePrefix:
+              options.routePrefix,
+
+            logger
+          }
 
           });
 

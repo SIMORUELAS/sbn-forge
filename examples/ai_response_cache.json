@@ -1,6 +1,6 @@
 {
   "schema": "simo_ai",
-  "table": "ai_business_models",
+  "table": "ai_response_cache",
   "columns": [
     {
       "name": "id",
@@ -13,25 +13,68 @@
       "default": "gen_random_uuid()"
     },
     {
-      "name": "code",
+      "name": "cache_key",
       "type": "character varying",
       "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "length": 80
+      "length": 255
     },
     {
-      "name": "name",
+      "name": "agent_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_agents",
+        "column": "id"
+      }
+    },
+    {
+      "name": "workflow_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_workflows",
+        "column": "id"
+      }
+    },
+    {
+      "name": "task_type",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 50
+    },
+    {
+      "name": "input_hash",
       "type": "character varying",
       "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "length": 150
+      "length": 128
     },
     {
-      "name": "description",
+      "name": "output_payload",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "output_summary",
       "type": "text",
       "nullable": true,
       "primaryKey": false,
@@ -39,54 +82,38 @@
       "writable": true
     },
     {
-      "name": "business_sector",
-      "type": "character varying",
+      "name": "token_input_count",
+      "type": "integer",
       "nullable": true,
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "length": 80
+      "precision": 32,
+      "scale": 0
     },
     {
-      "name": "business_type",
-      "type": "character varying",
+      "name": "token_output_count",
+      "type": "integer",
       "nullable": true,
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "length": 80
+      "precision": 32,
+      "scale": 0
     },
     {
-      "name": "status",
-      "type": "character varying",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "'active'::character varying",
-      "length": 20
-    },
-    {
-      "name": "lifecycle_stage",
-      "type": "character varying",
+      "name": "estimated_cost",
+      "type": "numeric",
       "nullable": true,
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "length": 30
+      "precision": 18,
+      "scale": 6
     },
     {
-      "name": "configuration_json",
-      "type": "jsonb",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true
-    },
-    {
-      "name": "metadata",
-      "type": "jsonb",
+      "name": "expires_at",
+      "type": "timestamp without time zone",
       "nullable": true,
       "primaryKey": false,
       "generated": false,
@@ -127,16 +154,6 @@
       "length": 50
     },
     {
-      "name": "updated_at",
-      "type": "timestamp without time zone",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": false,
-      "hasDefault": true,
-      "default": "CURRENT_TIMESTAMP"
-    },
-    {
       "name": "updated_by",
       "type": "bigint",
       "nullable": true,
@@ -152,6 +169,16 @@
       "scale": 0
     },
     {
+      "name": "updated_at",
+      "type": "timestamp without time zone",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "hasDefault": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
       "name": "updated_from",
       "type": "character varying",
       "nullable": true,
@@ -159,14 +186,6 @@
       "generated": false,
       "writable": false,
       "length": 50
-    },
-    {
-      "name": "deleted_at",
-      "type": "timestamp without time zone",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": false
     },
     {
       "name": "deleted_by",
@@ -184,6 +203,14 @@
       "scale": 0
     },
     {
+      "name": "deleted_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false
+    },
+    {
       "name": "version_no",
       "type": "integer",
       "nullable": false,
@@ -196,18 +223,7 @@
       "scale": 0
     },
     {
-      "name": "model_scope",
-      "type": "character varying",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "'global_template'::character varying",
-      "length": 30
-    },
-    {
-      "name": "publisher_organization_id",
+      "name": "organization_id",
       "type": "uuid",
       "nullable": true,
       "primaryKey": false,
@@ -215,49 +231,56 @@
       "writable": true
     },
     {
-      "name": "is_deployable",
-      "type": "boolean",
-      "nullable": false,
+      "name": "branch_id",
+      "type": "uuid",
+      "nullable": true,
       "primaryKey": false,
       "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "true"
+      "writable": true
     },
     {
-      "name": "allow_client_customization",
-      "type": "boolean",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "true"
-    },
-    {
-      "name": "default_update_strategy",
+      "name": "cache_scope",
       "type": "character varying",
       "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
       "hasDefault": true,
-      "default": "'manual_approval'::character varying",
+      "default": "'organization'::character varying",
       "length": 30
     },
     {
-      "name": "current_version",
+      "name": "model_name",
       "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 100
+    },
+    {
+      "name": "context_hash",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 128
+    },
+    {
+      "name": "hit_count",
+      "type": "bigint",
       "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
       "hasDefault": true,
-      "default": "'1.0.0'::character varying",
-      "length": 30
+      "default": "0",
+      "precision": 64,
+      "scale": 0
     },
     {
-      "name": "published_at",
+      "name": "last_hit_at",
       "type": "timestamp without time zone",
       "nullable": true,
       "primaryKey": false,
@@ -265,37 +288,37 @@
       "writable": true
     },
     {
-      "name": "published_by",
-      "type": "bigint",
-      "nullable": true,
+      "name": "is_qa",
+      "type": "boolean",
+      "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "precision": 64,
-      "scale": 0
+      "hasDefault": true,
+      "default": "false"
     }
   ],
   "seeds": [
     {
-      "code": "SBN-SMART-COLLECTIONS",
-      "name": "SBN Smart Collections",
-      "description": "Modelo empresarial para automatización de cobranza.",
-      "business_sector": "Servicios empresariales",
-      "business_type": "SaaS",
-      "status": "active",
-      "lifecycle_stage": "development",
-      "configuration_json": {
-        "collections": true,
-        "forecast": true
-      },
-      "metadata": {
-        "source": "sbn-forge"
-      },
-      "model_scope": "global_template",
-      "is_deployable": true,
-      "allow_client_customization": true,
-      "default_update_strategy": "manual_approval",
-      "current_version": "1.0.0"
+      "cache_key": "example_cache_key",
+      "agent_id": null,
+      "workflow_id": null,
+      "task_type": null,
+      "input_hash": "example_input_hash",
+      "output_payload": {},
+      "output_summary": null,
+      "token_input_count": null,
+      "token_output_count": null,
+      "estimated_cost": null,
+      "expires_at": null,
+      "organization_id": null,
+      "branch_id": null,
+      "cache_scope": "organization",
+      "model_name": null,
+      "context_hash": null,
+      "hit_count": 0,
+      "last_hit_at": null,
+      "is_qa": false
     }
   ]
 }

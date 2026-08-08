@@ -1,6 +1,6 @@
 {
   "schema": "simo_ai",
-  "table": "ai_business_model_departments",
+  "table": "ai_business_model_installation_steps",
   "columns": [
     {
       "name": "id",
@@ -13,7 +13,7 @@
       "scale": 0
     },
     {
-      "name": "business_model_id",
+      "name": "installation_id",
       "type": "uuid",
       "nullable": false,
       "primaryKey": false,
@@ -21,35 +21,12 @@
       "writable": true,
       "foreignKey": {
         "schema": "simo_ai",
-        "table": "ai_business_models",
+        "table": "ai_business_model_installations",
         "column": "id"
       }
     },
     {
-      "name": "department_id",
-      "type": "uuid",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "foreignKey": {
-        "schema": "simo_ai",
-        "table": "ai_intelligent_departments",
-        "column": "id"
-      }
-    },
-    {
-      "name": "is_required",
-      "type": "boolean",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "true"
-    },
-    {
-      "name": "execution_order",
+      "name": "step_order",
       "type": "integer",
       "nullable": false,
       "primaryKey": false,
@@ -61,17 +38,87 @@
       "scale": 0
     },
     {
-      "name": "recommended_plan",
+      "name": "step_code",
       "type": "character varying",
       "nullable": true,
       "primaryKey": false,
       "generated": false,
       "writable": true,
+      "length": 80
+    },
+    {
+      "name": "step_name",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 150
+    },
+    {
+      "name": "step_type",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 50
+    },
+    {
+      "name": "target_type",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 50
+    },
+    {
+      "name": "target_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "step_status",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "'pending'::character varying",
       "length": 30
     },
     {
-      "name": "configuration_json",
+      "name": "error_message",
+      "type": "text",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "result_json",
       "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "started_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "completed_at",
+      "type": "timestamp without time zone",
       "nullable": true,
       "primaryKey": false,
       "generated": false,
@@ -168,12 +215,18 @@
   ],
   "seeds": [
     {
-      "business_model_id": "{{AI_BUSINESS_MODELS_ID}}",
-      "department_id": "{{AI_INTELLIGENT_DEPARTMENTS_ID}}",
-      "is_required": true,
-      "execution_order": 1,
-      "recommended_plan": null,
-      "configuration_json": {}
+      "installation_id": "{{AI_BUSINESS_MODEL_INSTALLATIONS_ID}}",
+      "step_order": 1,
+      "step_code": "EXAMPLE-CODE",
+      "step_name": "example_step_name",
+      "step_type": "example_step_type",
+      "target_type": null,
+      "target_id": null,
+      "step_status": "pending",
+      "error_message": null,
+      "result_json": {},
+      "started_at": null,
+      "completed_at": null
     }
   ]
 }

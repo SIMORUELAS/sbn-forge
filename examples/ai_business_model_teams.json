@@ -83,7 +83,7 @@
       "nullable": false,
       "primaryKey": false,
       "generated": false,
-      "writable": true,
+      "writable": false,
       "hasDefault": true,
       "default": "CURRENT_TIMESTAMP"
     },
@@ -93,7 +93,7 @@
       "nullable": true,
       "primaryKey": false,
       "generated": false,
-      "writable": true,
+      "writable": false,
       "precision": 64,
       "scale": 0
     },
@@ -103,7 +103,7 @@
       "nullable": true,
       "primaryKey": false,
       "generated": false,
-      "writable": true,
+      "writable": false,
       "length": 50
     },
     {
@@ -112,7 +112,7 @@
       "nullable": false,
       "primaryKey": false,
       "generated": false,
-      "writable": true,
+      "writable": false,
       "hasDefault": true,
       "default": "CURRENT_TIMESTAMP"
     },
@@ -122,7 +122,7 @@
       "nullable": true,
       "primaryKey": false,
       "generated": false,
-      "writable": true,
+      "writable": false,
       "precision": 64,
       "scale": 0
     },
@@ -132,7 +132,7 @@
       "nullable": true,
       "primaryKey": false,
       "generated": false,
-      "writable": true,
+      "writable": false,
       "length": 50
     },
     {
@@ -141,7 +141,7 @@
       "nullable": true,
       "primaryKey": false,
       "generated": false,
-      "writable": true
+      "writable": false
     },
     {
       "name": "deleted_by",
@@ -149,7 +149,7 @@
       "nullable": true,
       "primaryKey": false,
       "generated": false,
-      "writable": true,
+      "writable": false,
       "precision": 64,
       "scale": 0
     },
@@ -159,11 +159,21 @@
       "nullable": false,
       "primaryKey": false,
       "generated": false,
-      "writable": true,
+      "writable": false,
       "hasDefault": true,
       "default": "1",
       "precision": 32,
       "scale": 0
+    }
+  ],
+  "seeds": [
+    {
+      "business_model_id": "{{AI_BUSINESS_MODELS_ID}}",
+      "team_id": "{{AI_BUSINESS_TEAMS_ID}}",
+      "is_required": true,
+      "execution_order": 1,
+      "recommended_plan": null,
+      "configuration_json": {}
     }
   ]
 }

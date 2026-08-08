@@ -1,6 +1,6 @@
 {
   "schema": "simo_ai",
-  "table": "ai_business_models",
+  "table": "ai_business_model_deployment_items",
   "columns": [
     {
       "name": "id",
@@ -13,33 +13,58 @@
       "default": "gen_random_uuid()"
     },
     {
-      "name": "code",
+      "name": "deployment_id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_business_model_deployments",
+        "column": "id"
+      }
+    },
+    {
+      "name": "release_item_id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_business_model_release_items",
+        "column": "id"
+      }
+    },
+    {
+      "name": "component_type",
       "type": "character varying",
       "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "length": 80
+      "length": 40
     },
     {
-      "name": "name",
-      "type": "character varying",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "length": 150
-    },
-    {
-      "name": "description",
-      "type": "text",
+      "name": "source_entity_id",
+      "type": "uuid",
       "nullable": true,
       "primaryKey": false,
       "generated": false,
       "writable": true
     },
     {
-      "name": "business_sector",
+      "name": "target_entity_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "target_schema",
       "type": "character varying",
       "nullable": true,
       "primaryKey": false,
@@ -48,33 +73,77 @@
       "length": 80
     },
     {
-      "name": "business_type",
+      "name": "target_table",
       "type": "character varying",
       "nullable": true,
       "primaryKey": false,
       "generated": false,
       "writable": true,
-      "length": 80
+      "length": 100
     },
     {
-      "name": "status",
+      "name": "deployment_item_status",
       "type": "character varying",
       "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
       "hasDefault": true,
-      "default": "'active'::character varying",
-      "length": 20
+      "default": "'pending'::character varying",
+      "length": 30
     },
     {
-      "name": "lifecycle_stage",
+      "name": "applied_version",
       "type": "character varying",
       "nullable": true,
       "primaryKey": false,
       "generated": false,
       "writable": true,
       "length": 30
+    },
+    {
+      "name": "is_locally_modified",
+      "type": "boolean",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "false"
+    },
+    {
+      "name": "local_checksum",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 128
+    },
+    {
+      "name": "template_checksum",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 128
+    },
+    {
+      "name": "installed_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "last_synced_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
     },
     {
       "name": "configuration_json",
@@ -85,7 +154,23 @@
       "writable": true
     },
     {
-      "name": "metadata",
+      "name": "result_json",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "error_message",
+      "type": "text",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "error_detail",
       "type": "jsonb",
       "nullable": true,
       "primaryKey": false,
@@ -194,108 +279,28 @@
       "default": "1",
       "precision": 32,
       "scale": 0
-    },
-    {
-      "name": "model_scope",
-      "type": "character varying",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "'global_template'::character varying",
-      "length": 30
-    },
-    {
-      "name": "publisher_organization_id",
-      "type": "uuid",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true
-    },
-    {
-      "name": "is_deployable",
-      "type": "boolean",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "true"
-    },
-    {
-      "name": "allow_client_customization",
-      "type": "boolean",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "true"
-    },
-    {
-      "name": "default_update_strategy",
-      "type": "character varying",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "'manual_approval'::character varying",
-      "length": 30
-    },
-    {
-      "name": "current_version",
-      "type": "character varying",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "'1.0.0'::character varying",
-      "length": 30
-    },
-    {
-      "name": "published_at",
-      "type": "timestamp without time zone",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true
-    },
-    {
-      "name": "published_by",
-      "type": "bigint",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "precision": 64,
-      "scale": 0
     }
   ],
   "seeds": [
     {
-      "code": "SBN-SMART-COLLECTIONS",
-      "name": "SBN Smart Collections",
-      "description": "Modelo empresarial para automatización de cobranza.",
-      "business_sector": "Servicios empresariales",
-      "business_type": "SaaS",
-      "status": "active",
-      "lifecycle_stage": "development",
-      "configuration_json": {
-        "collections": true,
-        "forecast": true
-      },
-      "metadata": {
-        "source": "sbn-forge"
-      },
-      "model_scope": "global_template",
-      "is_deployable": true,
-      "allow_client_customization": true,
-      "default_update_strategy": "manual_approval",
-      "current_version": "1.0.0"
+      "deployment_id": "{{AI_BUSINESS_MODEL_DEPLOYMENTS_ID}}",
+      "release_item_id": "{{AI_BUSINESS_MODEL_RELEASE_ITEMS_ID}}",
+      "component_type": "example_component_type",
+      "source_entity_id": null,
+      "target_entity_id": null,
+      "target_schema": null,
+      "target_table": null,
+      "deployment_item_status": "pending",
+      "applied_version": null,
+      "is_locally_modified": false,
+      "local_checksum": null,
+      "template_checksum": null,
+      "installed_at": null,
+      "last_synced_at": null,
+      "configuration_json": {},
+      "result_json": {},
+      "error_message": null,
+      "error_detail": {}
     }
   ]
 }

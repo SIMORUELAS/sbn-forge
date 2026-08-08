@@ -1,42 +1,85 @@
 {
   "schema": "simo_ai",
-  "table": "ai_business_model_departments",
+  "table": "ai_business_model_release_items",
   "columns": [
     {
       "name": "id",
-      "type": "bigint",
+      "type": "uuid",
       "nullable": false,
       "primaryKey": true,
-      "generated": true,
+      "generated": false,
       "writable": false,
-      "precision": 64,
+      "hasDefault": true,
+      "default": "gen_random_uuid()"
+    },
+    {
+      "name": "release_id",
+      "type": "uuid",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_business_model_releases",
+        "column": "id"
+      }
+    },
+    {
+      "name": "component_type",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 40
+    },
+    {
+      "name": "source_entity_id",
+      "type": "uuid",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "component_code",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 100
+    },
+    {
+      "name": "component_name",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 180
+    },
+    {
+      "name": "parent_component_code",
+      "type": "character varying",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "length": 100
+    },
+    {
+      "name": "installation_order",
+      "type": "integer",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "1",
+      "precision": 32,
       "scale": 0
-    },
-    {
-      "name": "business_model_id",
-      "type": "uuid",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "foreignKey": {
-        "schema": "simo_ai",
-        "table": "ai_business_models",
-        "column": "id"
-      }
-    },
-    {
-      "name": "department_id",
-      "type": "uuid",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "foreignKey": {
-        "schema": "simo_ai",
-        "table": "ai_intelligent_departments",
-        "column": "id"
-      }
     },
     {
       "name": "is_required",
@@ -49,19 +92,38 @@
       "default": "true"
     },
     {
-      "name": "execution_order",
-      "type": "integer",
+      "name": "is_enabled_by_default",
+      "type": "boolean",
       "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
       "hasDefault": true,
-      "default": "1",
-      "precision": 32,
-      "scale": 0
+      "default": "true"
     },
     {
-      "name": "recommended_plan",
+      "name": "can_customize",
+      "type": "boolean",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "true"
+    },
+    {
+      "name": "deployment_mode",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "'clone'::character varying",
+      "length": 30
+    },
+    {
+      "name": "source_version",
       "type": "character varying",
       "nullable": true,
       "primaryKey": false,
@@ -70,7 +132,15 @@
       "length": 30
     },
     {
-      "name": "configuration_json",
+      "name": "configuration_snapshot",
+      "type": "jsonb",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "metadata",
       "type": "jsonb",
       "nullable": true,
       "primaryKey": false,
@@ -94,6 +164,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -123,6 +198,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -150,6 +230,11 @@
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -168,12 +253,20 @@
   ],
   "seeds": [
     {
-      "business_model_id": "{{AI_BUSINESS_MODELS_ID}}",
-      "department_id": "{{AI_INTELLIGENT_DEPARTMENTS_ID}}",
+      "release_id": "{{AI_BUSINESS_MODEL_RELEASES_ID}}",
+      "component_type": "example_component_type",
+      "source_entity_id": null,
+      "component_code": "EXAMPLE-CODE",
+      "component_name": "example_component_name",
+      "parent_component_code": "EXAMPLE-CODE",
+      "installation_order": 1,
       "is_required": true,
-      "execution_order": 1,
-      "recommended_plan": null,
-      "configuration_json": {}
+      "is_enabled_by_default": true,
+      "can_customize": true,
+      "deployment_mode": "clone",
+      "source_version": null,
+      "configuration_snapshot": {},
+      "metadata": {}
     }
   ]
 }

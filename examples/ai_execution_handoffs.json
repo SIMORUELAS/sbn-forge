@@ -1,6 +1,6 @@
 {
   "schema": "simo_ai",
-  "table": "ai_business_model_departments",
+  "table": "ai_execution_handoffs",
   "columns": [
     {
       "name": "id",
@@ -13,7 +13,7 @@
       "scale": 0
     },
     {
-      "name": "business_model_id",
+      "name": "task_id",
       "type": "uuid",
       "nullable": false,
       "primaryKey": false,
@@ -21,61 +21,87 @@
       "writable": true,
       "foreignKey": {
         "schema": "simo_ai",
-        "table": "ai_business_models",
+        "table": "ai_tasks",
         "column": "id"
       }
     },
     {
-      "name": "department_id",
-      "type": "uuid",
+      "name": "from_execution_id",
+      "type": "bigint",
       "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
       "foreignKey": {
         "schema": "simo_ai",
-        "table": "ai_intelligent_departments",
+        "table": "ai_task_executions",
         "column": "id"
-      }
-    },
-    {
-      "name": "is_required",
-      "type": "boolean",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "true"
-    },
-    {
-      "name": "execution_order",
-      "type": "integer",
-      "nullable": false,
-      "primaryKey": false,
-      "generated": false,
-      "writable": true,
-      "hasDefault": true,
-      "default": "1",
-      "precision": 32,
+      },
+      "precision": 64,
       "scale": 0
     },
     {
-      "name": "recommended_plan",
-      "type": "character varying",
-      "nullable": true,
+      "name": "to_execution_id",
+      "type": "bigint",
+      "nullable": false,
       "primaryKey": false,
       "generated": false,
       "writable": true,
+      "foreignKey": {
+        "schema": "simo_ai",
+        "table": "ai_task_executions",
+        "column": "id"
+      },
+      "precision": 64,
+      "scale": 0
+    },
+    {
+      "name": "handoff_type",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "'context_transfer'::character varying",
       "length": 30
     },
     {
-      "name": "configuration_json",
+      "name": "handoff_status",
+      "type": "character varying",
+      "nullable": false,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "hasDefault": true,
+      "default": "'pending'::character varying",
+      "length": 20
+    },
+    {
+      "name": "context_summary",
+      "type": "text",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
+      "name": "context_payload",
       "type": "jsonb",
       "nullable": true,
       "primaryKey": false,
       "generated": false,
       "writable": true
+    },
+    {
+      "name": "token_estimate",
+      "type": "integer",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true,
+      "precision": 32,
+      "scale": 0
     },
     {
       "name": "created_at",
@@ -88,12 +114,25 @@
       "default": "CURRENT_TIMESTAMP"
     },
     {
+      "name": "completed_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": true
+    },
+    {
       "name": "created_by",
       "type": "bigint",
       "nullable": true,
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
     },
@@ -107,6 +146,21 @@
       "length": 50
     },
     {
+      "name": "updated_by",
+      "type": "bigint",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
+      "precision": 64,
+      "scale": 0
+    },
+    {
       "name": "updated_at",
       "type": "timestamp without time zone",
       "nullable": false,
@@ -115,16 +169,6 @@
       "writable": false,
       "hasDefault": true,
       "default": "CURRENT_TIMESTAMP"
-    },
-    {
-      "name": "updated_by",
-      "type": "bigint",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": false,
-      "precision": 64,
-      "scale": 0
     },
     {
       "name": "updated_from",
@@ -136,22 +180,27 @@
       "length": 50
     },
     {
-      "name": "deleted_at",
-      "type": "timestamp without time zone",
-      "nullable": true,
-      "primaryKey": false,
-      "generated": false,
-      "writable": false
-    },
-    {
       "name": "deleted_by",
       "type": "bigint",
       "nullable": true,
       "primaryKey": false,
       "generated": false,
       "writable": false,
+      "foreignKey": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      },
       "precision": 64,
       "scale": 0
+    },
+    {
+      "name": "deleted_at",
+      "type": "timestamp without time zone",
+      "nullable": true,
+      "primaryKey": false,
+      "generated": false,
+      "writable": false
     },
     {
       "name": "version_no",
@@ -168,12 +217,15 @@
   ],
   "seeds": [
     {
-      "business_model_id": "{{AI_BUSINESS_MODELS_ID}}",
-      "department_id": "{{AI_INTELLIGENT_DEPARTMENTS_ID}}",
-      "is_required": true,
-      "execution_order": 1,
-      "recommended_plan": null,
-      "configuration_json": {}
+      "task_id": "{{AI_TASKS_ID}}",
+      "from_execution_id": "{{AI_TASK_EXECUTIONS_ID}}",
+      "to_execution_id": "{{AI_TASK_EXECUTIONS_ID}}",
+      "handoff_type": "context_transfer",
+      "handoff_status": "pending",
+      "context_summary": null,
+      "context_payload": {},
+      "token_estimate": null,
+      "completed_at": null
     }
   ]
 }
