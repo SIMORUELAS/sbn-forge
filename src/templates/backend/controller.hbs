@@ -1,9 +1,163 @@
 'use strict';
-const service = require('./{{names.moduleName}}.service');
-function requestContext(request) { return { userId: request.user?.id, organizationId: request.user?.organization_id, source: request.headers['x-client-source'] || 'api' }; }
-async function list(request, reply) { return reply.send(await service.list(request.query, requestContext(request))); }
-async function getById(request, reply) { return reply.send(await service.getById(request.params.id, requestContext(request))); }
-async function create(request, reply) { const result=await service.create(request.body,requestContext(request)); return reply.code(201).send(result); }
-async function update(request, reply) { return reply.send(await service.update(request.params.id,request.body,requestContext(request))); }
-async function remove(request, reply) { await service.remove(request.params.id,requestContext(request)); return reply.code(204).send(); }
-module.exports={list,getById,create,update,remove};
+
+const service =
+  require(
+    './{{names.moduleName}}.service'
+  );
+
+function requestContext(
+  request
+) {
+  return {
+    userId:
+      request.user?.id,
+
+    organizationId:
+      request.user
+        ?.organization_id,
+
+    source:
+      request.headers[
+        'x-client-source'
+      ] || 'api'
+  };
+}
+
+function handleDatabaseError(
+  error,
+  reply
+) {
+  if (
+    error?.code ===
+    '23505'
+  ) {
+    return reply
+      .code(409)
+      .send({
+        error:
+          'CONFLICT',
+
+        code:
+          'UNIQUE_VIOLATION',
+
+        message:
+          error.detail ||
+          'Ya existe un registro con esos datos.',
+
+        constraint:
+          error.constraint ||
+          null
+      });
+  }
+
+  throw error;
+}
+
+async function list(
+  request,
+  reply
+) {
+  const result =
+    await service.list(
+      request.query,
+      requestContext(
+        request
+      )
+    );
+
+  return reply.send(
+    result
+  );
+}
+
+async function getById(
+  request,
+  reply
+) {
+  const result =
+    await service.getById(
+      request.params.id,
+      requestContext(
+        request
+      )
+    );
+
+  return reply.send(
+    result
+  );
+}
+
+async function create(
+  request,
+  reply
+) {
+  try {
+    const result =
+      await service.create(
+        request.body,
+        requestContext(
+          request
+        )
+      );
+
+    return reply
+      .code(201)
+      .send(
+        result
+      );
+  } catch (error) {
+    return handleDatabaseError(
+      error,
+      reply
+    );
+  }
+}
+
+async function update(
+  request,
+  reply
+) {
+  try {
+    const result =
+      await service.update(
+        request.params.id,
+        request.body,
+        requestContext(
+          request
+        )
+      );
+
+    return reply.send(
+      result
+    );
+  } catch (error) {
+    return handleDatabaseError(
+      error,
+      reply
+    );
+  }
+}
+
+async function remove(
+  request,
+  reply
+) {
+  await service.remove(
+    request.params.id,
+    requestContext(
+      request
+    )
+  );
+
+  return reply
+    .code(204)
+    .send();
+}
+
+module.exports = {
+  list,
+  getById,
+  create,
+  update,
+  remove
+};
