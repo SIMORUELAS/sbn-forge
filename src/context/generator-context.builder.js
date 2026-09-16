@@ -385,6 +385,28 @@ class GeneratorContextBuilder {
       );
 
     /*
+     * Columna que representa la llave primaria.
+     *
+     * primaryKey conserva la metadata original
+     * de la restricción.
+     *
+     * primaryKeyColumn expone la columna
+     * normalizada y enriquecida, incluyendo
+     * jsonSchema.
+     */
+    const primaryKeyName =
+      metadata.primaryKey?.columns?.[0] ||
+      metadata.primaryKey?.name ||
+      null;
+
+    const primaryKeyColumn =
+      primaryKeyName
+        ? columnMap[
+            primaryKeyName
+          ] || null
+        : null;
+
+    /*
      * Los seeds pertenecen a la definición
      * funcional original y no a la metadata
      * estructural normalizada.
@@ -479,7 +501,7 @@ class GeneratorContextBuilder {
             ?.organizationContext
         )
     };
-   
+
       const postmanCollection =
         this.buildPostmanCollection({
           names,
@@ -582,6 +604,8 @@ class GeneratorContextBuilder {
           columns:
             []
         },
+
+      primaryKeyColumn,
 
       foreignKeys:
         metadata.foreignKeys || [],
@@ -1321,7 +1345,7 @@ class GeneratorContextBuilder {
     };
   }
 
- 
+
   buildInstallationContext({
       names,
       api,
@@ -1473,8 +1497,8 @@ class GeneratorContextBuilder {
         '\n'
       );
     }
-  
-      
+
+
 
     buildRegisterCode({
       framework,
@@ -2085,7 +2109,7 @@ class GeneratorContextBuilder {
 
       }
 
-  
+
 
 
     buildJsonSchema(

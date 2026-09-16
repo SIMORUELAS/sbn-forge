@@ -5,8 +5,8 @@ const idParam = {
   required: ['id'],
   properties: {
     id: {
-      type: 'integer',
-      minimum: 1
+      type: '{{primaryKeyColumn.jsonSchema.type}}'{{#if primaryKeyColumn.jsonSchema.format}},
+      format: '{{primaryKeyColumn.jsonSchema.format}}'{{/if}}
     }
   },
   additionalProperties: false
