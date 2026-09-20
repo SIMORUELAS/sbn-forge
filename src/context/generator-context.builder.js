@@ -344,7 +344,51 @@ class GeneratorContextBuilder {
           };
         }
       );
+    /*
+     * Columnas utilizadas como filtros
+     * automáticos en operaciones LIST.
+     *
+     * En esta primera versión se exponen
+     * como filtros las columnas que
+     * participan como llaves foráneas.
+     *
+     * La definición completa de la columna
+     * normalizada se conserva para reutilizar
+     * su jsonSchema en los templates.
+     */
+    const foreignKeyColumns =
+      new Set(
+        (
+          metadata.foreignKeys ||
+          []
+        )
+          .map(
+            foreignKey =>
+              foreignKey.column ||
+              foreignKey.localColumn
+          )
+          .filter(Boolean)
+      );
 
+    const listFilters =
+      normalizedColumns
+        .filter(
+          column =>
+            foreignKeyColumns.has(
+              column.name
+            )
+        )
+        .map(
+          column => ({
+            ...column,
+            filterSchemaType:
+              column.jsonSchema?.type,
+            filterSchemaFormat:
+              column.jsonSchema?.format,
+            filterSchemaMaxLength:
+              column.jsonSchema?.maxLength
+          })
+        );
     /*
      * Columnas que pueden recibirse en
      * operaciones de creación o actualización.
@@ -582,6 +626,8 @@ class GeneratorContextBuilder {
 
       columns:
         normalizedColumns,
+
+      listFilters,
 
       writableColumns,
 

@@ -93,6 +93,7 @@ async function list(query = {}) {
       : 'DESC';
 
   const where = [];
+  const values = [];
 
   {{#if capabilities.softDelete}}
   if (!query.include_deleted) {
@@ -102,24 +103,51 @@ async function list(query = {}) {
   }
   {{/if}}
 
+  {{#each listFilters}}
+  if (
+    query.{{name}} !== undefined &&
+    query.{{name}} !== null
+  ) {
+    values.push(
+      query.{{name}}
+    );
+
+    where.push(
+      '{{name}} = $' +
+        values.length
+    );
+  }
+  {{/each}}
+
   const whereClause =
     where.length > 0
       ? `WHERE ${where.join(' AND ')}`
       : '';
+
+  const limitParameter =
+    values.length + 1;
+
+  const offsetParameter =
+    values.length + 2;
+
+  values.push(
+    limit,
+    offset
+  );
 
   const sql = `
     SELECT *
     FROM ${QUALIFIED_TABLE}
     ${whereClause}
     ORDER BY ${sort} ${direction}
-    LIMIT $1
-    OFFSET $2
+    LIMIT $${limitParameter}
+    OFFSET $${offsetParameter}
   `;
 
   const result =
     await connection().query(
       sql,
-      [limit, offset]
+      values
     );
 
   return {

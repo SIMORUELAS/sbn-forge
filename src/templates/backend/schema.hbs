@@ -48,7 +48,12 @@ const list = {
       include_deleted: {
         type: 'boolean',
         default: false
-      }{{/if}}
+      }{{/if}}{{#each listFilters}},
+      {{name}}: {
+        type: '{{filterSchemaType}}'{{#if filterSchemaFormat}},
+        format: '{{filterSchemaFormat}}'{{/if}}{{#if filterSchemaMaxLength}},
+        maxLength: {{filterSchemaMaxLength}}{{/if}}
+      }{{/each}}
     },
     additionalProperties: false
   }
