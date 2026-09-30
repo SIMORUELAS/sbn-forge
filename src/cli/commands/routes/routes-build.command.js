@@ -1,5 +1,10 @@
 'use strict';
 
+const path =
+  require(
+    'path'
+  );
+
 const {
   Command
 } = require(
@@ -42,6 +47,17 @@ function registerRoutesBuildCommand(
       './generated'
     )
 
+    .option(
+      '--installed',
+      'Construye el registro usando los módulos instalados en el proyecto.',
+      false
+    )
+
+    .option(
+      '--project-root <directory>',
+      'Directorio raíz del proyecto donde están instalados los módulos.'
+    )
+
     .action(
       async (
         options
@@ -70,15 +86,54 @@ function registerRoutesBuildCommand(
          * ruta de instalación final, no necesariamente
          * la carpeta física del output de Forge.
          */
-        const modulesDirectory =
-          `${configuration.generation.output}/modules`;
+
+        let modulesDirectory;
+        let outputDirectory;
+
+        if (
+          options.installed
+        ) {
+          if (
+            !options.projectRoot
+          ) {
+            throw new Error(
+              'Debe indicar --project-root cuando utiliza --installed.'
+            );
+          }
+
+          const projectRoot =
+            path.resolve(
+              options.projectRoot
+            );
+
+          modulesDirectory =
+            path.join(
+              projectRoot,
+              'src',
+              configuration
+                .project
+                .moduleRoot
+            );
+
+          outputDirectory =
+            path.join(
+              projectRoot,
+              'src',
+              'generated'
+            );
+        }
+        else {
+          modulesDirectory =
+            `${configuration.generation.output}/modules`;
+
+          outputDirectory =
+            options.output;
+        }
 
         const result =
           await generator.generate({
             modulesDirectory,
-
-            outputDirectory:
-              options.output
+            outputDirectory
           });
 
         console.log(
