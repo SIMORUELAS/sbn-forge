@@ -162,4 +162,158 @@ describe('API Generator', () => {
       ).toBe(false);
     }
   );
+
+  test(
+    'genera idParam integer para primary key bigint',
+    async () => {
+      const output =
+        await fs.mkdtemp(
+          path.join(
+            os.tmpdir(),
+            'forge-pk-bigint-'
+          )
+        );
+
+      try {
+        const context =
+          createGeneratorContext(
+            definition
+          );
+
+        const result =
+          await generateApi(
+            context,
+            {
+              output
+            }
+          );
+
+        const schemaPath =
+          path.join(
+            result.moduleDirectory,
+            'ai-business-model-departments.schema.js'
+          );
+
+        const schema =
+          await fs.readFile(
+            schemaPath,
+            'utf8'
+          );
+
+        const idParamBlock =
+          schema.match(
+            /const idParam = \{[\s\S]*?\n\};/
+          )?.[0];
+
+        expect(
+          idParamBlock
+        ).toBeDefined();
+
+        expect(
+          idParamBlock
+        ).toContain(
+          "type: 'integer'"
+        );
+
+        expect(
+          idParamBlock
+        ).not.toContain(
+          "format: 'uuid'"
+        );
+      } finally {
+        await fs.remove(
+          output
+        );
+      }
+    }
+  );
+
+  test(
+    'genera idParam uuid para primary key uuid',
+    async () => {
+      const output =
+        await fs.mkdtemp(
+          path.join(
+            os.tmpdir(),
+            'forge-pk-uuid-'
+          )
+        );
+
+      const uuidDefinition = {
+        ...definition,
+
+        table:
+          'ai_business_model_departments_uuid_test',
+
+        columns:
+          definition.columns.map(
+            (column) =>
+              column.name === 'id'
+                ? {
+                    ...column,
+                    type: 'uuid',
+                    generated: false,
+                    writable: false,
+                    precision: undefined,
+                    scale: undefined
+                  }
+                : {
+                    ...column
+                  }
+          )
+      };
+
+      try {
+        const context =
+          createGeneratorContext(
+            uuidDefinition
+          );
+
+        const result =
+          await generateApi(
+            context,
+            {
+              output
+            }
+          );
+
+        const schemaPath =
+          path.join(
+            result.moduleDirectory,
+            'ai-business-model-departments-uuid-test.schema.js'
+          );
+
+        const schema =
+          await fs.readFile(
+            schemaPath,
+            'utf8'
+          );
+
+        const idParamBlock =
+          schema.match(
+            /const idParam = \{[\s\S]*?\n\};/
+          )?.[0];
+
+        expect(
+          idParamBlock
+        ).toBeDefined();
+
+        expect(
+          idParamBlock
+        ).toContain(
+          "type: 'string'"
+        );
+
+        expect(
+          idParamBlock
+        ).toContain(
+          "format: 'uuid'"
+        );
+      } finally {
+        await fs.remove(
+          output
+        );
+      }
+    }
+  );
 });

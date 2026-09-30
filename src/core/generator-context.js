@@ -285,6 +285,9 @@ function createGeneratorContext(
 
     primaryKey,
 
+    primaryKeyColumn:
+      primaryKey,
+
     writableColumns,
 
     createRequiredColumns,
