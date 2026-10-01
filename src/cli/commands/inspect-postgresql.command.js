@@ -5,6 +5,12 @@ const chalk = require('chalk');
 const ora = require('ora');
 
 const {
+  loadForgeConfig
+} = require(
+  '../../config/forge-config'
+);
+
+const {
   PostgresDatasource
 } = require('../../datasources/postgresql');
 
@@ -29,6 +35,49 @@ const DefinitionWriter = require(
  *
  * sbn-forge inspect postgresql <table>
  */
+
+function resolvePostgresqlOptions(
+  options,
+  configuration,
+  environment = process.env
+) {
+  return {
+    host:
+      options.host ||
+      configuration.source.host ||
+      environment.SBN_FORGE_DB_HOST,
+
+    port: Number(
+      options.port ||
+      configuration.source.port ||
+      environment.SBN_FORGE_DB_PORT ||
+      5432
+    ),
+
+    database:
+      options.database ||
+      configuration.source.database ||
+      environment.SBN_FORGE_DB_NAME,
+
+    user:
+      options.user ||
+      configuration.source.user ||
+      environment.SBN_FORGE_DB_USER,
+
+    password:
+      options.password ||
+      environment.SBN_POSTGRES_PASSWORD ||
+      environment.SBN_FORGE_DB_PASSWORD,
+
+    ssl:
+      options.ssl ||
+      environment.SBN_FORGE_DB_SSL === 'true'
+        ? {
+            rejectUnauthorized: false
+          }
+        : false
+  };
+}
 function registerInspectPostgresqlCommand(parent) {
   parent
     .command('postgresql <table>')
@@ -73,41 +122,33 @@ function registerInspectPostgresqlCommand(parent) {
       'Reduce la salida del CLI',
       false
     )
+    .option(
+      '--config <file>',
+      'Archivo de configuración de Forge.',
+      'forge.config.json'
+    )
     .action(async (table, options) => {
-      const cwd = process.cwd();
+            const cwd = process.cwd();
+
+            const configuration =
+              await loadForgeConfig({
+                rootDirectory:
+                  cwd,
+
+                configFile:
+                  options.config
+              });
+
+            const datasourceOptions =
+        resolvePostgresqlOptions(
+          options,
+          configuration
+        );
 
       const datasource =
-        new PostgresDatasource({
-          host:
-            options.host ||
-            process.env.SBN_FORGE_DB_HOST,
-
-          port: Number(
-            options.port ||
-            process.env.SBN_FORGE_DB_PORT ||
-            5432
-          ),
-
-          database:
-            options.database ||
-            process.env.SBN_FORGE_DB_NAME,
-
-          user:
-            options.user ||
-            process.env.SBN_FORGE_DB_USER,
-
-          password:
-            options.password ||
-            process.env.SBN_FORGE_DB_PASSWORD,
-
-          ssl:
-            options.ssl ||
-            process.env.SBN_FORGE_DB_SSL === 'true'
-              ? {
-                  rejectUnauthorized: false
-                }
-              : false
-        });
+        new PostgresDatasource(
+          datasourceOptions
+        );
 
       const outputPath = path.resolve(
         cwd,
@@ -193,5 +234,6 @@ function registerInspectPostgresqlCommand(parent) {
 }
 
 module.exports = {
-  registerInspectPostgresqlCommand
+  registerInspectPostgresqlCommand,
+  resolvePostgresqlOptions
 };
