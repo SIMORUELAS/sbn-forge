@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const path =
   require(
@@ -10,6 +10,13 @@ const {
 } =
   require(
     '../../core/template-engine'
+  );
+
+const {
+  FileWriter
+} =
+  require(
+    '../../core/file-writer'
   );
 
 class RuntimeResourceGenerator {
@@ -52,6 +59,54 @@ class RuntimeResourceGenerator {
     return this.engine.render(
       'runtime/resource.hbs',
       templateContext
+    );
+  }
+
+  async generate(
+    runtimeContext,
+    {
+      output,
+      dryRun = false,
+      force = false,
+      writeMode
+    } = {}
+  ) {
+    this.validateContext(
+      runtimeContext
+    );
+
+    if (
+      typeof output !==
+        'string' ||
+      output.trim() ===
+        ''
+    ) {
+      throw new TypeError(
+        'RuntimeResourceGenerator requiere options.output.'
+      );
+    }
+
+    const content =
+      await this.render(
+        runtimeContext
+      );
+
+    const target =
+      path.resolve(
+        output,
+        `${runtimeContext.name}.resource.ts`
+      );
+
+    const writer =
+      new FileWriter({
+        dryRun,
+        force,
+        writeMode
+      });
+
+    return writer.write(
+      target,
+      content
     );
   }
 
