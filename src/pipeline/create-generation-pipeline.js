@@ -22,6 +22,16 @@ const {
   '../generators/backend/api-generator'
 );
 
+const RuntimeResourceContextBuilder =
+  require(
+    '../runtime/runtime-resource-context.builder'
+  );
+
+const RuntimeResourceGenerator =
+  require(
+    '../generators/runtime/runtime-resource.generator'
+  );
+
 /**
  * Crea el pipeline principal de generación.
  *
@@ -140,6 +150,31 @@ function createGenerationPipeline(
       }
     };
 
+  const runtimeContextBuilder =
+    options.runtimeContextBuilder ||
+    new RuntimeResourceContextBuilder();
+
+  const runtimeResourceGenerator =
+    options.runtimeResourceGenerator ||
+    new RuntimeResourceGenerator();
+
+  const runtimeGenerator = {
+    async generate(
+      context,
+      generationOptions = {}
+    ) {
+      const runtimeContext =
+        await runtimeContextBuilder.build(
+          context
+        );
+
+      return runtimeResourceGenerator.generate(
+        runtimeContext,
+        generationOptions
+      );
+    }
+  };
+
   return new GenerationPipeline({
     contextBuilder,
 
@@ -150,6 +185,9 @@ function createGenerationPipeline(
     generators: {
       api:
         apiGenerator,
+
+      runtime:
+        runtimeGenerator,
 
       ...(options.generators || {})
     }
