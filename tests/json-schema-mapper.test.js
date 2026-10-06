@@ -70,4 +70,58 @@ describe('json-schema-mapper', () => {
       maxLength: 30
     });
   });
+  test('conserva nullable en propiedades JSON Schema', () => {
+    expect(
+      buildJsonSchemaProperty({
+        type: 'uuid',
+        nullable: true
+      })
+    ).toEqual({
+      type: 'string',
+      format: 'uuid',
+      nullable: true
+    });
+
+    expect(
+      buildJsonSchemaProperty({
+        type: 'integer',
+        nullable: true
+      })
+    ).toEqual({
+      type: 'integer',
+      nullable: true
+    });
+
+    expect(
+      buildJsonSchemaProperty({
+        type: 'boolean',
+        nullable: true
+      })
+    ).toEqual({
+      type: 'boolean',
+      nullable: true
+    });
+
+    expect(
+      buildJsonSchemaProperty({
+        type: 'jsonb',
+        nullable: true
+      })
+    ).toEqual({
+      type: 'object',
+      nullable: true
+    });
+
+    expect(
+      buildJsonSchemaProperty({
+        type: 'varchar',
+        nullable: true,
+        length: 50
+      })
+    ).toEqual({
+      type: 'string',
+      maxLength: 50,
+      nullable: true
+    });
+  });
 });

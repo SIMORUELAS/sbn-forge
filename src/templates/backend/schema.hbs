@@ -17,7 +17,8 @@ const writableProperties = {
   {{name}}: {
     type: '{{jsonSchema.type}}'{{#if jsonSchema.format}},
     format: '{{jsonSchema.format}}'{{/if}}{{#if jsonSchema.maxLength}},
-    maxLength: {{jsonSchema.maxLength}}{{/if}}
+    maxLength: {{jsonSchema.maxLength}}{{/if}}{{#if jsonSchema.nullable}},
+    nullable: true{{/if}}
   }{{#unless @last}},{{/unless}}
 {{/each}}
 };

@@ -90,6 +90,10 @@ const maxLength =
     ) {
         property.maxLength = maxLength;
     }
+    if (column.nullable === true) {
+        property.nullable = true;
+    }
+
       return property;
     }
 

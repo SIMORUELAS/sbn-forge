@@ -8,6 +8,10 @@ const definition = require(
   '../examples/ai_business_model_departments.json'
 );
 
+const aiAgentsDefinition = require(
+  '../examples/ai_agents.json'
+);
+
 const {
   createGeneratorContext
 } = require(
@@ -308,6 +312,97 @@ describe('API Generator', () => {
           idParamBlock
         ).toContain(
           "format: 'uuid'"
+        );
+      } finally {
+        await fs.remove(
+          output
+        );
+      }
+    }
+  );
+  test(
+    'genera uuid nullable para branch_id de ai_agents',
+    async () => {
+      const output =
+        await fs.mkdtemp(
+          path.join(
+            os.tmpdir(),
+            'forge-ai-agents-nullable-'
+          )
+        );
+
+      try {
+        const context =
+          createGeneratorContext(
+            aiAgentsDefinition
+          );
+
+        const result =
+          await generateApi(
+            context,
+            {
+              output
+            }
+          );
+
+        const schemaPath =
+          path.join(
+            result.moduleDirectory,
+            'ai-agents.schema.js'
+          );
+
+        const schema =
+          await fs.readFile(
+            schemaPath,
+            'utf8'
+          );
+
+        const idParamBlock =
+          schema.match(
+            /const idParam = \{[\s\S]*?\n\};/
+          )?.[0];
+
+        expect(
+          idParamBlock
+        ).toBeDefined();
+
+        expect(
+          idParamBlock
+        ).toContain(
+          "type: 'string'"
+        );
+
+        expect(
+          idParamBlock
+        ).toContain(
+          "format: 'uuid'"
+        );
+
+        const branchIdBlock =
+          schema.match(
+            /branch_id: \{[\s\S]*?\n  \}/
+          )?.[0];
+
+        expect(
+          branchIdBlock
+        ).toBeDefined();
+
+        expect(
+          branchIdBlock
+        ).toContain(
+          "type: 'string'"
+        );
+
+        expect(
+          branchIdBlock
+        ).toContain(
+          "format: 'uuid'"
+        );
+
+        expect(
+          branchIdBlock
+        ).toContain(
+          "nullable: true"
         );
       } finally {
         await fs.remove(
