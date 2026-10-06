@@ -249,7 +249,7 @@ async function update(
     context.source || 'api';
   {{/if}}
 
-  {{#if capabilities.versioning}}
+  {{#if capabilities.optimisticLock}}
   const expectedVersion =
     input.expected_version_no;
 
@@ -293,7 +293,7 @@ async function update(
     WHERE ${TABLE_METADATA.primaryKey} = $${values.length}
   `;
 
-  {{#if capabilities.versioning}}
+  {{#if capabilities.optimisticLock}}
   values.push(
     input.expected_version_no
   );
@@ -331,7 +331,7 @@ async function remove(
     UPDATE ${QUALIFIED_TABLE}
     SET
       deleted_at = CURRENT_TIMESTAMP{{#if columnMap.deleted_by}},
-      deleted_by = $2{{/if}}{{#if capabilities.versioning}},
+      deleted_by = $2{{/if}}{{#if capabilities.optimisticLock}},
       version_no = version_no + 1{{/if}}
     WHERE ${TABLE_METADATA.primaryKey} = $1
       AND deleted_at IS NULL
@@ -373,3 +373,4 @@ module.exports = {
   WRITABLE_COLUMNS,
   SORTABLE_COLUMNS
 };
+

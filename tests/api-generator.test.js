@@ -321,7 +321,7 @@ describe('API Generator', () => {
     }
   );
   test(
-    'genera uuid nullable para branch_id de ai_agents',
+    'genera uuid nullable y optimistic locking para ai_agents',
     async () => {
       const output =
         await fs.mkdtemp(
@@ -404,6 +404,55 @@ describe('API Generator', () => {
         ).toContain(
           "nullable: true"
         );
+
+        const repositoryPath =
+          path.join(
+            result.moduleDirectory,
+            'ai-agents.repository.js'
+          );
+
+        const repository =
+          await fs.readFile(
+            repositoryPath,
+            'utf8'
+          );
+
+        expect(
+          repository
+        ).toContain(
+          'input.expected_version_no'
+        );
+
+        expect(
+          repository
+        ).toContain(
+          'const expectedVersion ='
+        );
+
+        expect(
+          repository
+        ).toContain(
+          'data.version_no ='
+        );
+
+        expect(
+          repository
+        ).toContain(
+          'expectedVersion + 1'
+        );
+
+        expect(
+          repository
+        ).toContain(
+          'AND version_no = $${values.length}'
+        );
+
+        expect(
+          repository
+        ).toContain(
+          'version_no = version_no + 1'
+        );
+
       } finally {
         await fs.remove(
           output
