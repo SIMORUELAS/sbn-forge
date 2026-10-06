@@ -395,6 +395,34 @@ describe(
           true
         );
 
+                expect(
+          context.columns.find(
+            column =>
+              column.name ===
+              'business_model_id'
+          ).jsonSchema
+        ).toEqual({
+          type:
+            'string',
+
+          format:
+            'uuid'
+        });
+
+        expect(
+          context.columns.find(
+            column =>
+              column.name ===
+              'configuration_json'
+          ).jsonSchema
+        ).toEqual({
+          type:
+            'object',
+
+          nullable:
+            true
+        });
+
         expect(
           context.columns.every(
             column =>

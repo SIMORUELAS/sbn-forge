@@ -1,7 +1,13 @@
-'use strict';
+﻿'use strict';
 
 const naming =
   require('../core/naming');
+
+const {
+  buildJsonSchemaProperty
+} = require(
+  '../core/json-schema-mapper'
+);
 
 const MetadataNormalizer =
   require(
@@ -93,7 +99,7 @@ function toSqlLiteral(
       )
     ) {
       throw new TypeError(
-        'Los valores numéricos de seeds deben ser finitos.'
+        'Los valores numÃ©ricos de seeds deben ser finitos.'
       );
     }
 
@@ -169,7 +175,7 @@ function buildSeedStatements(
         )
       ) {
         throw new TypeError(
-          `El seed en la posición ${seedIndex} debe ser un objeto.`
+          `El seed en la posiciÃ³n ${seedIndex} debe ser un objeto.`
         );
       }
 
@@ -207,7 +213,7 @@ function buildSeedStatements(
         entries.length === 0
       ) {
         throw new Error(
-          `El seed en la posición ${seedIndex} está vacío.`
+          `El seed en la posiciÃ³n ${seedIndex} estÃ¡ vacÃ­o.`
         );
       }
 
@@ -285,7 +291,7 @@ class GeneratorContextBuilder {
 
     /*
      * Enriquece las columnas normalizadas
-     * con información que será utilizada
+     * con informaciÃ³n que serÃ¡ utilizada
      * por los diferentes templates.
      */
     const normalizedColumns =
@@ -332,7 +338,7 @@ class GeneratorContextBuilder {
             jsonSchema,
 
             /*
-             * Versión serializada para los
+             * VersiÃ³n serializada para los
              * templates Markdown.
              */
             jsonSchemaText:
@@ -346,13 +352,13 @@ class GeneratorContextBuilder {
       );
     /*
      * Columnas utilizadas como filtros
-     * automáticos en operaciones LIST.
+     * automÃ¡ticos en operaciones LIST.
      *
-     * En esta primera versión se exponen
+     * En esta primera versiÃ³n se exponen
      * como filtros las columnas que
-     * participan como llaves foráneas.
+     * participan como llaves forÃ¡neas.
      *
-     * La definición completa de la columna
+     * La definiciÃ³n completa de la columna
      * normalizada se conserva para reutilizar
      * su jsonSchema en los templates.
      */
@@ -391,7 +397,7 @@ class GeneratorContextBuilder {
         );
     /*
      * Columnas que pueden recibirse en
-     * operaciones de creación o actualización.
+     * operaciones de creaciÃ³n o actualizaciÃ³n.
      */
     const writableColumns =
       normalizedColumns.filter(
@@ -432,7 +438,7 @@ class GeneratorContextBuilder {
      * Columna que representa la llave primaria.
      *
      * primaryKey conserva la metadata original
-     * de la restricción.
+     * de la restricciÃ³n.
      *
      * primaryKeyColumn expone la columna
      * normalizada y enriquecida, incluyendo
@@ -451,7 +457,7 @@ class GeneratorContextBuilder {
         : null;
 
     /*
-     * Los seeds pertenecen a la definición
+     * Los seeds pertenecen a la definiciÃ³n
      * funcional original y no a la metadata
      * estructural normalizada.
      */
@@ -497,7 +503,7 @@ class GeneratorContextBuilder {
      * - archivos HTTP;
      * - Postman;
      * - OpenAPI;
-     * - futuras pruebas de integración.
+     * - futuras pruebas de integraciÃ³n.
      */
 
       const apiExamples =
@@ -755,7 +761,7 @@ class GeneratorContextBuilder {
         ''
     ) {
       throw new TypeError(
-        'El perfil de generación debe ser una cadena válida'
+        'El perfil de generaciÃ³n debe ser una cadena vÃ¡lida'
       );
     }
 
@@ -773,7 +779,7 @@ class GeneratorContextBuilder {
         'object'
     ) {
       throw new TypeError(
-        'MetadataNormalizer debe devolver un objeto válido'
+        'MetadataNormalizer debe devolver un objeto vÃ¡lido'
       );
     }
 
@@ -816,7 +822,7 @@ class GeneratorContextBuilder {
        *
        * Se mantiene habilitada mientras
        * ni el perfil ni el detector la
-       * desactiven explícitamente.
+       * desactiven explÃ­citamente.
        */
       crud:
         profileCapabilities.crud !==
@@ -825,7 +831,7 @@ class GeneratorContextBuilder {
 
       /*
        * Capacidades controladas por
-       * el perfil de generación.
+       * el perfil de generaciÃ³n.
        */
       bulk:
         Boolean(
@@ -1013,7 +1019,7 @@ class GeneratorContextBuilder {
     ) {
       /*
       * project.routePrefix ya fue resuelto
-      * utilizando la jerarquía oficial.
+      * utilizando la jerarquÃ­a oficial.
       */
       const prefix =
         project.routePrefix;
@@ -1173,7 +1179,7 @@ class GeneratorContextBuilder {
             reason:
               dependency.column
                 ? `Requerido por ${dependency.column}.`
-                : 'Requerido por una llave foránea.'
+                : 'Requerido por una llave forÃ¡nea.'
           })
         );
 
@@ -1276,21 +1282,21 @@ class GeneratorContextBuilder {
             'pg',
 
           purpose:
-            'Conexión con PostgreSQL.'
+            'ConexiÃ³n con PostgreSQL.'
         },
         {
           name:
             'zod',
 
           purpose:
-            'Validación de datos y contratos.'
+            'ValidaciÃ³n de datos y contratos.'
         },
         {
           name:
             '@fastify/jwt',
 
           purpose:
-            'Autenticación mediante JWT.'
+            'AutenticaciÃ³n mediante JWT.'
         }
       ],
 
@@ -1303,7 +1309,7 @@ class GeneratorContextBuilder {
             true,
 
           description:
-            'Cadena de conexión PostgreSQL.'
+            'Cadena de conexiÃ³n PostgreSQL.'
         },
         {
           name:
@@ -1613,7 +1619,7 @@ class GeneratorContextBuilder {
         ''
     ) {
       throw new TypeError(
-        'buildNames requiere un nombre de tabla válido'
+        'buildNames requiere un nombre de tabla vÃ¡lido'
       );
     }
 
@@ -1785,7 +1791,7 @@ class GeneratorContextBuilder {
         ''
     ) {
       throw new TypeError(
-        'La ruta de API debe ser una cadena válida'
+        'La ruta de API debe ser una cadena vÃ¡lida'
       );
     }
 
@@ -1938,7 +1944,7 @@ class GeneratorContextBuilder {
         'Registro de ejemplo',
 
       description:
-        'Descripción de ejemplo generada por SBN Forge.',
+        'DescripciÃ³n de ejemplo generada por SBN Forge.',
 
       status:
         'active',
@@ -2128,8 +2134,8 @@ class GeneratorContextBuilder {
 
           /*
           * JSON.stringify convierte el body JSON
-          * en una cadena válida para body.raw
-          * dentro de la colección Postman.
+          * en una cadena vÃ¡lida para body.raw
+          * dentro de la colecciÃ³n Postman.
           */
           bodyCreateJson:
             JSON.stringify(
@@ -2155,120 +2161,20 @@ class GeneratorContextBuilder {
 
       }
 
+     buildJsonSchema(
+        column
+      ) {
+        return buildJsonSchemaProperty({
+          ...column,
 
-
-
-    buildJsonSchema(
-    column
-  ) {
-    const dataType =
-      String(
-        column.dataType ||
-        column.type ||
-        column.nativeType ||
-        ''
-      )
-        .trim()
-        .toLowerCase();
-
-    switch (dataType) {
-      case 'uuid':
-        return {
           type:
-            'string',
-
-          format:
-            'uuid'
-        };
-
-      case 'boolean':
-      case 'bool':
-        return {
-          type:
-            'boolean'
-        };
-
-      case 'integer':
-      case 'int':
-      case 'int2':
-      case 'int4':
-      case 'smallint':
-        return {
-          type:
-            'integer'
-        };
-
-      case 'bigint':
-      case 'int8':
-        return {
-          type:
-            'integer'
-        };
-
-      case 'numeric':
-      case 'decimal':
-      case 'real':
-      case 'float':
-      case 'float4':
-      case 'float8':
-      case 'double':
-      case 'double precision':
-        return {
-          type:
-            'number'
-        };
-
-      case 'json':
-      case 'jsonb':
-        return {
-          type:
-            'object'
-        };
-
-      case 'date':
-        return {
-          type:
-            'string',
-
-          format:
-            'date'
-        };
-
-      case 'timestamp':
-      case 'timestamptz':
-      case 'timestamp without time zone':
-      case 'timestamp with time zone':
-        return {
-          type:
-            'string',
-
-          format:
-            'date-time'
-        };
-
-      default: {
-        const jsonSchema = {
-          type:
-            'string'
-        };
-
-        const maxLength =
-          column.maxLength ??
-          column.length;
-
-        if (
-          Number.isInteger(
-            maxLength
-          )
-        ) {
-          jsonSchema.maxLength =
-            maxLength;
-        }
-
-        return jsonSchema;
+            column.dataType ||
+            column.type ||
+            column.nativeType ||
+            ''
+        });
       }
-    }
-  }
+
 }
 
 module.exports =
