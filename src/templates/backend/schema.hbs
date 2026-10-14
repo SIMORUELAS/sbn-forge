@@ -2,6 +2,17 @@
 
 const idParam = {
   type: 'object',
+{{#if primaryKeyInfo.isComposite}}
+  required: [{{#each primaryKeyInfo.columns}}'{{name}}'{{#unless @last}}, {{/unless}}{{/each}}],
+  properties: {
+{{#each primaryKeyInfo.columns}}
+    {{name}}: {
+      type: '{{jsonSchema.type}}'{{#if jsonSchema.format}},
+      format: '{{jsonSchema.format}}'{{/if}}
+    }{{#unless @last}},{{/unless}}
+{{/each}}
+  },
+{{else}}
   required: ['id'],
   properties: {
     id: {
@@ -9,6 +20,7 @@ const idParam = {
       format: '{{primaryKeyColumn.jsonSchema.format}}'{{/if}}
     }
   },
+{{/if}}
   additionalProperties: false
 };
 
@@ -23,6 +35,16 @@ const writableProperties = {
 {{/each}}
 };
 
+const createPrimaryKeyProperties = {
+{{#each primaryKeyInfo.columns}}
+{{#unless generated}}
+  {{name}}: {
+    type: '{{jsonSchema.type}}'{{#if jsonSchema.format}},
+    format: '{{jsonSchema.format}}'{{/if}}
+  },
+{{/unless}}
+{{/each}}
+};
 const list = {
   tags: ['{{names.module}}'],
   querystring: {
@@ -69,7 +91,7 @@ const create = {
   tags: ['{{names.module}}'],
   body: {
     type: 'object',
-    properties: writableProperties,
+    properties: { ...writableProperties, ...createPrimaryKeyProperties },
     {{#if createRequiredColumns.length}}
     required: [
       {{#each createRequiredColumns}}

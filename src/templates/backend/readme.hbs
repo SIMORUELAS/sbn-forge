@@ -35,10 +35,10 @@ fastify.register(routes);
 | Método | Endpoint |
 |---------|----------|
 | GET | `{{api.basePath}}` |
-| GET | `{{api.basePath}}/:id` |
+| GET | `{{api.basePath}}{{#if primaryKeyInfo.isComposite}}{{primaryKeyInfo.routePath}}{{else}}/:id{{/if}}` |
 | POST | `{{api.basePath}}` |
-| PATCH | `{{api.basePath}}/:id` |
-| DELETE | `{{api.basePath}}/:id` |
+| PATCH | `{{api.basePath}}{{#if primaryKeyInfo.isComposite}}{{primaryKeyInfo.routePath}}{{else}}/:id{{/if}}` |
+| DELETE | `{{api.basePath}}{{#if primaryKeyInfo.isComposite}}{{primaryKeyInfo.routePath}}{{else}}/:id{{/if}}` |
 
 ---
 

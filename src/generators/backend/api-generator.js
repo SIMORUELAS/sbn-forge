@@ -655,6 +655,69 @@ function normalizeTemplateContext(
     context.forge?.generatorVersion ||
     '0.1.0';
 
+  const primaryKeyNames =
+    Array.isArray(context.primaryKeys) &&
+    context.primaryKeys.length > 0
+      ? context.primaryKeys.map(column =>
+          typeof column === 'string'
+            ? column
+            : column.name
+        )
+      : Array.isArray(context.primaryKey?.columns)
+        ? context.primaryKey.columns
+        : context.primaryKeyColumn?.name
+          ? [context.primaryKeyColumn.name]
+          : context.primaryKey?.name
+            ? [context.primaryKey.name]
+            : [];
+
+  const primaryKeyColumns =
+    primaryKeyNames.map(name => {
+      const column = context.columns.find(
+        item => item.name === name
+      );
+
+      if (!column) {
+        throw new Error(
+          `No se encontró la columna PK: ${name}`
+        );
+      }
+
+      return column;
+    });
+
+  const createPrimaryKeyColumns =
+    primaryKeyColumns.filter(column => !column.generated);
+
+  const createColumns = [
+    ...createPrimaryKeyColumns,
+    ...context.writableColumns.filter(
+      column =>
+        !createPrimaryKeyColumns.some(
+          primaryKey => primaryKey.name === column.name
+        )
+    )
+  ];
+
+  const createRequiredColumns = [
+    ...createPrimaryKeyColumns,
+    ...context.createRequiredColumns.filter(
+      column =>
+        !createPrimaryKeyColumns.some(
+          primaryKey => primaryKey.name === column.name
+        )
+    )
+  ];
+  const primaryKeyInfo = {
+    columns: primaryKeyColumns,
+    isComposite: primaryKeyColumns.length > 1,
+    routePath: primaryKeyColumns
+      .map(column => `/:${column.name}`)
+      .join(''),
+    defaultSort: primaryKeyColumns
+      .map(column => column.name)
+      .join(', ')
+  };
   return {
     ...context,
 
@@ -662,6 +725,9 @@ function normalizeTemplateContext(
 
     table,
 
+    primaryKeyInfo,
+    createColumns,
+    createRequiredColumns,
     generator: {
       name:
         context.generator?.name ||

@@ -4,7 +4,12 @@ const TABLE_METADATA =
   Object.freeze({
     schema: '{{schema}}',
     table: '{{table}}',
-    primaryKey: '{{primaryKey.name}}'
+    primaryKey: '{{primaryKeyInfo.columns.[0].name}}',
+    primaryKeyColumns: Object.freeze([
+{{#each primaryKeyInfo.columns}}
+      '{{name}}'{{#unless @last}},{{/unless}}
+{{/each}}
+    ])
   });
 
 const QUALIFIED_TABLE =
@@ -64,7 +69,7 @@ function pickWritable(input) {
 function safeSort(value) {
   return SORTABLE_COLUMNS.includes(value)
     ? value
-    : TABLE_METADATA.primaryKey;
+    : TABLE_METADATA.primaryKeyColumns[0];
 }
 
 async function list(query = {}) {
@@ -161,10 +166,26 @@ async function list(query = {}) {
 }
 
 async function getById(id) {
+  const keyValues =
+    TABLE_METADATA.primaryKeyColumns.map(
+      column =>
+        TABLE_METADATA.primaryKeyColumns.length === 1
+          ? id
+          : id?.[column]
+    );
+
+  const keyWhere =
+    TABLE_METADATA.primaryKeyColumns
+      .map(
+        (column, index) =>
+          `${column} = $${index + 1}`
+      )
+      .join(' AND ');
+
   const sql = `
     SELECT *
     FROM ${QUALIFIED_TABLE}
-    WHERE ${TABLE_METADATA.primaryKey} = $1
+    WHERE ${keyWhere}
     {{#if capabilities.softDelete}}AND deleted_at IS NULL{{/if}}
     LIMIT 1
   `;
@@ -172,18 +193,26 @@ async function getById(id) {
   const result =
     await connection().query(
       sql,
-      [id]
+      keyValues
     );
 
   return result.rows[0] || null;
 }
-
 async function create(
   input,
   context = {}
 ) {
   const data =
     pickWritable(input);
+
+  {{#each primaryKeyInfo.columns}}
+  {{#unless generated}}
+  if (Object.prototype.hasOwnProperty.call(input, '{{name}}')) {
+    data.{{name}} = input.{{name}};
+  }
+  {{/unless}}
+  {{/each}}
+
 
   {{#if columnMap.created_by}}
   data.created_by =
@@ -277,7 +306,23 @@ async function update(
       key => data[key]
     );
 
-  values.push(id);
+  const keyValues =
+    TABLE_METADATA.primaryKeyColumns.map(
+      column =>
+        TABLE_METADATA.primaryKeyColumns.length === 1
+          ? id
+          : id?.[column]
+    );
+
+  const keyWhere =
+    TABLE_METADATA.primaryKeyColumns
+      .map(
+        (column, index) =>
+          `${column} = $${values.length + index + 1}`
+      )
+      .join(' AND ');
+
+  values.push(...keyValues);
 
   const setClause =
     keys
@@ -290,7 +335,7 @@ async function update(
   let sql = `
     UPDATE ${QUALIFIED_TABLE}
     SET ${setClause}
-    WHERE ${TABLE_METADATA.primaryKey} = $${values.length}
+    WHERE ${keyWhere}
   `;
 
   {{#if capabilities.optimisticLock}}
@@ -326,30 +371,46 @@ async function remove(
   id,
   context = {}
 ) {
+  const keyValues =
+    TABLE_METADATA.primaryKeyColumns.map(
+      column =>
+        TABLE_METADATA.primaryKeyColumns.length === 1
+          ? id
+          : id?.[column]
+    );
+
+  const keyWhere =
+    TABLE_METADATA.primaryKeyColumns
+      .map(
+        (column, index) =>
+          `${column} = $${index + 1}`
+      )
+      .join(' AND ');
+
   {{#if capabilities.softDelete}}
+  const values = [...keyValues];
+  {{#if columnMap.deleted_by}}
+  values.push(context.userId || null);
+  {{/if}}
+
   const sql = `
     UPDATE ${QUALIFIED_TABLE}
     SET
       deleted_at = CURRENT_TIMESTAMP{{#if columnMap.deleted_by}},
-      deleted_by = $2{{/if}}{{#if capabilities.optimisticLock}},
+      deleted_by = $${values.length}{{/if}}{{#if capabilities.optimisticLock}},
       version_no = version_no + 1{{/if}}
-    WHERE ${TABLE_METADATA.primaryKey} = $1
+    WHERE ${keyWhere}
       AND deleted_at IS NULL
-    RETURNING ${TABLE_METADATA.primaryKey}
+    RETURNING *
   `;
-
-  const values = [
-    id{{#if columnMap.deleted_by}},
-    context.userId || null{{/if}}
-  ];
   {{else}}
+  const values = [...keyValues];
+
   const sql = `
     DELETE FROM ${QUALIFIED_TABLE}
-    WHERE ${TABLE_METADATA.primaryKey} = $1
-    RETURNING ${TABLE_METADATA.primaryKey}
+    WHERE ${keyWhere}
+    RETURNING *
   `;
-
-  const values = [id];
   {{/if}}
 
   const result =
@@ -360,7 +421,6 @@ async function remove(
 
   return result.rowCount > 0;
 }
-
 module.exports = {
   configure,
   list,

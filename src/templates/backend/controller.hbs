@@ -76,7 +76,7 @@ async function getById(
 ) {
   const result =
     await service.getById(
-      request.params.id,
+      {{#if primaryKeyInfo.isComposite}}request.params{{else}}request.params.id{{/if}},
       requestContext(
         request
       )
@@ -120,7 +120,7 @@ async function update(
   try {
     const result =
       await service.update(
-        request.params.id,
+        {{#if primaryKeyInfo.isComposite}}request.params{{else}}request.params.id{{/if}},
         request.body,
         requestContext(
           request
@@ -143,7 +143,7 @@ async function remove(
   reply
 ) {
   await service.remove(
-    request.params.id,
+    {{#if primaryKeyInfo.isComposite}}request.params{{else}}request.params.id{{/if}},
     requestContext(
       request
     )

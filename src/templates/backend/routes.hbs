@@ -66,7 +66,7 @@ async function {{names.variablePlural}}Routes(
   );
 
   fastify.get(
-    `${base}/:id`,
+    `${base}{{#if primaryKeyInfo.isComposite}}{{primaryKeyInfo.routePath}}{{else}}/:id{{/if}}`,
     {
       schema: schemas.getById
     },
@@ -82,7 +82,7 @@ async function {{names.variablePlural}}Routes(
   );
 
   fastify.patch(
-    `${base}/:id`,
+    `${base}{{#if primaryKeyInfo.isComposite}}{{primaryKeyInfo.routePath}}{{else}}/:id{{/if}}`,
     {
       schema: schemas.update
     },
@@ -90,7 +90,7 @@ async function {{names.variablePlural}}Routes(
   );
 
   fastify.delete(
-    `${base}/:id`,
+    `${base}{{#if primaryKeyInfo.isComposite}}{{primaryKeyInfo.routePath}}{{else}}/:id{{/if}}`,
     {
       schema: schemas.remove
     },
