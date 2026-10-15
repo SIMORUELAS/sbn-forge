@@ -1,6 +1,6 @@
 'use strict';
 const repository = require('./{{names.moduleName}}.repository');
-function notFound(id){const e=new Error('{{names.entitySingular}} no encontrado.');e.statusCode=404;e.code='{{names.permissionPrefix}}_NOT_FOUND';e.details={id};return e;}
+function notFound(id){const e=new Error('Registro no encontrado.');e.statusCode=404;e.code='{{names.permissionPrefix}}_NOT_FOUND';e.details={id};return e;}
 async function list(query,context){return repository.list(query,context);}
 async function getById(id,context){const row=await repository.getById(id,context);if(!row)throw notFound(id);return row;}
 async function create(input,context){return repository.create(input,context);}
