@@ -10,8 +10,11 @@ CREATE SCHEMA IF NOT EXISTS {{schema}};
 CREATE TABLE IF NOT EXISTS {{schema}}.{{table}}
 (
 {{#each columns}}
-    {{name}} {{nativeType}}{{#if identity}} GENERATED ALWAYS AS IDENTITY{{/if}}{{#unless nullable}} NOT NULL{{/unless}}{{#if hasDefaultValue}} DEFAULT {{{defaultValue}}}{{/if}}{{#if primaryKey}} PRIMARY KEY{{/if}}{{#unless @last}},{{/unless}}
+    {{name}} {{nativeType}}{{#if identity}} GENERATED ALWAYS AS IDENTITY{{/if}}{{#unless nullable}} NOT NULL{{/unless}}{{#if hasDefaultValue}} DEFAULT {{{defaultValue}}}{{/if}}{{#unless @last}},{{/unless}}
 {{/each}}
+{{#if primaryKeys.length}}
+    ,PRIMARY KEY ({{#each primaryKeys}}{{name}}{{#unless @last}}, {{/unless}}{{/each}})
+{{/if}}
 );
 
 {{#each foreignKeys}}
