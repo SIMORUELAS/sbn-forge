@@ -144,9 +144,5 @@
       "scale": 0
     }
   ],
-  "seeds": [
-    {
-      "assigned_at": null
-    }
-  ]
+  "seeds": []
 }
