@@ -48,8 +48,18 @@ describe(
           expect(
             migration
           ).toContain(
-            'id bigint GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY'
+            'id bigint GENERATED ALWAYS AS IDENTITY NOT NULL'
           );
+
+          expect(
+            migration
+          ).toContain(
+            'PRIMARY KEY (id)'
+          );
+
+          expect(
+            (migration.match(/PRIMARY KEY/g) || [])
+          ).toHaveLength(1);
 
           expect(
             migration
