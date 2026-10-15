@@ -130,7 +130,8 @@ function toSqlLiteral(
  */
 function buildSeedStatements(
   seeds,
-  columns
+  columns,
+  primaryKeyColumns = []
 ) {
   if (
     !Array.isArray(
@@ -201,6 +202,27 @@ function buildSeedStatements(
           unknownColumns.join(
             ', '
           )
+        );
+      }
+
+      const requiredColumns = columns.filter(column =>
+        (primaryKeyColumns.includes(column.name) || column.nullable === false) &&
+        column.generated !== true &&
+        column.identity !== true &&
+        column.hasDefaultValue !== true
+      );
+
+      const missingColumns = requiredColumns
+        .filter(column =>
+          !Object.prototype.hasOwnProperty.call(seed, column.name) ||
+          seed[column.name] === null ||
+          seed[column.name] === undefined
+        )
+        .map(column => column.name);
+
+      if (missingColumns.length > 0) {
+        throw new Error(
+          `El seed en la posición ${seedIndex} requiere valores para: ${missingColumns.join(', ')}.`
         );
       }
 
@@ -471,7 +493,8 @@ class GeneratorContextBuilder {
     const seedStatements =
       buildSeedStatements(
         seeds,
-        normalizedColumns
+        normalizedColumns,
+        metadata.primaryKey?.columns || []
       );
 
     const names =
