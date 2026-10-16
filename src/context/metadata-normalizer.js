@@ -419,8 +419,12 @@ class MetadataNormalizer {
               foreignKey.column ||
               'id',
 
-            onDelete: this.normalizeReferentialAction(foreignKey.onDelete ?? foreignKey.deleteRule),
-            onUpdate: this.normalizeReferentialAction(foreignKey.onUpdate ?? foreignKey.updateRule)
+            ...(foreignKey.onDelete != null || foreignKey.deleteRule != null
+              ? { onDelete: this.normalizeReferentialAction(foreignKey.onDelete ?? foreignKey.deleteRule) }
+              : {}),
+            ...(foreignKey.onUpdate != null || foreignKey.updateRule != null
+              ? { onUpdate: this.normalizeReferentialAction(foreignKey.onUpdate ?? foreignKey.updateRule) }
+              : {})
           };
         }
       );
@@ -468,8 +472,12 @@ class MetadataNormalizer {
         foreignKey.referenceColumn ||
         'id',
 
-      onDelete: this.normalizeReferentialAction(foreignKey.onDelete ?? foreignKey.deleteRule),
-      onUpdate: this.normalizeReferentialAction(foreignKey.onUpdate ?? foreignKey.updateRule)
+      ...(foreignKey.onDelete != null || foreignKey.deleteRule != null
+        ? { onDelete: this.normalizeReferentialAction(foreignKey.onDelete ?? foreignKey.deleteRule) }
+        : {}),
+      ...(foreignKey.onUpdate != null || foreignKey.updateRule != null
+        ? { onUpdate: this.normalizeReferentialAction(foreignKey.onUpdate ?? foreignKey.updateRule) }
+        : {})
     };
   }
 
