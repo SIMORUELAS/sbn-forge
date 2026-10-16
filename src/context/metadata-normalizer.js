@@ -214,11 +214,17 @@ class MetadataNormalizer {
             column.nativeType ||
             'unknown',
 
-          nativeType:
-            column.nativeType ||
-            column.dataType ||
-            column.type ||
-            'unknown',
+          nativeType: (() => {
+            const type = String(column.nativeType || column.dataType || column.type || 'unknown');
+            const length = column.maxLength ?? column.length;
+            if (/^(character varying|varchar|character|char)$/i.test(type) && length != null) {
+              if (!Number.isSafeInteger(Number(length)) || Number(length) < 1) {
+                throw new TypeError(`Longitud SQL inválida para ${name}`);
+              }
+              return `${type}(${Number(length)})`;
+            }
+            return type;
+          })(),
 
           nullable:
             Boolean(
@@ -231,10 +237,7 @@ class MetadataNormalizer {
             null,
 
           maxLength:
-            column.maxLength ===
-            undefined
-              ? null
-              : column.maxLength,
+            column.maxLength ?? column.length ?? null,
 
           precision:
             column.precision ===
@@ -414,7 +417,10 @@ class MetadataNormalizer {
               foreignKey.referencedColumn ||
               foreignKey.targetColumn ||
               foreignKey.column ||
-              'id'
+              'id',
+
+            onDelete: this.normalizeReferentialAction(foreignKey.onDelete ?? foreignKey.deleteRule),
+            onUpdate: this.normalizeReferentialAction(foreignKey.onUpdate ?? foreignKey.updateRule)
           };
         }
       );
@@ -460,8 +466,20 @@ class MetadataNormalizer {
         foreignKey.referencedColumn ||
         foreignKey.targetColumn ||
         foreignKey.referenceColumn ||
-        'id'
+        'id',
+
+      onDelete: this.normalizeReferentialAction(foreignKey.onDelete ?? foreignKey.deleteRule),
+      onUpdate: this.normalizeReferentialAction(foreignKey.onUpdate ?? foreignKey.updateRule)
     };
+  }
+
+  normalizeReferentialAction(value) {
+    if (value == null || value === '') return null;
+    const action = String(value).trim().toUpperCase().replace(/\s+/g, ' ');
+    if (!['NO ACTION', 'RESTRICT', 'CASCADE', 'SET NULL', 'SET DEFAULT'].includes(action)) {
+      throw new TypeError(`Acción referencial no válida: ${value}`);
+    }
+    return action;
   }
 
   normalizeIndexes(indexes) {
