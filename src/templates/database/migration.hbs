@@ -22,6 +22,6 @@ ALTER TABLE {{../schema}}.{{../table}}
     ADD CONSTRAINT {{#if name}}{{name}}{{else}}fk_{{../table}}_{{column}}{{/if}}
     FOREIGN KEY ({{column}})
     REFERENCES {{referencedSchema}}.{{referencedTable}}
-    ({{referencedColumn}});
+    ({{referencedColumn}}){{#if onDelete}} ON DELETE {{onDelete}}{{/if}}{{#if onUpdate}} ON UPDATE {{onUpdate}}{{/if}};
 
 {{/each}}
