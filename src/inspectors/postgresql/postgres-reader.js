@@ -93,7 +93,9 @@ class PostgresReader {
         kcu.column_name,
         ccu.table_schema AS referenced_schema,
         ccu.table_name AS referenced_table,
-        ccu.column_name AS referenced_column
+        ccu.column_name AS referenced_column,
+        rc.delete_rule AS delete_rule,
+        rc.update_rule AS update_rule
       FROM information_schema.table_constraints tc
       INNER JOIN information_schema.key_column_usage kcu
         ON kcu.constraint_catalog = tc.constraint_catalog
@@ -103,6 +105,10 @@ class PostgresReader {
         ON ccu.constraint_catalog = tc.constraint_catalog
        AND ccu.constraint_schema = tc.constraint_schema
        AND ccu.constraint_name = tc.constraint_name
+      INNER JOIN information_schema.referential_constraints rc
+        ON rc.constraint_catalog = tc.constraint_catalog
+       AND rc.constraint_schema = tc.constraint_schema
+       AND rc.constraint_name = tc.constraint_name
       WHERE tc.constraint_type = 'FOREIGN KEY'
         AND tc.table_schema = $1
         AND tc.table_name = $2
