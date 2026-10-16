@@ -21,7 +21,13 @@ class MetadataBuilder {
         position: Number(column.ordinal_position),
         name: column.column_name,
         dataType: column.data_type,
-        nativeType: column.udt_name,
+        nativeType: column.data_type === 'character varying' && column.character_maximum_length != null
+          ? `character varying(${Number(column.character_maximum_length)})`
+          : column.data_type === 'character' && column.character_maximum_length != null
+            ? `character(${Number(column.character_maximum_length)})`
+            : column.data_type === 'USER-DEFINED'
+              ? column.udt_name
+              : column.data_type,
         nullable: column.is_nullable === 'YES',
         defaultValue: column.column_default ?? null,
         maxLength:
@@ -50,7 +56,9 @@ class MetadataBuilder {
         column: foreignKey.column_name,
         referencedSchema: foreignKey.referenced_schema,
         referencedTable: foreignKey.referenced_table,
-        referencedColumn: foreignKey.referenced_column
+        referencedColumn: foreignKey.referenced_column,
+        onDelete: foreignKey.delete_rule,
+        onUpdate: foreignKey.update_rule
       })),
 
       indexes: indexes.map((index) => ({
