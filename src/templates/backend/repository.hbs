@@ -246,6 +246,19 @@ async function create(
       (${keys.join(', ')})
     VALUES
       (${params})
+    {{#if capabilities.softDelete}}
+    {{#if primaryKeyInfo.columns.length}}
+    ON CONFLICT ({{#each primaryKeyInfo.columns}}{{name}}{{#unless @last}}, {{/unless}}{{/each}})
+    DO UPDATE SET
+      deleted_at = NULL{{#if columnMap.deleted_by}},
+      deleted_by = NULL{{/if}}{{#if columnMap.updated_at}},
+      updated_at = CURRENT_TIMESTAMP{{/if}}{{#if columnMap.updated_by}}{{#if columnMap.created_by}},
+      updated_by = EXCLUDED.created_by{{/if}}{{/if}}{{#if columnMap.updated_from}},
+      updated_from = {{#if columnMap.created_from}}EXCLUDED.created_from{{else}}'api'{{/if}}{{/if}}{{#if capabilities.optimisticLock}},
+      version_no = {{database.schema}}.{{database.table}}.version_no + 1{{/if}}
+    WHERE {{database.schema}}.{{database.table}}.deleted_at IS NOT NULL
+    {{/if}}
+    {{/if}}
     RETURNING *
   `;
 
@@ -257,7 +270,26 @@ async function create(
       )
     );
 
+  {{#if capabilities.softDelete}}
+  {{#if primaryKeyInfo.columns.length}}
+  if (result.rows[0]) {
+    return result.rows[0];
+  }
+
+  const key = Object.fromEntries(
+    TABLE_METADATA.primaryKeyColumns.map(column => [column, data[column]])
+  );
+  return getById(
+    TABLE_METADATA.primaryKeyColumns.length === 1
+      ? key[TABLE_METADATA.primaryKeyColumns[0]]
+      : key
+  );
+  {{else}}
   return result.rows[0];
+  {{/if}}
+  {{else}}
+  return result.rows[0];
+  {{/if}}
 }
 
 async function update(
