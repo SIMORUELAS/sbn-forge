@@ -1,13 +1,13 @@
 -- ============================================================================
 -- SBN Forge migration
--- Schema: {{schema}}
--- Table: {{table}}
+-- Schema: {{database.schema}}
+-- Table: {{database.table}}
 -- Generated automatically by SBN Forge
 -- ============================================================================
 
-CREATE SCHEMA IF NOT EXISTS {{schema}};
+CREATE SCHEMA IF NOT EXISTS {{database.schema}};
 
-CREATE TABLE IF NOT EXISTS {{schema}}.{{table}}
+CREATE TABLE IF NOT EXISTS {{database.schema}}.{{database.table}}
 (
 {{#each columns}}
     {{name}} {{nativeType}}{{#if identity}} GENERATED ALWAYS AS IDENTITY{{/if}}{{#unless nullable}} NOT NULL{{/unless}}{{#if hasDefaultValue}} DEFAULT {{{defaultValue}}}{{/if}}{{#unless @last}},{{/unless}}
@@ -18,8 +18,8 @@ CREATE TABLE IF NOT EXISTS {{schema}}.{{table}}
 );
 
 {{#each foreignKeys}}
-ALTER TABLE {{../schema}}.{{../table}}
-    ADD CONSTRAINT {{#if name}}{{name}}{{else}}fk_{{../table}}_{{column}}{{/if}}
+ALTER TABLE {{../database.schema}}.{{../database.table}}
+    ADD CONSTRAINT {{#if name}}{{name}}{{else}}fk_{{../database.table}}_{{column}}{{/if}}
     FOREIGN KEY ({{column}})
     REFERENCES {{referencedSchema}}.{{referencedTable}}
     ({{referencedColumn}}){{#if onDelete}} ON DELETE {{onDelete}}{{/if}}{{#if onUpdate}} ON UPDATE {{onUpdate}}{{/if}};
