@@ -217,7 +217,7 @@ class MetadataNormalizer {
           nativeType: (() => {
             const type = String(column.nativeType || column.dataType || column.type || 'unknown');
             const length = column.maxLength ?? column.length;
-            if (/^(character varying|varchar|character|char)$/i.test(type) && length != null) {
+            if (/^(character varying|varchar|character|char)$/i.test(type) && length !== null && length !== undefined) {
               if (!Number.isSafeInteger(Number(length)) || Number(length) < 1) {
                 throw new TypeError(`Longitud SQL inválida para ${name}`);
               }
@@ -419,10 +419,10 @@ class MetadataNormalizer {
               foreignKey.column ||
               'id',
 
-            ...(foreignKey.onDelete != null || foreignKey.deleteRule != null
+            ...((foreignKey.onDelete !== null && foreignKey.onDelete !== undefined) || (foreignKey.deleteRule !== null && foreignKey.deleteRule !== undefined)
               ? { onDelete: this.normalizeReferentialAction(foreignKey.onDelete ?? foreignKey.deleteRule) }
               : {}),
-            ...(foreignKey.onUpdate != null || foreignKey.updateRule != null
+            ...((foreignKey.onUpdate !== null && foreignKey.onUpdate !== undefined) || (foreignKey.updateRule !== null && foreignKey.updateRule !== undefined)
               ? { onUpdate: this.normalizeReferentialAction(foreignKey.onUpdate ?? foreignKey.updateRule) }
               : {})
           };
@@ -472,17 +472,19 @@ class MetadataNormalizer {
         foreignKey.referenceColumn ||
         'id',
 
-      ...(foreignKey.onDelete != null || foreignKey.deleteRule != null
+      ...((foreignKey.onDelete !== null && foreignKey.onDelete !== undefined) || (foreignKey.deleteRule !== null && foreignKey.deleteRule !== undefined)
         ? { onDelete: this.normalizeReferentialAction(foreignKey.onDelete ?? foreignKey.deleteRule) }
         : {}),
-      ...(foreignKey.onUpdate != null || foreignKey.updateRule != null
+      ...((foreignKey.onUpdate !== null && foreignKey.onUpdate !== undefined) || (foreignKey.updateRule !== null && foreignKey.updateRule !== undefined)
         ? { onUpdate: this.normalizeReferentialAction(foreignKey.onUpdate ?? foreignKey.updateRule) }
         : {})
     };
   }
 
   normalizeReferentialAction(value) {
-    if (value == null || value === '') return null;
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
     const action = String(value).trim().toUpperCase().replace(/\s+/g, ' ');
     if (!['NO ACTION', 'RESTRICT', 'CASCADE', 'SET NULL', 'SET DEFAULT'].includes(action)) {
       throw new TypeError(`Acción referencial no válida: ${value}`);
