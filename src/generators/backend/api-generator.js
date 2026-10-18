@@ -718,12 +718,24 @@ function normalizeTemplateContext(
       .map(column => column.name)
       .join(', ')
   };
+  const listFilters = Array.isArray(context.listFilters)
+    ? context.listFilters
+    : context.columns.filter(column => Boolean(column.foreignKey));
+
   return {
     ...context,
 
     schema,
 
     table,
+
+    database: {
+      ...(context.database || {}),
+      schema,
+      table
+    },
+
+    listFilters,
 
     primaryKeyInfo,
     createColumns,
