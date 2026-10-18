@@ -13,10 +13,14 @@ function readConfig(file) {
   const values = {};
   for (const line of fs.readFileSync(file, 'utf8').split(/\r?\n/)) {
     const match = line.match(/^\s*(DB_HOST|DB_PORT|DB_USER|DB_PASSWORD)\s*=\s*(.*)\s*$/);
-    if (!match) continue;
+    if (!match) {
+      continue;
+    }
     let value = match[2].trim();
     if ((value.startsWith('"') && value.endsWith('"')) ||
-        (value.startsWith("'") && value.endsWith("'"))) value = value.slice(1, -1);
+        (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
     values[match[1]] = value;
   }
   return values;
@@ -55,7 +59,9 @@ function generateRepository() {
 describe('generated repository: PostgreSQL transaction integration', () => {
   testReal('create, filter, update, soft-delete, reactivate, idempotency, rollback', async () => {
     const file = process.env.FORGE_PG_ENV_FILE;
-    if (!file) throw new Error('FORGE_PG_ENV_FILE es obligatorio');
+    if (!file) {
+      throw new Error('FORGE_PG_ENV_FILE es obligatorio');
+    }
     const config = readConfig(file);
     const client = new Client({
       host: config.DB_HOST,
@@ -125,9 +131,15 @@ describe('generated repository: PostgreSQL transaction integration', () => {
       expect(count.rows[0].count).toBe(1);
     } finally {
       if (connected && inTransaction) {
-        try { await client.query('ROLLBACK'); } catch (_) { /* connection may have dropped */ }
+        try {
+          await client.query('ROLLBACK');
+        } catch {
+          // La conexión pudo haberse cerrado.
+        }
       }
-      if (connected) await client.end();
+      if (connected) {
+        await client.end();
+      }
     }
   }, 20000);
 });
