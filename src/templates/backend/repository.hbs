@@ -251,7 +251,7 @@ async function create(
       updated_from = {{#if columnMap.created_from}}EXCLUDED.created_from{{else}}'api'{{/if}}{{/if}}{{#if capabilities.optimisticLock}},
       version_no = {{database.schema}}.{{database.table}}.version_no + 1{{/if}}
     WHERE {{database.schema}}.{{database.table}}.deleted_at IS NOT NULL
-    {{/if}}
+    {{/unless}}
     {{/if}}
     RETURNING *
   `;
