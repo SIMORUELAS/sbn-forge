@@ -108,4 +108,40 @@ describe('API Generator - Composite Primary Key', () => {
       await fs.remove(output);
     }
   });
+  test('legacy definition generates UUID filter and qualified conflict SQL', async () => {
+    const output = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'forge-legacy-filter-')
+    );
+    try {
+      const context = createGeneratorContext(definition);
+      const result = await generateApi(context, { output });
+      const repositoryModule = require(path.join(
+        result.moduleDirectory,
+        'ai-agent-role-assignments.repository.js'
+      ));
+      const calls = [];
+      repositoryModule.configure({
+        async query(sql, values) {
+          calls.push({ sql, values });
+          return { rows: [], rowCount: 0 };
+        }
+      });
+      const agentId = '11111111-1111-4111-8111-111111111111';
+      await repositoryModule.list({ agent_id: agentId, limit: 7, offset: 2 });
+      expect(calls[0].sql).toMatch(/agent_id\\s*=\\s*\\$1/);
+      expect(calls[0].sql).toMatch(/LIMIT\\s+\\$2/);
+      expect(calls[0].sql).toMatch(/OFFSET\\s+\\$3/);
+      expect(calls[0].values).toEqual([agentId, 7, 2]);
+      await repositoryModule.create({ agent_id: agentId, role_id: 3 });
+      expect(calls[1].sql).toContain(
+        'version_no = simo_ai.ai_agent_role_assignments.version_no + 1'
+      );
+      expect(calls[1].sql).toContain(
+        'WHERE simo_ai.ai_agent_role_assignments.deleted_at IS NOT NULL'
+      );
+    } finally {
+      await fs.remove(output);
+    }
+  });
+
 });
