@@ -1,7 +1,5 @@
 'use strict';
 
-const fs = require('fs-extra');
-const os = require('os');
 const path = require('path');
 const GeneratorContextBuilder = require('../src/context/generator-context.builder');
 const { TemplateEngine } = require('../src/core/template-engine');
