@@ -128,9 +128,9 @@ describe('API Generator - Composite Primary Key', () => {
       });
       const agentId = '11111111-1111-4111-8111-111111111111';
       await repositoryModule.list({ agent_id: agentId, limit: 7, offset: 2 });
-      expect(calls[0].sql).toMatch(/agent_id\\s*=\\s*\\$1/);
-      expect(calls[0].sql).toMatch(/LIMIT\\s+\\$2/);
-      expect(calls[0].sql).toMatch(/OFFSET\\s+\\$3/);
+      expect(calls[0].sql).toMatch(/agent_id\s*=\s*\$1/);
+      expect(calls[0].sql).toMatch(/LIMIT\s+\$2/);
+      expect(calls[0].sql).toMatch(/OFFSET\s+\$3/);
       expect(calls[0].values).toEqual([agentId, 7, 2]);
       await repositoryModule.create({ agent_id: agentId, role_id: 3 });
       expect(calls[1].sql).toContain(
