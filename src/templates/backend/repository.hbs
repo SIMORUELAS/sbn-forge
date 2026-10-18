@@ -227,11 +227,6 @@ async function create(
   const keys =
     Object.keys(data);
 
-  {{#if createColumns.length}}
-  {{else}}
-  // Las tablas con PK autogenerada pueden usar DEFAULT VALUES.
-  {{/if}}
-
   const params =
     keys
       .map(
