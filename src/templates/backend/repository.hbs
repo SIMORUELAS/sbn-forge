@@ -227,11 +227,10 @@ async function create(
   const keys =
     Object.keys(data);
 
-  if (keys.length === 0) {
-    throw new Error(
-      'No hay campos escribibles.'
-    );
-  }
+  {{#if createColumns.length}}
+  {{else}}
+  // Las tablas con PK autogenerada pueden usar DEFAULT VALUES.
+  {{/if}}
 
   const params =
     keys
@@ -243,11 +242,11 @@ async function create(
 
   const sql = `
     INSERT INTO ${QUALIFIED_TABLE}
-      (${keys.join(', ')})
-    VALUES
-      (${params})
+    ${keys.length > 0
+      ? `(${keys.join(', ')}) VALUES (${params})`
+      : 'DEFAULT VALUES'}
     {{#if capabilities.softDelete}}
-    {{#if primaryKeyInfo.columns.length}}
+    {{#unless primaryKeyInfo.columns.[0].generated}}
     ON CONFLICT ({{#each primaryKeyInfo.columns}}{{name}}{{#unless @last}}, {{/unless}}{{/each}})
     DO UPDATE SET
       deleted_at = NULL{{#if columnMap.deleted_by}},
@@ -271,7 +270,7 @@ async function create(
     );
 
   {{#if capabilities.softDelete}}
-  {{#if primaryKeyInfo.columns.length}}
+  {{#unless primaryKeyInfo.columns.[0].generated}}
   if (result.rows[0]) {
     return result.rows[0];
   }
