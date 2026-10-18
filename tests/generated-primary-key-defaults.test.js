@@ -58,4 +58,49 @@ describe('generated primary keys and optional audit columns', () => {
     expect((await repo.create({})).id).toBe(43);
     expect(sql).not.toMatch(/ON CONFLICT/);
   });
+  test('partial audit metadata uses only existing created_from and updated_by fields', async () => {
+    const repo = repository({
+      primaryKeyInfo: { columns: [{ name: 'id', generated: false }] },
+      columns: [{ name: 'id' }, { name: 'created_from' }, { name: 'updated_by' }],
+      columnMap: { created_from: {}, updated_by: {} }
+    });
+    const calls = [];
+    repo.configure({
+      async query(sql, values) {
+        calls.push({ sql, values });
+        return { rows: [{ id: 7 }], rowCount: 1 };
+      }
+    });
+    await repo.create({ id: 7 }, { source: 'test-origin', userId: 'user-1' });
+    expect(calls[0].sql).toContain('created_from');
+    expect(calls[0].sql).not.toContain('created_by');
+    expect(Array.from(calls[0].values)).toEqual([7, 'test-origin']);
+    await repo.update(7, {}, { userId: 'user-2' });
+    expect(calls[1].sql).toContain('updated_by = $1');
+    expect(calls[1].sql).not.toContain('updated_from');
+    expect(Array.from(calls[1].values)).toEqual(['user-2', 7]);
+  });
+
+  test('optimistic version rejects stale updates through SQL predicate', async () => {
+    const repo = repository({
+      primaryKeyInfo: { columns: [{ name: 'id', generated: false }] },
+      columns: [{ name: 'id' }, { name: 'version_no' }],
+      capabilities: { softDelete: false, optimisticLock: true }
+    });
+    let version = 1;
+    repo.configure({
+      async query(sql, values) {
+        const expected = values[values.length - 1];
+        if (expected !== version) {
+          return { rows: [], rowCount: 0 };
+        }
+        version = values[0];
+        return { rows: [{ id: 7, version_no: version }], rowCount: 1 };
+      }
+    });
+    expect((await repo.update(7, { expected_version_no: 1 })).version_no).toBe(2);
+    expect(await repo.update(7, { expected_version_no: 1 })).toBeNull();
+    expect(version).toBe(2);
+  });
+
 });
