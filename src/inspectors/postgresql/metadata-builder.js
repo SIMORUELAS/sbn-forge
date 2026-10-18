@@ -21,9 +21,9 @@ class MetadataBuilder {
         position: Number(column.ordinal_position),
         name: column.column_name,
         dataType: column.data_type,
-        nativeType: column.data_type === 'character varying' && column.character_maximum_length != null
+        nativeType: column.data_type === 'character varying' && (column.character_maximum_length !== null && column.character_maximum_length !== undefined)
           ? `character varying(${Number(column.character_maximum_length)})`
-          : column.data_type === 'character' && column.character_maximum_length != null
+          : column.data_type === 'character' && (column.character_maximum_length !== null && column.character_maximum_length !== undefined)
             ? `character(${Number(column.character_maximum_length)})`
             : column.data_type === 'USER-DEFINED'
               ? column.udt_name
