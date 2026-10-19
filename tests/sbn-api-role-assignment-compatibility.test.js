@@ -60,6 +60,43 @@ describe('Forge to SBN API role-assignment compatibility contracts', () => {
       .rejects.toMatchObject({ statusCode: 404 });
   });
 
+  test('invalid expected_version_no is rejected before database access', async () => {
+    const query = jest.fn();
+    repository.configure({ query });
+    const key = { agent_id: '11111111-1111-4111-8111-111111111111', role_id: 2 };
+    for (const version of [0, -1, 1.5, '2', Number.MAX_SAFE_INTEGER + 1, undefined]) {
+      await expect(repository.update(key, { expected_version_no: version }))
+        .rejects.toMatchObject({ statusCode: 400 });
+    }
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  test('create writes audit origin and update binds composite keys and version', async () => {
+    const calls = [];
+    const key = { agent_id: '11111111-1111-4111-8111-111111111111', role_id: 2 };
+    repository.configure({
+      async query(sql, values) {
+        calls.push({ sql, values });
+        return { rows: [{ ...key, version_no: 3 }], rowCount: 1 };
+      }
+    });
+    await repository.create(key, { userId: 42, source: 'contract-test' });
+    expect(calls[0].sql).toMatch(/INSERT INTO simo_ai\\.ai_agent_role_assignments/);
+    expect(calls[0].sql).toContain('created_by');
+    expect(calls[0].sql).toContain('created_from');
+    expect(calls[0].values).toContain(42);
+    expect(calls[0].values).toContain('contract-test');
+    await repository.update(key, { expected_version_no: 2 }, { userId: 42, source: 'contract-test' });
+    expect(calls[1].sql).toMatch(/AND version_no = \\$\\d+/);
+    expect(calls[1].sql).toContain('deleted_at IS NULL');
+    expect(calls[1].sql).toContain('agent_id =');
+    expect(calls[1].sql).toContain('role_id =');
+    expect(calls[1].values).toContain(42);
+    expect(calls[1].values).toContain('contract-test');
+    expect(calls[1].values).toContain(key.agent_id);
+    expect(calls[1].values).toContain(key.role_id);
+  });
+
   test('JWT guard rejects missing verification and verifies authenticated requests', async () => {
     const hooks = [];
     const registered = [];
