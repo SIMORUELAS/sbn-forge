@@ -17,6 +17,28 @@ const {
 } = require('../src/generators/backend/api-generator');
 
 describe('API Generator - Composite Primary Key', () => {
+  test('opt-in JWT protects module routes without changing generic defaults', async () => {
+    const output = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-jwt-contract-'));
+    try {
+      const context = createGeneratorContext(definition);
+      context.security = { requireJwt: true };
+      const result = await generateApi(context, { output });
+      const routes = await fs.readFile(path.join(
+        result.moduleDirectory, 'ai-agent-role-assignments.routes.js'
+      ), 'utf8');
+      expect(routes).toContain("fastify.addHook('onRequest', requireAuth)");
+      expect(routes).toContain("await request.jwtVerify()");
+      expect(routes).toContain('reply.code(503)');
+      const schemas = require(path.join(
+        result.moduleDirectory, 'ai-agent-role-assignments.schema.js'
+      ));
+      expect(schemas.create.body.required).toEqual(['agent_id', 'role_id']);
+      expect(schemas.update.body.required).toEqual(['expected_version_no']);
+      expect(schemas.getById.params.required).toEqual(['agent_id', 'role_id']);
+    } finally {
+      await fs.remove(output);
+    }
+  });
   test('genera CRUD con agent_id y role_id', async () => {
     const output = await fs.mkdtemp(
       path.join(os.tmpdir(), 'forge-composite-pk-')
