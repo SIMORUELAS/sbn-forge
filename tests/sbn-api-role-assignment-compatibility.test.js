@@ -87,7 +87,7 @@ describe('Forge to SBN API role-assignment compatibility contracts', () => {
     expect(calls[0].values).toContain(42);
     expect(calls[0].values).toContain('contract-test');
     await repository.update(key, { expected_version_no: 2 }, { userId: 42, source: 'contract-test' });
-    expect(calls[1].sql).toMatch(/AND version_no = \\$\\d+/);
+    expect(calls[1].sql).toMatch(/AND version_no = \$\d+/);
     expect(calls[1].sql).toContain('deleted_at IS NULL');
     expect(calls[1].sql).toContain('agent_id =');
     expect(calls[1].sql).toContain('role_id =');
