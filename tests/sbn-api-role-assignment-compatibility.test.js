@@ -19,6 +19,7 @@ describe('Forge to SBN API role-assignment compatibility contracts', () => {
     output = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-api-contract-'));
     const context = createGeneratorContext(definition);
     context.security = { requireJwt: true };
+    context.api = { basePath: '/ia/ai-agent-role-assignments' };
     directory = (await generateApi(context, { output })).moduleDirectory;
     const file = suffix => require(path.join(directory, `ai-agent-role-assignments.${suffix}.js`));
     repository = file('repository');
@@ -44,8 +45,8 @@ describe('Forge to SBN API role-assignment compatibility contracts', () => {
     const key = { agent_id: '11111111-1111-4111-8111-111111111111', role_id: 2 };
     repository.configure({
       async query(sql) {
-        if (/^\\s*UPDATE\\b/i.test(sql)) return { rows: [], rowCount: 0 };
-        if (/^\\s*SELECT\\b/i.test(sql)) return { rows: [{ ...key, version_no: 3 }], rowCount: 1 };
+        if (/^\s*UPDATE\b/i.test(sql)) return { rows: [], rowCount: 0 };
+        if (/^\s*SELECT\b/i.test(sql)) return { rows: [{ ...key, version_no: 3 }], rowCount: 1 };
         throw new Error('Unexpected SQL');
       }
     });
