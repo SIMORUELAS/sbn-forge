@@ -308,10 +308,15 @@ async function update(
   const expectedVersion =
     input.expected_version_no;
 
-  if (!Number.isInteger(expectedVersion)) {
-    throw new Error(
-      'expected_version_no es obligatorio.'
+  if (
+    !Number.isSafeInteger(expectedVersion) ||
+    expectedVersion < 1
+  ) {
+    const error = new TypeError(
+      'expected_version_no debe ser un entero positivo.'
     );
+    error.statusCode = 400;
+    throw error;
   }
 
   data.version_no =
