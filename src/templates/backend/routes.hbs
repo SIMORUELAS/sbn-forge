@@ -54,6 +54,19 @@ async function {{names.variablePlural}}Routes(
     database
   );
 
+{{#if security.requireJwt}}
+  // Guard de autenticación por módulo: no depende de hooks globales.
+  const requireAuth = async (request, reply) => {
+    if (typeof request.jwtVerify !== 'function') {
+      return reply.code(503).send({
+        message: 'Autenticacion JWT no configurada.'
+      });
+    }
+    await request.jwtVerify();
+  };
+  fastify.addHook('onRequest', requireAuth);
+{{/if}}
+
   const base =
     '{{names.routeBase}}';
 
