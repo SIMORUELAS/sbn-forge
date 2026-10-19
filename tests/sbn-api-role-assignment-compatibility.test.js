@@ -81,7 +81,7 @@ describe('Forge to SBN API role-assignment compatibility contracts', () => {
       }
     });
     await repository.create(key, { userId: 42, source: 'contract-test' });
-    expect(calls[0].sql).toMatch(/INSERT INTO simo_ai\\.ai_agent_role_assignments/);
+    expect(calls[0].sql).toMatch(/INSERT INTO simo_ai\.ai_agent_role_assignments/);
     expect(calls[0].sql).toContain('created_by');
     expect(calls[0].sql).toContain('created_from');
     expect(calls[0].values).toContain(42);
