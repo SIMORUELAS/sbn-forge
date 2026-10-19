@@ -29,7 +29,7 @@ describe('Forge to SBN API role-assignment compatibility contracts', () => {
   });
 
   afterAll(async () => {
-    if (output) await fs.remove(output);
+    if (output) { await fs.remove(output); }
   });
 
   test('schemas preserve composite UUID key and optimistic version', () => {
@@ -45,8 +45,8 @@ describe('Forge to SBN API role-assignment compatibility contracts', () => {
     const key = { agent_id: '11111111-1111-4111-8111-111111111111', role_id: 2 };
     repository.configure({
       async query(sql) {
-        if (/^\s*UPDATE\b/i.test(sql)) return { rows: [], rowCount: 0 };
-        if (/^\s*SELECT\b/i.test(sql)) return { rows: [{ ...key, version_no: 3 }], rowCount: 1 };
+        if (/^\s*UPDATE\b/i.test(sql)) { return { rows: [], rowCount: 0 }; }
+        if (/^\s*SELECT\b/i.test(sql)) { return { rows: [{ ...key, version_no: 3 }], rowCount: 1 }; }
         throw new Error('Unexpected SQL');
       }
     });
