@@ -96,6 +96,15 @@ const maxLength =
     ) {
         property.maxLength = maxLength;
     }
+    if (column.minimum !== undefined) {
+        property.minimum = column.minimum;
+    }
+    if (column.maximum !== undefined) {
+        property.maximum = column.maximum;
+    }
+    if (Array.isArray(column.enum)) {
+        property.enum = [...column.enum];
+    }
     if (column.nullable === true) {
         property.nullable = true;
     }
