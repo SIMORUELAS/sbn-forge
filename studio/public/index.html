@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SBN Forge Studio — Prototipo local</title>
+  <link rel="stylesheet" href="/app.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" aria-label="Navegación Forge">
+      <div class="brand"><span class="mark">⬡</span><div><strong>SBN <em>FORGE</em></strong><small>STUDIO · v0.1</small></div></div>
+      <div class="sidebar-caption">HERRAMIENTAS</div>
+      <nav id="navigation" aria-label="Secciones">
+        <button class="nav active" data-view="inicio">⌂ <span>Inicio</span></button>
+        <button class="nav" data-view="conexiones">▤ <span>Conexiones</span></button>
+        <button class="nav" data-view="inspector">⌕ <span>Inspector PostgreSQL</span></button>
+        <button class="nav" data-view="diseno">⚙ <span>Diseño de módulo</span></button>
+        <button class="nav" data-view="generacion">⌘ <span>Generación</span></button>
+        <button class="nav" data-view="modulos">◫ <span>Módulos</span></button>
+        <button class="nav" data-view="plantillas">▧ <span>Plantillas</span></button>
+        <button class="nav" data-view="reglas">◇ <span>Reglas SBN</span></button>
+        <button class="nav" data-view="historial">◷ <span>Historial</span></button>
+        <button class="nav" data-view="configuracion">⚙ <span>Configuración</span></button>
+      </nav>
+      <div class="sidebar-bottom"><strong>Asistente IA</strong><p>Próximamente: recomendaciones para diseñar módulos.</p></div>
+    </aside>
+    <main class="main">
+      <header class="topbar"><div class="breadcrumbs">SBN Portal <span>›</span> Forge Studio <span>›</span> <strong id="current-section">Inicio</strong></div><div class="top-actions"><span class="local-tag">PROTOTIPO LOCAL</span><span class="avatar">FS</span></div></header>
+      <div class="content">
+        <section class="hero"><div><div class="eyebrow">HERRAMIENTA DE DESARROLLO</div><h1>SBN Forge Studio</h1><p>Diseña, genera y publica módulos empresariales desde una sola interfaz.</p></div><div class="hero-icon">⌘</div></section>
+        <div class="notice" role="status"><strong>Modo demostración.</strong> Esta interfaz no está conectada al Portal SBN, PostgreSQL ni al motor de generación. No administra usuarios ni publica código.</div>
+        <section id="home-view">
+          <h2>Selecciona una operación para comenzar</h2>
+          <div class="cards">
+            <button class="card" data-go="conexiones"><span class="card-icon">▤</span><strong>Conectar a PostgreSQL</strong><p>Configura conexiones autorizadas y explora esquemas.</p><span class="card-link">Conectar →</span></button>
+            <button class="card" data-go="inspector"><span class="card-icon">⌕</span><strong>Inspector PostgreSQL</strong><p>Analiza tablas, columnas y relaciones.</p><span class="card-link">Explorar →</span></button>
+            <button class="card" data-go="diseno"><span class="card-icon">⚙</span><strong>Diseño de módulo</strong><p>Configura vistas, campos y permisos.</p><span class="card-link">Diseñar →</span></button>
+            <button class="card" data-go="generacion"><span class="card-icon">⌘</span><strong>Generación</strong><p>Prepara API, frontend, pruebas y documentación.</p><span class="card-link">Ver opciones →</span></button>
+            <button class="card" data-go="modulos"><span class="card-icon">◫</span><strong>Módulos</strong><p>Revisa las definiciones y versiones generadas.</p><span class="card-link">Ver módulos →</span></button>
+            <button class="card" data-go="historial"><span class="card-icon">◷</span><strong>Historial</strong><p>Consulta ejecuciones y resultados auditados.</p><span class="card-link">Ver historial →</span></button>
+          </div>
+          <h2>Flujo de trabajo</h2>
+          <div class="steps" aria-label="Etapas de generación"><span>1 · Conectar</span><span>2 · Seleccionar</span><span>3 · Configurar</span><span>4 · Previsualizar</span><span>5 · Generar</span><span>6 · Publicar</span></div>
+        </section>
+        <section id="detail-view" hidden>
+          <div class="panel"><div class="panel-header"><div><div class="eyebrow">SBN FORGE STUDIO</div><h2 id="detail-title"></h2><p id="detail-description"></p></div><span class="status">Pendiente de integración</span></div><div class="empty"><span class="empty-icon">⌘</span><h3>Interfaz preparada</h3><p>Esta sección se conectará al motor Forge en el siguiente macrobloque. No se utilizan datos ficticios como si fueran reales.</p><button id="back-home" class="primary">Volver al inicio</button></div></div>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
