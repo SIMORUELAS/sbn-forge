@@ -26,6 +26,30 @@ const foreignKeys = [
 ];
 
 describe('PostgreSQL migration type lengths and referential actions', () => {
+  test('genera CHECK para enum CUSTOM, rango SMALLINT y conserva UUID nullable', async () => {
+    const engine = new TemplateEngine({
+      templatesDirectory: path.join(__dirname, '../src/templates')
+    });
+    const sql = await engine.render('database/migration.hbs', {
+      database: { schema: 'simo_ai', table: 'forge_domain_test' },
+      columns: [
+        { name: 'id', nativeType: 'uuid', nullable: false },
+        { name: 'branch_id', nativeType: 'uuid', nullable: true },
+        { name: 'role_id', nativeType: 'smallint', nullable: false,
+          jsonSchema: { minimum: 1, maximum: 32767 } },
+        { name: 'permission_level', nativeType: 'varchar(20)', nullable: false,
+          jsonSchema: { enum: ['VIEW', 'OPERATE', 'MANAGE', 'ADMIN', 'CUSTOM'] } }
+      ],
+      primaryKey: { columns: ['id'] },
+      foreignKeys: []
+    });
+    expect(sql).toContain('CHECK (role_id >= 1)');
+    expect(sql).toContain('CHECK (role_id <= 32767)');
+    expect(sql).toContain("CHECK (permission_level IN ('VIEW', 'OPERATE', 'MANAGE', 'ADMIN', 'CUSTOM'))");
+    expect(sql).toMatch(/branch_id uuid,/);
+    expect(sql).not.toMatch(/branch_id uuid NOT NULL/);
+  });
+
   test('preserves varchar(50), composite PK, and all five FK actions', async () => {
     const context = new GeneratorContextBuilder().build({
       source: { type: 'postgresql' },
