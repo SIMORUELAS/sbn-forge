@@ -19,6 +19,12 @@ function mapPostgresType(column) {
       };
 
     case 'smallint':
+      return {
+        type: 'integer',
+        minimum: -32768,
+        maximum: 32767
+      };
+
     case 'integer':
     case 'int':
     case 'bigint':
