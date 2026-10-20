@@ -25,6 +25,33 @@ const {
 );
 
 describe('API Generator', () => {
+  test('genera contratos con permisos CUSTOM y rangos declarados', async () => {
+    const output = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-domain-'));
+    try {
+      const sample = {
+        schema: 'simo_ai',
+        table: 'forge_domain_contract',
+        columns: [
+          { name: 'id', type: 'uuid', primaryKey: true, generated: false },
+          { name: 'permission_level', type: 'varchar', nullable: false,
+            enum: ['VIEW', 'OPERATE', 'MANAGE', 'ADMIN', 'CUSTOM'] },
+          { name: 'role_id', type: 'smallint', nullable: false, minimum: 1, maximum: 32767 },
+          { name: 'branch_id', type: 'uuid', nullable: true }
+        ]
+      };
+      const result = await generateApi(createGeneratorContext(sample), { output });
+      const schemas = require(path.join(result.moduleDirectory, 'forge-domain-contract.schema.js'));
+      expect(schemas.create.body.properties.permission_level.enum)
+        .toEqual(['VIEW', 'OPERATE', 'MANAGE', 'ADMIN', 'CUSTOM']);
+      expect(schemas.create.body.properties.role_id)
+        .toEqual({ type: 'integer', minimum: 1, maximum: 32767 });
+      expect(schemas.create.body.properties.branch_id)
+        .toEqual({ type: 'string', format: 'uuid', nullable: true });
+    } finally {
+      await fs.remove(output);
+    }
+  });
+
   test('aplica limites SMALLINT a llave primaria simple sin duplicar propiedades', async () => {
     const output = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-smallint-pk-'));
     try {
