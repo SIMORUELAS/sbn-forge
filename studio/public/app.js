@@ -12,7 +12,7 @@ const sections = {
   configuracion: ['Configuración', 'Configura las preferencias de Studio.']
 };
 function showSection(id) {
-  if (!Object.prototype.hasOwnProperty.call(sections, id)) id = 'inicio';
+  if (!Object.prototype.hasOwnProperty.call(sections, id)) { id = 'inicio'; }
   const [title, description] = sections[id];
   document.getElementById('current-section').textContent = title;
   document.getElementById('home-view').hidden = id !== 'inicio';
@@ -22,8 +22,8 @@ function showSection(id) {
   document.querySelectorAll('[data-view]').forEach(el => {
     const selected = el.dataset.view === id;
     el.classList.toggle('active', selected);
-    if (selected) el.setAttribute('aria-current', 'page');
-    else el.removeAttribute('aria-current');
+    if (selected) { el.setAttribute('aria-current', 'page'); }
+    else { el.removeAttribute('aria-current'); }
   });
   window.location.hash = id === 'inicio' ? '' : id;
 }
