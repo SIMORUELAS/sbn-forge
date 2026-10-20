@@ -19,7 +19,9 @@ const idParam = {
   properties: {
     id: {
       type: '{{primaryKeyColumn.jsonSchema.type}}'{{#if primaryKeyColumn.jsonSchema.format}},
-      format: '{{primaryKeyColumn.jsonSchema.format}}'{{/if}}
+      format: '{{primaryKeyColumn.jsonSchema.format}}'{{/if}}{{#if primaryKeyColumn.jsonSchema.minimum}},
+      minimum: {{primaryKeyColumn.jsonSchema.minimum}}{{/if}}{{#if primaryKeyColumn.jsonSchema.maximum}},
+      maximum: {{primaryKeyColumn.jsonSchema.maximum}}{{/if}}
     }
   },
 {{/if}}
@@ -30,9 +32,7 @@ const writableProperties = {
 {{#each writableColumns}}
   {{name}}: {
     type: '{{jsonSchema.type}}'{{#if jsonSchema.format}},
-    format: '{{jsonSchema.format}}'{{/if}}{{#if jsonSchema.minimum}},
-      minimum: {{jsonSchema.minimum}}{{/if}}{{#if jsonSchema.maximum}},
-      maximum: {{jsonSchema.maximum}}{{/if}}{{#if jsonSchema.maxLength}},
+    format: '{{jsonSchema.format}}'{{/if}}{{#if jsonSchema.maxLength}},
     maxLength: {{jsonSchema.maxLength}}{{/if}}{{#if jsonSchema.minimum}},
     minimum: {{jsonSchema.minimum}}{{/if}}{{#if jsonSchema.maximum}},
     maximum: {{jsonSchema.maximum}}{{/if}}{{#if jsonSchema.nullable}},
