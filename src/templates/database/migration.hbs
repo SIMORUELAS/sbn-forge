@@ -10,7 +10,7 @@ CREATE SCHEMA IF NOT EXISTS {{database.schema}};
 CREATE TABLE IF NOT EXISTS {{database.schema}}.{{database.table}}
 (
 {{#each columns}}
-    {{name}} {{nativeType}}{{#if identity}} GENERATED ALWAYS AS IDENTITY{{/if}}{{#unless nullable}} NOT NULL{{/unless}}{{#if hasDefaultValue}} DEFAULT {{{defaultValue}}}{{/if}}{{#unless @last}},{{/unless}}
+    {{name}} {{nativeType}}{{#if identity}} GENERATED ALWAYS AS IDENTITY{{/if}}{{#unless nullable}} NOT NULL{{/unless}}{{#if hasDefaultValue}} DEFAULT {{{defaultValue}}}{{/if}}{{#if jsonSchema.minimum}} CHECK ({{name}} >= {{jsonSchema.minimum}}){{/if}}{{#if jsonSchema.maximum}} CHECK ({{name}} <= {{jsonSchema.maximum}}){{/if}}{{#if jsonSchema.enum}} CHECK ({{name}} IN ({{#each jsonSchema.enum}}'{{this}}'{{#unless @last}}, {{/unless}}{{/each}})){{/if}}{{#unless @last}},{{/unless}}
 {{/each}}
 {{#if primaryKey.columns.length}}
     ,PRIMARY KEY ({{#each primaryKey.columns}}{{this}}{{#unless @last}}, {{/unless}}{{/each}})
