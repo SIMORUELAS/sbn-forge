@@ -6,6 +6,18 @@ const {
 } = require('../src/core/json-schema-mapper');
 
 describe('json-schema-mapper', () => {
+  test('preserva restricciones empresariales configurables', () => {
+    expect(buildJsonSchemaProperty({ type: 'smallint', minimum: 1, maximum: 100 }))
+      .toEqual({ type: 'integer', minimum: 1, maximum: 100 });
+    expect(buildJsonSchemaProperty({
+      type: 'varchar',
+      enum: ['VIEW', 'OPERATE', 'MANAGE', 'ADMIN', 'CUSTOM']
+    })).toEqual({
+      type: 'string',
+      enum: ['VIEW', 'OPERATE', 'MANAGE', 'ADMIN', 'CUSTOM']
+    });
+  });
+
   test('convierte uuid a string con formato uuid', () => {
     expect(
       mapPostgresType({
