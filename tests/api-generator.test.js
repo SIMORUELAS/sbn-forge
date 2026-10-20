@@ -25,6 +25,30 @@ const {
 );
 
 describe('API Generator', () => {
+  test('aplica limites SMALLINT a llave primaria simple sin duplicar propiedades', async () => {
+    const output = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-smallint-pk-'));
+    try {
+      const sample = {
+        ...definition,
+        table: 'forge_smallint_pk_contract',
+        columns: definition.columns.map(column =>
+          column.name === 'id'
+            ? { ...column, type: 'smallint', generated: false }
+            : { ...column }
+        )
+      };
+      const result = await generateApi(createGeneratorContext(sample), { output });
+      const schema = require(path.join(result.moduleDirectory, 'forge-smallint-pk-contract.schema.js'));
+      expect(schema.getById.params.properties.id).toEqual({
+        type: 'integer', minimum: -32768, maximum: 32767
+      });
+      const text = await fs.readFile(path.join(result.moduleDirectory, 'forge-smallint-pk-contract.schema.js'), 'utf8');
+      expect(text).not.toMatch(/minimum: -32768,[\\s\\S]*?minimum: -32768/);
+    } finally {
+      await fs.remove(output);
+    }
+  });
+
   test(
     'genera módulo, README y manifest',
     async () => {
