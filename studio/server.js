@@ -31,13 +31,13 @@ function createStudioServer() {
         'X-Content-Type-Options': 'nosniff',
         'Referrer-Policy': 'no-referrer'
       });
-      if (req.method === 'HEAD') res.end(); else res.end(content);
+      if (req.method === 'HEAD') { res.end(); } else { res.end(content); }
     });
   });
 }
 
 if (require.main === module) {
-  if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) throw new Error('FORGE_STUDIO_PORT inválido');
+  if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) { throw new Error('FORGE_STUDIO_PORT inválido'); }
   createStudioServer().listen(PORT, HOST, () => {
     process.stdout.write('SBN Forge Studio (prototipo local): http://' + HOST + ':' + PORT + '\n');
   });
