@@ -36,6 +36,9 @@ describe('Forge to SBN API role-assignment compatibility contracts', () => {
     expect(schemas.getById.params.required).toEqual(['agent_id', 'role_id']);
     expect(schemas.getById.params.properties.agent_id.format).toBe('uuid');
     expect(schemas.getById.params.properties.role_id.type).toBe('integer');
+    expect(schemas.getById.params.properties.role_id.minimum).toBe(-32768);
+    expect(schemas.getById.params.properties.role_id.maximum).toBe(32767);
+    expect(schemas.create.body.properties.role_id.maximum).toBe(32767);
     expect(schemas.create.body.required).toEqual(['agent_id', 'role_id']);
     expect(schemas.update.body.required).toEqual(['expected_version_no']);
     expect(schemas.update.body.properties.expected_version_no.minimum).toBe(1);
