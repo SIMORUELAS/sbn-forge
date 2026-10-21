@@ -22,7 +22,7 @@
     {name:'Componentes Industriales',source:'Cliente SBN',type:'Producto físico',status:'Publicado',sales:3216},
     {name:'Consultoría Empresarial',source:'Cliente SBN',type:'Servicio',status:'Publicado',sales:1284}
   ];
-  const el = (tag, cls, text) => { const node=document.createElement(tag); if(cls) node.className=cls; if(text!==undefined) node.textContent=text; return node; };
+  const el = (tag, cls, text) => { const node=document.createElement(tag); if (cls) { node.className=cls; } if (text!==undefined) { node.textContent=text; } return node; };
   const root=document.getElementById('product-hub-app');
   const sidebar=el('aside','ph-sidebar');
   const brand=el('div','ph-brand','⬡  SBN  Product Hub');
