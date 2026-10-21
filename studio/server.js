@@ -18,7 +18,7 @@ function createStudioServer() {
     let pathname;
     try { pathname = new URL(req.url, 'http://localhost').pathname; }
     catch { res.writeHead(400); res.end(); return; }
-    const routes = { '/': 'index.html', '/index.html': 'index.html', '/app.css': 'app.css', '/app.js': 'app.js' };
+    const routes = { '/': 'index.html', '/index.html': 'index.html', '/app.css': 'app.css', '/app.js': 'app.js', '/product-hub': 'product-hub.html', '/product-hub.html': 'product-hub.html', '/product-hub.js': 'product-hub.js', '/product-hub.css': 'product-hub.css' };
     const filename = routes[pathname];
     if (!filename) { res.writeHead(404); res.end(); return; }
     const file = path.join(ROOT, filename);
