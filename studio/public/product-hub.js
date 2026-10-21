@@ -41,7 +41,26 @@
   const demo=el('span','ph-demo','DATOS DEMOSTRATIVOS');
   const forge=el('a','ph-button ph-button-primary','↗ Abrir Forge Studio');
   forge.href='/';forge.title='Ir al prototipo existente de Forge Studio';
-  headerActions.append(demo,forge);header.append(heading,headerActions);
+  const userDisplay=el('div','ph-user');
+  userDisplay.append(el('span','ph-user-label','USUARIO DEL PORTAL'),el('strong','ph-user-name','Sin vincular'));
+  const userName=userDisplay.querySelector('.ph-user-name');
+  const allowedPortalOrigins=['http://localhost:3000','http://127.0.0.1:3000'];
+  window.addEventListener('message',(event)=>{
+    if (!allowedPortalOrigins.includes(event.origin) ||
+        event.source!==window.opener ||
+        event.data?.type!=='SBN_PRODUCT_HUB_IDENTITY_DISPLAY') {
+      return;
+    }
+    const name=typeof event.data.name==='string'?event.data.name.trim().slice(0,120):'';
+    userName.textContent=name||'Usuario SBN';
+    userName.title=typeof event.data.email==='string'?event.data.email.slice(0,160):'';
+  });
+  if (window.opener) {
+    allowedPortalOrigins.forEach(origin=>{
+      window.opener.postMessage({type:'SBN_PRODUCT_HUB_IDENTITY_REQUEST'},origin);
+    });
+  }
+  headerActions.append(userDisplay,demo,forge);header.append(heading,headerActions);
   const content=el('div','ph-content');
   main.append(header,content);root.append(sidebar,main);
   function panel(title){const p=el('section','ph-panel');p.append(el('h2','',title));return p;}
