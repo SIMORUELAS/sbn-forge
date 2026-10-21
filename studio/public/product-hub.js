@@ -43,6 +43,12 @@
   forge.href='/';forge.title='Ir al prototipo existente de Forge Studio';
   const userDisplay=el('div','ph-user');
   userDisplay.append(el('span','ph-user-label','USUARIO DEL PORTAL'),el('strong','ph-user-name','Sin vincular'));
+  const orgDisplay=el('div','ph-org-context');
+  orgDisplay.append(
+    el('span','ph-org-line','Empresa activa: No vinculada'),
+    el('span','ph-org-line','Organización padre: No disponible')
+  );
+  userDisplay.append(orgDisplay);
   const userName=userDisplay.querySelector('.ph-user-name');
   const allowedPortalOrigins=['http://localhost:3000','http://127.0.0.1:3000'];
   window.addEventListener('message',(event)=>{
@@ -54,6 +60,10 @@
     const name=typeof event.data.name==='string'?event.data.name.trim().slice(0,120):'';
     userName.textContent=name||'Usuario SBN';
     userName.title=typeof event.data.email==='string'?event.data.email.slice(0,160):'';
+    const active=typeof event.data.activeOrganization==='string'?event.data.activeOrganization.trim().slice(0,120):'';
+    const parent=typeof event.data.parentOrganization==='string'?event.data.parentOrganization.trim().slice(0,120):'';
+    orgDisplay.children[0].textContent='Empresa activa: '+(active||'No disponible');
+    orgDisplay.children[1].textContent='Organización padre: '+(parent||'No disponible');
   });
   if (window.opener) {
     allowedPortalOrigins.forEach(origin=>{
