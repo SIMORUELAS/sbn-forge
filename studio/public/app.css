@@ -15,3 +15,12 @@
 @media(max-width:850px){.inspect-grid{grid-template-columns:1fr}}
 
 .inspect-form select{padding:11px 12px;border:1px solid #b9c8e6;border-radius:8px;font:inherit;color:#10204b;background:white;max-width:250px;min-width:170px}
+
+#designer-fields{margin-top:22px}
+#designer-fields table{width:100%;border-collapse:collapse}
+#designer-fields th,#designer-fields td{padding:11px 13px;border-bottom:1px solid #e1e8f5;text-align:left;vertical-align:middle}
+#designer-fields th{background:#f0f4fc;color:#16305f;font-weight:700}
+#designer-fields th:nth-child(n+3),#designer-fields td:nth-child(n+3){text-align:center}
+#designer-fields tr:hover td{background:#f7f9ff}
+#designer-fields input[type="checkbox"]{width:16px;height:16px;accent-color:#5141e9}
+#designer-fields input[type="checkbox"]:disabled{opacity:.55;cursor:not-allowed}
