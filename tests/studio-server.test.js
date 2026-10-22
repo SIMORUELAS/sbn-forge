@@ -25,7 +25,7 @@ describe('SBN Forge Studio local preview', () => {
     const res = await request('/');
     expect(res.status).toBe(200);
     expect(res.body).toContain('SBN Forge Studio');
-    expect(res.body).toContain('Modo demostración');
+    expect(res.body).toContain('Modo local.');
     expect(res.headers['content-security-policy']).toContain("default-src 'self'");
   });
   test('serves only allowlisted assets', async () => {
