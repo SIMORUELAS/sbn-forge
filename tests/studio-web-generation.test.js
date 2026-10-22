@@ -1,5 +1,8 @@
 'use strict';
 const http = require('node:http');
+const fs = require('node:fs/promises');
+const os = require('node:os');
+const path = require('node:path');
 const { createStudioServer } = require('../studio/server');
 
 function request(port, route, method = 'GET', body = null) {
@@ -20,12 +23,14 @@ function request(port, route, method = 'GET', body = null) {
 describe('Studio web generation safety', () => {
   let server;
   let port;
+  let tempRoot;
   beforeAll(async () => {
-    server = createStudioServer();
+    tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'studio-web-test-'));
+    server = createStudioServer({ runsDirectory: path.join(tempRoot, 'runs') });
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     port = server.address().port;
   });
-  afterAll(async () => { await new Promise(resolve => server.close(resolve)); });
+  afterAll(async () => { await new Promise(resolve => server.close(resolve)); await fs.rm(tempRoot, { recursive: true, force: true }); });
   test('lists empty session history', async () => {
     const result = await request(port, '/api/studio/runs');
     expect(result.status).toBe(200);
