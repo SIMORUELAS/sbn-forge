@@ -6,6 +6,7 @@ const crypto = require('node:crypto');
 const { generateIsolated } = require('./isolated-generation');
 
 const DEFAULT_ROOT = path.join(os.homedir(), '.sbn-forge-studio', 'runs');
+const ORPHAN_AGE_MS = 24 * 60 * 60 * 1000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function httpError(message, status) { const error = new Error(message); error.status = status; return error; }
 function inside(root, target) { return target.startsWith(root + path.sep); }
@@ -100,6 +101,16 @@ function createRunManager({ definitionStore, generate = generateIsolated, limit 
     recovered.sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
     for (const run of recovered) { runs.set(run.id, run); }
     await trim();
+    // Only remove stale Forge staging directories directly beneath this owned root.
+    // Unknown entries and symbolic links are never followed or deleted.
+    for (const entry of await fs.readdir(root)) {
+      if (!/^sbn-forge-studio-[a-zA-Z0-9_-]+$/.test(entry)) { continue; }
+      const candidate = path.join(root, entry);
+      const stat = await fs.lstat(candidate).catch(() => null);
+      if (!stat || !stat.isDirectory() || stat.isSymbolicLink() ||
+          Date.now() - stat.mtimeMs < ORPHAN_AGE_MS) { continue; }
+      await fs.rm(candidate, { recursive: true, force: true });
+    }
   }
   function start() { if (!ready) { ready = initialize().catch(error => { ready = null; throw error; }); } return ready; }
   return {
