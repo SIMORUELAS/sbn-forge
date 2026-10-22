@@ -1,29 +1,50 @@
 'use strict';
 const { toForgePreview } = require('./forge-preview');
+const { createGeneratorContext } = require('../src/core/generator-context');
+const { generateApi } = require('../src/generators/backend/api-generator');
+const FILE_CATALOG = require('../src/catalogs/file-catalog');
 
+const GENERIC_KEYS = ['routes', 'controller', 'service', 'repository', 'schema', 'readme'];
 function createGenerationPlan(definition) {
   const result = toForgePreview(definition);
-  const resource = result.preview.table;
-  const base = 'src/generated/' + result.preview.schema + '/' + resource;
-  const artifacts = [
-    { kind: 'definition', path: base + '.definition.json', action: 'planned', description: 'Contrato Forge normalizado' },
-    { kind: 'api', path: base + '.api.js', action: 'planned', description: 'API y rutas del recurso' },
-    { kind: 'runtime', path: base + '.resource.js', action: 'planned', description: 'Recurso de interfaz Forge Runtime' },
-    { kind: 'tests', path: 'tests/generated/' + resource + '.test.js', action: 'planned', description: 'Pruebas del recurso' },
-    { kind: 'docs', path: 'docs/generated/' + resource + '.md', action: 'planned', description: 'Documentación técnica' }
-  ];
+  const blockers = [...result.blockers];
+  let context = null;
+  if (result.readyForGeneration) {
+    try {
+      context = createGeneratorContext(result.preview, { generatedAt: '1970-01-01T00:00:00.000Z' });
+    } catch (error) { blockers.push('No se pudo preparar el contexto Forge: ' + error.message); }
+  }
+  const moduleName = context?.names?.moduleName || result.preview.table.replace(/_/g, '-');
+  const artifacts = [...GENERIC_KEYS, 'manifest'].map(key => {
+    const item = FILE_CATALOG[key];
+    if (!item || (key !== 'manifest' && !item.template)) {
+      blockers.push('Falta plantilla real en catálogo: ' + key);
+      return { kind: key, path: null, action: 'unavailable', description: 'Plantilla no disponible' };
+    }
+    return {
+      kind: key,
+      path: moduleName + '/' + item.output.replace(/\{module\}/g, moduleName),
+      template: item.template,
+      category: item.category,
+      generator: 'generateApi',
+      action: 'planned',
+      description: key === 'manifest' ? 'Manifiesto del módulo' : 'Plantilla existente del catálogo Forge'
+    };
+  });
   return {
     name: result.name,
-    source: { schema: result.preview.schema, table: resource },
+    source: { schema: result.preview.schema, table: result.preview.table },
     compatible: result.compatible,
-    readyForGeneration: result.readyForGeneration,
+    readyForGeneration: result.readyForGeneration && blockers.length === 0,
     executable: false,
     mode: 'plan-only',
-    blockers: result.blockers,
+    engine: { api: typeof generateApi === 'function' ? 'generateApi' : 'unavailable', profile: 'generic' },
+    integrations: [{ target: 'Forge Runtime frontend', status: 'not-mapped', reason: 'No forma parte del catálogo de generateApi' }],
+    blockers,
     warnings: result.warnings,
     artifacts,
-    totals: { planned: artifacts.length, written: 0, published: 0 },
-    notice: 'Plan informativo: no ejecuta generadores, no escribe archivos, no modifica bases de datos ni publica código.'
+    totals: { planned: artifacts.filter(item => item.action === 'planned').length, written: 0, published: 0 },
+    notice: 'Inventario de plantillas reales; no ejecuta generadores, no escribe archivos, no modifica bases de datos ni publica código.'
   };
 }
 module.exports = { createGenerationPlan };
