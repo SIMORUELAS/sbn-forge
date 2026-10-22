@@ -334,31 +334,78 @@ document.getElementById('generation-plan').addEventListener('click', async () =>
 refreshGenerationDefinitions().catch(() => {});
 
 let activeRun = null;
+const integrityLabels = {
+  verified: 'Verificada (SHA-256)',
+  'legacy-unverified': 'Sin huella histórica',
+  corrupt: 'Alterada o incompleta',
+  missing: 'Directorio no disponible'
+};
+function integrityText(run) { return integrityLabels[run.integrity] || 'Sin verificar'; }
 async function refreshRuns() {
   const response = await fetch('/api/studio/runs');
   const data = await response.json();
   if (!response.ok) { throw new Error(data.error || 'Historial no disponible'); }
   const list = document.getElementById('generation-runs-list');
   list.replaceChildren();
+  const counts = { verified: 0, 'legacy-unverified': 0, corrupt: 0, missing: 0 };
   for (const run of data.runs) {
+    if (Object.prototype.hasOwnProperty.call(counts, run.integrity)) { counts[run.integrity]++; }
     const li = document.createElement('li');
     const button = document.createElement('button');
-    button.textContent = run.createdAt + ' · ' + run.name + ' · ' + run.totals.written + ' archivos';
+    button.type = 'button';
+    button.className = 'run-entry';
+    button.textContent = run.createdAt + ' · ' + run.name + ' · ' + run.totals.written +
+      ' archivos · ' + integrityText(run) + ' · Sin publicar';
     button.addEventListener('click', () => selectRun(run));
     li.appendChild(button);
     list.appendChild(li);
+  }
+  document.getElementById('generation-integrity-summary').textContent =
+    data.runs.length + ' ejecuciones · ' + counts.verified + ' verificadas · ' +
+    counts['legacy-unverified'] + ' históricas sin SHA-256 · ' +
+    (counts.corrupt + counts.missing) + ' con incidencias';
+  if (activeRun) {
+    const updated = data.runs.find(run => run.id === activeRun.id);
+    if (updated) { selectRun(updated); }
+    else {
+      activeRun = null;
+      document.getElementById('generation-run-detail').hidden = true;
+      document.getElementById('generation-file').replaceChildren();
+      document.getElementById('generation-file-content').textContent = '';
+    }
   }
 }
 function selectRun(run) {
   activeRun = run;
   const select = document.getElementById('generation-file');
+  const previous = select.value;
   select.replaceChildren();
+  const rows = document.getElementById('generation-artifact-rows');
+  rows.replaceChildren();
   for (const file of run.artifacts) {
     const option = document.createElement('option');
     option.value = file.path;
     option.textContent = file.path + ' (' + file.bytes + ' bytes)';
     select.appendChild(option);
+    const tr = document.createElement('tr');
+    for (const value of [file.path, String(file.bytes), file.sha256 || 'No disponible (histórico)']) {
+      const td = document.createElement('td');
+      td.textContent = value;
+      tr.appendChild(td);
+    }
+    rows.appendChild(tr);
   }
+  if ([...select.options].some(option => option.value === previous)) { select.value = previous; }
+  const status = document.getElementById('generation-run-status');
+  status.textContent = 'Integridad: ' + integrityText(run) + '. Publicación: No. ' +
+    ((run.integrity === 'corrupt' || run.integrity === 'missing')
+      ? 'Advertencia: no se permite revisar los archivos de esta ejecución.'
+      : run.integrity === 'legacy-unverified'
+        ? 'Esta ejecución es anterior al registro de huellas SHA-256.'
+        : 'Los archivos coinciden con las huellas registradas.');
+  status.className = run.integrity === 'corrupt' || run.integrity === 'missing' ? 'integrity-warning' : '';
+  document.getElementById('generation-run-detail').hidden = false;
+  document.getElementById('generation-open-file').disabled = run.integrity === 'corrupt' || run.integrity === 'missing';
   document.getElementById('generation-file-content').textContent = '';
 }
 document.getElementById('generation-history').addEventListener('click', async () => {
@@ -376,7 +423,8 @@ document.getElementById('generation-execute').addEventListener('click', async ()
     const result = await response.json();
     if (!response.ok) { throw new Error(result.error || 'Generación no autorizada'); }
     await refreshRuns();
-    selectRun(result);
+    const latest = await fetch('/api/studio/runs').then(response => response.json());
+    selectRun(latest.runs.find(run => run.id === result.id) || result);
     message.textContent = 'Generados ' + result.totals.written + ' archivos aislados. No publicados.';
   } catch (error) { message.textContent = error.message; }
   finally { button.disabled = false; }
