@@ -10,17 +10,18 @@ function toForgePreview(input) {
   const primaryKeys = new Set(definition.primaryKey.columns);
   const relations = new Map();
   const warnings = [];
+  const blockers = [];
   for (const fk of definition.foreignKeys) {
-    if (!fk || typeof fk !== 'object') { warnings.push('Relación foránea inválida; revisar metadatos originales.'); continue; }
+    if (!fk || typeof fk !== 'object') { blockers.push('Relación foránea inválida; revisar metadatos originales.'); continue; }
     const columns = Array.isArray(fk.columns) ? fk.columns : [fk.column];
     const referencedColumns = Array.isArray(fk.referencedColumns) ? fk.referencedColumns : [fk.referencedColumn];
     if (columns.length !== 1 || referencedColumns.length !== 1) {
-      warnings.push('Relación compuesta ' + String(fk.name || '') + ' requiere tratamiento especializado.');
+      blockers.push('Relación compuesta ' + String(fk.name || '') + ' requiere tratamiento especializado.');
       continue;
     }
     if (columns[0] && fk.referencedSchema && fk.referencedTable && referencedColumns[0]) {
       relations.set(columns[0], { schema: fk.referencedSchema, table: fk.referencedTable, column: referencedColumns[0] });
-    } else { warnings.push('Relación foránea incompleta: ' + String(fk.name || 'sin nombre')); }
+    } else { blockers.push('Relación foránea incompleta: ' + String(fk.name || 'sin nombre')); }
   }
   const columns = definition.fields.map(field => {
     const type = field.dataType.toLowerCase().trim();
@@ -29,13 +30,23 @@ function toForgePreview(input) {
       type,
       nullable: field.nullable,
       primaryKey: primaryKeys.has(field.name),
-      generated: false,
+      generated: field.identity === true,
       writable: field.editable && !primaryKeys.has(field.name) && !AUDIT.test(field.name)
     };
+    const metadataKeys = ['defaultValue', 'identity', 'maxLength', 'precision', 'scale'];
+    const missing = metadataKeys.filter(key => !Object.prototype.hasOwnProperty.call(field, key));
+    if (missing.length) { blockers.push('Metadatos originales incompletos para ' + field.name + ': ' + missing.join(', ')); }
+    if (Object.prototype.hasOwnProperty.call(field, 'defaultValue') && field.defaultValue !== null) {
+      column.hasDefault = true;
+      column.default = field.defaultValue;
+    }
+    if (Number.isInteger(field.maxLength)) { column.length = field.maxLength; }
+    if (Number.isInteger(field.precision)) { column.precision = field.precision; }
+    if (Number.isInteger(field.scale)) { column.scale = field.scale; }
     if (relations.has(field.name)) { column.foreignKey = relations.get(field.name); }
     if (!SUPPORTED.has(type)) { warnings.push('Tipo no soportado por validador Forge: ' + field.name + ' (' + type + ')'); }
-    if (!field.nullable && !field.required && field.editable) {
-      warnings.push('Comprobar valor predeterminado o regla de creación para: ' + field.name);
+    if (!field.nullable && !field.required && field.editable && field.defaultValue == null && field.identity !== true) {
+      blockers.push('Comprobar valor predeterminado o regla de creación para: ' + field.name);
     }
     return column;
   });
@@ -43,7 +54,7 @@ function toForgePreview(input) {
   let compatible = false;
   try { validateForge(preview); compatible = true; }
   catch (error) { warnings.push(error.message); }
-  warnings.push('Vista preliminar: Studio aún no conserva defaults, identidad ni precisión completos; no usar para generar migraciones.');
-  return { name: definition.name, compatible, preview, warnings };
+  warnings.push('Vista preliminar de contrato; no genera ni publica migraciones.');
+  return { name: definition.name, compatible, readyForGeneration: compatible && blockers.length === 0, preview, warnings: [...blockers, ...warnings], blockers };
 }
 module.exports = { toForgePreview };
