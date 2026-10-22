@@ -13,3 +13,5 @@
 .inspect-grid th,.inspect-grid td{padding:10px;text-align:left;border-bottom:1px solid #e1e8f6}
 .inspect-grid th{color:#405a85;background:#f4f7ff}
 @media(max-width:850px){.inspect-grid{grid-template-columns:1fr}}
+
+.inspect-form select{padding:11px 12px;border:1px solid #b9c8e6;border-radius:8px;font:inherit;color:#10204b;background:white;max-width:250px;min-width:170px}
