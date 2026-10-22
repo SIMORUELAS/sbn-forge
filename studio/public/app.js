@@ -86,3 +86,36 @@ document.getElementById('inspect-form').addEventListener('submit', async event =
     submit.disabled = false;
   }
 });
+
+document.getElementById('inspect-load-tables').addEventListener('click', async () => {
+  const schema = document.getElementById('inspect-schema').value.trim();
+  const message = document.getElementById('inspect-message');
+  const selector = document.getElementById('inspect-table-list');
+  const button = document.getElementById('inspect-load-tables');
+  button.disabled = true;
+  message.textContent = 'Consultando tablas disponibles...';
+  selector.replaceChildren();
+  const initial = document.createElement('option');
+  initial.value = '';
+  initial.textContent = 'Seleccionar tabla…';
+  selector.appendChild(initial);
+  try {
+    const response = await fetch('/api/studio/tables?' + new URLSearchParams({ schema }));
+    const result = await response.json();
+    if (!response.ok) { throw new Error(result.error || 'No fue posible consultar las tablas'); }
+    for (const table of result.tables) {
+      const option = document.createElement('option');
+      option.value = table;
+      option.textContent = table;
+      selector.appendChild(option);
+    }
+    message.textContent = result.tables.length + ' tablas disponibles en ' + schema + '.';
+  } catch (error) {
+    message.textContent = error.message;
+  } finally {
+    button.disabled = false;
+  }
+});
+document.getElementById('inspect-table-list').addEventListener('change', event => {
+  if (event.target.value) { document.getElementById('inspect-table').value = event.target.value; }
+});
