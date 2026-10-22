@@ -93,7 +93,7 @@ function createStudioServer(options = {}) {
           ORDER BY table_name
         `, [schema]);
         json(res, 200, { schema, tables: result.rows.map(row => row.name) });
-      } catch (error) {
+      } catch {
         json(res, 502, { error: 'No fue posible consultar las tablas' });
       } finally {
         if (datasource) { await datasource.close(); }
