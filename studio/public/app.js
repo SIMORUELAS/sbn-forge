@@ -153,9 +153,13 @@ document.getElementById('designer-import').addEventListener('click', () => {
     const type = document.createElement('td');
     type.textContent = column.nativeType || column.dataType;
     row.append(name, type);
-    row.appendChild(createDesignerCheckbox(column, 'visible', true, false));
-    row.appendChild(createDesignerCheckbox(column, 'editable', !primaryKeys.has(column.name) && !column.identity, primaryKeys.has(column.name) || column.identity));
-    row.appendChild(createDesignerCheckbox(column, 'required', !column.nullable && (column.defaultValue === null || column.defaultValue === undefined) && !primaryKeys.has(column.name), primaryKeys.has(column.name)));
+    const systemField = /^(created_at|created_by|updated_at|updated_by|deleted_at|deleted_by)$/.test(column.name);
+    const protectedField = primaryKeys.has(column.name) || column.identity || systemField;
+    const hasDefault = column.defaultValue !== null && column.defaultValue !== undefined;
+    const required = !column.nullable && !hasDefault && !protectedField;
+    row.appendChild(createDesignerCheckbox(column, 'visible', !systemField, false));
+    row.appendChild(createDesignerCheckbox(column, 'editable', !protectedField, protectedField));
+    row.appendChild(createDesignerCheckbox(column, 'required', required, protectedField));
     rows.appendChild(row);
   }
   document.getElementById('designer-fields').hidden = false;
