@@ -20,7 +20,8 @@ function showSection(id) {
   document.getElementById('detail-title').textContent = title;
   document.getElementById('detail-description').textContent = description;
   document.getElementById('inspector-workspace').hidden = id !== 'inspector';
-  document.getElementById('detail-placeholder').hidden = id === 'inspector';
+  document.getElementById('designer-workspace').hidden = id !== 'diseno';
+  document.getElementById('detail-placeholder').hidden = id === 'inspector' || id === 'diseno';
   document.querySelectorAll('[data-view]').forEach(el => {
     const selected = el.dataset.view === id;
     el.classList.toggle('active', selected);
@@ -40,7 +41,9 @@ function addTextItem(parent, value) {
   item.textContent = value;
   parent.appendChild(item);
 }
+let lastInspectedMetadata = null;
 function renderMetadata(metadata) {
+  lastInspectedMetadata = metadata;
   document.getElementById('inspect-heading').textContent = metadata.schema + '.' + metadata.table;
   const columns = document.getElementById('inspect-columns');
   columns.replaceChildren();
@@ -118,4 +121,72 @@ document.getElementById('inspect-load-tables').addEventListener('click', async (
 });
 document.getElementById('inspect-table-list').addEventListener('change', event => {
   if (event.target.value) { document.getElementById('inspect-table').value = event.target.value; }
+});
+
+function createDesignerCheckbox(column, property, checked, disabled) {
+  const cell = document.createElement('td');
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.dataset.column = column.name;
+  input.dataset.property = property;
+  input.checked = checked;
+  input.disabled = disabled;
+  cell.appendChild(input);
+  return cell;
+}
+document.getElementById('designer-import').addEventListener('click', () => {
+  const message = document.getElementById('designer-message');
+  if (!lastInspectedMetadata) {
+    message.textContent = 'Primero inspecciona una tabla en Inspector PostgreSQL.';
+    return;
+  }
+  const metadata = lastInspectedMetadata;
+  const primaryKeys = new Set(metadata.primaryKey?.columns || []);
+  document.getElementById('designer-name').value = metadata.table;
+  document.getElementById('designer-source').textContent = metadata.schema + '.' + metadata.table;
+  const rows = document.getElementById('designer-field-rows');
+  rows.replaceChildren();
+  for (const column of metadata.columns || []) {
+    const row = document.createElement('tr');
+    const name = document.createElement('td');
+    name.textContent = column.name;
+    const type = document.createElement('td');
+    type.textContent = column.nativeType || column.dataType;
+    row.append(name, type);
+    row.appendChild(createDesignerCheckbox(column, 'visible', true, false));
+    row.appendChild(createDesignerCheckbox(column, 'editable', !primaryKeys.has(column.name) && !column.identity, primaryKeys.has(column.name) || column.identity));
+    row.appendChild(createDesignerCheckbox(column, 'required', !column.nullable && column.defaultValue == null && !primaryKeys.has(column.name), primaryKeys.has(column.name)));
+    rows.appendChild(row);
+  }
+  document.getElementById('designer-fields').hidden = false;
+  document.getElementById('designer-export').disabled = false;
+  message.textContent = 'Campos importados. Ajusta su configuración y exporta la definición.';
+});
+document.getElementById('designer-export').addEventListener('click', () => {
+  if (!lastInspectedMetadata) { return; }
+  const metadata = lastInspectedMetadata;
+  const fields = (metadata.columns || []).map(column => {
+    const options = {};
+    for (const property of ['visible', 'editable', 'required']) {
+      const input = [...document.querySelectorAll('#designer-field-rows input')].find(el => el.dataset.column === column.name && el.dataset.property === property);
+      options[property] = Boolean(input?.checked);
+    }
+    return { name: column.name, dataType: column.dataType, nullable: column.nullable, ...options };
+  });
+  const definition = {
+    version: 1,
+    name: document.getElementById('designer-name').value.trim() || metadata.table,
+    source: { type: 'postgresql', schema: metadata.schema, table: metadata.table },
+    primaryKey: metadata.primaryKey,
+    foreignKeys: metadata.foreignKeys,
+    fields
+  };
+  const blob = new Blob([JSON.stringify(definition, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'forge-' + metadata.schema + '-' + metadata.table + '.json';
+  link.click();
+  URL.revokeObjectURL(url);
+  document.getElementById('designer-message').textContent = 'Definición exportada. Todavía no se ha generado ni publicado ningún módulo.';
 });
