@@ -27,7 +27,22 @@ function validateDefinition(value) {
     seen.add(field.name);
     if (field.required && (!field.editable || !field.visible)) { throw new Error('Un campo obligatorio debe ser visible y editable: ' + field.name); }
     if ((keys.includes(field.name) || AUDIT.test(field.name)) && (field.editable || field.required)) { throw new Error('Campo del sistema protegido: ' + field.name); }
-    return { name: field.name, dataType: field.dataType, nullable: field.nullable, visible: field.visible, editable: field.editable, required: field.required };
+    const result = { name: field.name, dataType: field.dataType, nullable: field.nullable, visible: field.visible, editable: field.editable, required: field.required };
+    if (Object.prototype.hasOwnProperty.call(field, 'defaultValue')) {
+      if (field.defaultValue !== null && (typeof field.defaultValue !== 'string' || field.defaultValue.length > 4096)) { throw new Error('Valor predeterminado inválido: ' + field.name); }
+      result.defaultValue = field.defaultValue;
+    }
+    if (Object.prototype.hasOwnProperty.call(field, 'identity')) {
+      if (typeof field.identity !== 'boolean') { throw new Error('Identidad inválida: ' + field.name); }
+      result.identity = field.identity;
+    }
+    for (const prop of ['maxLength', 'precision', 'scale']) {
+      if (Object.prototype.hasOwnProperty.call(field, prop)) {
+        if (field[prop] !== null && (!Number.isInteger(field[prop]) || field[prop] < 0 || field[prop] > 1000000)) { throw new Error('Metadato numérico inválido: ' + field.name + '.' + prop); }
+        result[prop] = field[prop];
+      }
+    }
+    return result;
   });
   if (!keys.every(key => seen.has(key))) { throw new Error('Clave primaria ausente en los campos'); }
   const cleaned = { version: 1, name, source: { type: 'postgresql', schema: source.schema, table: source.table },
