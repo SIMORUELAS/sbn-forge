@@ -62,6 +62,44 @@ function createStudioServer(options = {}) {
       }
       return;
     }
+    if (pathname === '/api/studio/tables') {
+      if (req.method !== 'GET') { json(res, 405, { error: 'Method not allowed' }); return; }
+      if (process.env.FORGE_STUDIO_DB_INSPECT !== '1') { json(res, 503, { error: 'Inspector no configurado' }); return; }
+      const schema = new URL(req.url, 'http://localhost').searchParams.get('schema');
+      if (!schema || !/^[a-zA-Z_][a-zA-Z0-9_$]*$/.test(schema)) {
+        json(res, 400, { error: 'Esquema inválido' }); return;
+      }
+      const config = {
+        host: process.env.FORGE_STUDIO_DB_HOST || '127.0.0.1',
+        port: Number(process.env.FORGE_STUDIO_DB_PORT || 5432),
+        database: process.env.FORGE_STUDIO_DB_NAME,
+        user: process.env.FORGE_STUDIO_DB_USER,
+        password: process.env.FORGE_STUDIO_DB_PASSWORD,
+        connectionTimeoutMillis: 3000,
+        query_timeout: 10000,
+        statement_timeout: 10000,
+        options: '-c default_transaction_read_only=on'
+      };
+      if (!config.database || !config.user || !config.password) {
+        json(res, 503, { error: 'Configuración PostgreSQL incompleta' }); return;
+      }
+      let datasource;
+      try {
+        datasource = createDatasource(config);
+        const result = await datasource.query(`
+          SELECT table_name AS name
+          FROM information_schema.tables
+          WHERE table_schema = $1 AND table_type = 'BASE TABLE'
+          ORDER BY table_name
+        `, [schema]);
+        json(res, 200, { schema, tables: result.rows.map(row => row.name) });
+      } catch (error) {
+        json(res, 502, { error: 'No fue posible consultar las tablas' });
+      } finally {
+        if (datasource) { await datasource.close(); }
+      }
+      return;
+    }
     const routes = { '/': 'index.html', '/index.html': 'index.html', '/app.css': 'app.css', '/app.js': 'app.js', '/product-hub': 'product-hub.html', '/product-hub.html': 'product-hub.html', '/product-hub.js': 'product-hub.js', '/product-hub.css': 'product-hub.css' };
     const filename = routes[pathname];
     if (!filename) { res.writeHead(404); res.end(); return; }
