@@ -1,79 +1,59 @@
-# {{names.entity}}
+# {{names.module}}
 
-Módulo generado por **SBN Forge** para la tabla `{{database.schema}}.{{database.table}}`.
+Módulo API generado por **SBN Forge** para `{{database.schema}}.{{database.table}}`.
 
----
-
-# Información de generación
+## Información de generación
 
 | Propiedad | Valor |
-|-----------|-------|
-| Perfil | `{{profile.name}}` |
-| Estándar | `{{profile.standard}}` |
-| Versión del contexto | `{{forge.contextVersion}}` |
-| Fecha de generación | `{{forge.generatedAt}}` |
-| Ruta base | `{{api.basePath}}` |
-| URL local | `{{api.baseUrl}}{{api.basePath}}` |
+|---|---|
+| Perfil | {{#if profile.name}}`{{profile.name}}`{{else}}`generic`{{/if}} |
+| Estándar | {{#if profile.standard}}`{{profile.standard}}`{{else}}No especificado{{/if}} |
+| Versión de contexto | {{#if forge.contextVersion}}`{{forge.contextVersion}}`{{else}}Contexto heredado{{/if}} |
+| Fecha | `{{generator.generatedAt}}` |
+| Ruta base | {{#if api.basePath}}`{{api.basePath}}`{{else}}Definida por aplicación host{{/if}} |
+| URL local | {{#if api.baseUrl}}`{{api.baseUrl}}`{{else}}No configurada{{/if}} |
 
----
-
-# Registro en Fastify
+## Registro Fastify
 
 ```javascript
 const routes = require('./{{names.module}}.routes');
 const repository = require('./{{names.module}}.repository');
-
 repository.configure(fastify.pg);
-
 fastify.register(routes);
 ```
 
----
+## Operaciones
 
-# Endpoints
+El módulo incluye rutas para GET (colección y registro), POST, PATCH y DELETE.
+{{#if api.basePath}}
+Ruta base configurada: `{{api.basePath}}`.
+{{else}}
+La ruta definitiva depende del registro en la aplicación host.
+{{/if}}
 
-| Método | Endpoint |
-|---------|----------|
-| GET | `{{api.basePath}}` |
-| GET | `{{api.basePath}}{{#if primaryKeyInfo.isComposite}}{{primaryKeyInfo.routePath}}{{else}}/:id{{/if}}` |
-| POST | `{{api.basePath}}` |
-| PATCH | `{{api.basePath}}{{#if primaryKeyInfo.isComposite}}{{primaryKeyInfo.routePath}}{{else}}/:id{{/if}}` |
-| DELETE | `{{api.basePath}}{{#if primaryKeyInfo.isComposite}}{{primaryKeyInfo.routePath}}{{else}}/:id{{/if}}` |
+## Seguridad
 
----
+{{#if security}}
+La configuración de seguridad se proporciona desde el contexto de generación y debe verificarse antes de desplegar.
+{{else}}
+**Sin configuración de seguridad explícita en este contexto.** El código generado no debe considerarse protegido hasta verificar autenticación, autorización y aislamiento de organización en la aplicación host.
+{{/if}}
 
-# Seguridad
-
-| Característica | Estado |
-|----------------|--------|
-| JWT | `{{security.jwt}}` |
-| Permisos | `{{security.permissions}}` |
-| Organización | `{{security.organizationContext}}` |
-
----
-
-# Capacidades detectadas
+## Capacidades detectadas
 
 ```json
 {{json capabilities}}
 ```
 
----
+## Permisos sugeridos
 
-# Permisos sugeridos
+{{#each permissions}}
+- `{{this}}`
+{{else}}
+No se proporcionaron permisos específicos.
+{{/each}}
 
-| Acción | Permiso |
-|--------|----------|
-| Consultar | `{{permissions.view}}` |
-| Crear | `{{permissions.create}}` |
-| Editar | `{{permissions.edit}}` |
-| Eliminar | `{{permissions.delete}}` |
-| Reordenar | `{{permissions.reorder}}` |
-| Copiar | `{{permissions.copy}}` |
-
----
-
-# Archivos generados
+## Archivos generados por el perfil genérico
 
 ```text
 {{names.module}}/
@@ -83,32 +63,13 @@ fastify.register(routes);
 ├── {{names.module}}.repository.js
 ├── {{names.module}}.schema.js
 ├── README.md
-├── API_EXAMPLES.md
-├── DATA_DICTIONARY.md
-├── UTILS_REQUIRED.md
-├── database/
-│   ├── migrations/
-│   └── seeds/
-├── tests/
-│   └── {{names.module}}.http
 └── sbn-forge.manifest.json
 ```
 
----
+El listado anterior corresponde al perfil genérico. Para otros perfiles o selecciones de plantillas, **el manifiesto es la fuente de verdad** sobre los archivos generados.
 
-# Integración
+## Integración
 
-Este módulo fue generado para trabajar con la arquitectura **SBN API v2**.
-
-Se espera que la aplicación host tenga registrados previamente:
-
-- Fastify
-- PostgreSQL (`@fastify/postgres`)
-- JWT
-- Middleware de autenticación
-- Middleware de autorización
-- Manejo centralizado de errores
-
----
+La aplicación host debe proporcionar Fastify, PostgreSQL y los controles de seguridad que correspondan. Este README no certifica que el módulo esté listo para producción.
 
 **Generado automáticamente por SBN Forge.**
