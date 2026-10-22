@@ -155,7 +155,7 @@ document.getElementById('designer-import').addEventListener('click', () => {
     row.append(name, type);
     row.appendChild(createDesignerCheckbox(column, 'visible', true, false));
     row.appendChild(createDesignerCheckbox(column, 'editable', !primaryKeys.has(column.name) && !column.identity, primaryKeys.has(column.name) || column.identity));
-    row.appendChild(createDesignerCheckbox(column, 'required', !column.nullable && column.defaultValue == null && !primaryKeys.has(column.name), primaryKeys.has(column.name)));
+    row.appendChild(createDesignerCheckbox(column, 'required', !column.nullable && (column.defaultValue === null || column.defaultValue === undefined) && !primaryKeys.has(column.name), primaryKeys.has(column.name)));
     rows.appendChild(row);
   }
   document.getElementById('designer-fields').hidden = false;
