@@ -3,7 +3,7 @@ const { validateDefinition: validateStudio } = require('./definition-store');
 const { validateDefinition: validateForge } = require('../src/core/definition-validator');
 
 const AUDIT = /^(created_at|created_by|updated_at|updated_by|deleted_at|deleted_by)$/;
-const SUPPORTED = new Set(['bigint','integer','smallint','uuid','boolean','varchar','character varying','text','json','jsonb','timestamp','timestamp without time zone','date','numeric','decimal']);
+const SUPPORTED = new Set(['bigint','integer','smallint','uuid','boolean','varchar','character varying','text','json','jsonb','timestamp','timestamp without time zone','timestamp with time zone','date','numeric','decimal']);
 
 function toForgePreview(input) {
   const definition = validateStudio(input);
