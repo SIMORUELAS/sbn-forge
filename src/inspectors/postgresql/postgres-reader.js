@@ -87,32 +87,46 @@ class PostgresReader {
   }
 
   async readForeignKeys(schemaName, tableName) {
+    // pg_constraint preserves the position-by-position mapping of composite FKs.
+    // Joining constraint_column_usage directly duplicates/mismatches FK columns.
     const sql = `
       SELECT
-        tc.constraint_name,
-        kcu.column_name,
-        ccu.table_schema AS referenced_schema,
-        ccu.table_name AS referenced_table,
-        ccu.column_name AS referenced_column,
-        rc.delete_rule AS delete_rule,
-        rc.update_rule AS update_rule
-      FROM information_schema.table_constraints tc
-      INNER JOIN information_schema.key_column_usage kcu
-        ON kcu.constraint_catalog = tc.constraint_catalog
-       AND kcu.constraint_schema = tc.constraint_schema
-       AND kcu.constraint_name = tc.constraint_name
-      INNER JOIN information_schema.constraint_column_usage ccu
-        ON ccu.constraint_catalog = tc.constraint_catalog
-       AND ccu.constraint_schema = tc.constraint_schema
-       AND ccu.constraint_name = tc.constraint_name
-      INNER JOIN information_schema.referential_constraints rc
-        ON rc.constraint_catalog = tc.constraint_catalog
-       AND rc.constraint_schema = tc.constraint_schema
-       AND rc.constraint_name = tc.constraint_name
-      WHERE tc.constraint_type = 'FOREIGN KEY'
-        AND tc.table_schema = $1
-        AND tc.table_name = $2
-      ORDER BY tc.constraint_name, kcu.ordinal_position;
+        con.conname AS constraint_name,
+        source_attribute.attname AS column_name,
+        referenced_namespace.nspname AS referenced_schema,
+        referenced_table.relname AS referenced_table,
+        referenced_attribute.attname AS referenced_column,
+        CASE con.confdeltype
+          WHEN 'a' THEN 'NO ACTION'
+          WHEN 'r' THEN 'RESTRICT'
+          WHEN 'c' THEN 'CASCADE'
+          WHEN 'n' THEN 'SET NULL'
+          WHEN 'd' THEN 'SET DEFAULT'
+        END AS delete_rule,
+        CASE con.confupdtype
+          WHEN 'a' THEN 'NO ACTION'
+          WHEN 'r' THEN 'RESTRICT'
+          WHEN 'c' THEN 'CASCADE'
+          WHEN 'n' THEN 'SET NULL'
+          WHEN 'd' THEN 'SET DEFAULT'
+        END AS update_rule
+      FROM pg_constraint con
+      JOIN pg_class source_table ON source_table.oid = con.conrelid
+      JOIN pg_namespace source_namespace ON source_namespace.oid = source_table.relnamespace
+      JOIN pg_class referenced_table ON referenced_table.oid = con.confrelid
+      JOIN pg_namespace referenced_namespace ON referenced_namespace.oid = referenced_table.relnamespace
+      CROSS JOIN LATERAL unnest(con.conkey, con.confkey)
+        WITH ORDINALITY AS key_columns(source_number, referenced_number, position)
+      JOIN pg_attribute source_attribute
+        ON source_attribute.attrelid = con.conrelid
+       AND source_attribute.attnum = key_columns.source_number
+      JOIN pg_attribute referenced_attribute
+        ON referenced_attribute.attrelid = con.confrelid
+       AND referenced_attribute.attnum = key_columns.referenced_number
+      WHERE con.contype = 'f'
+        AND source_namespace.nspname = $1
+        AND source_table.relname = $2
+      ORDER BY con.conname, key_columns.position;
     `;
 
     const result = await this.datasource.query(sql, [
