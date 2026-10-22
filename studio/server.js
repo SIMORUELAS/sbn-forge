@@ -22,7 +22,7 @@ function json(res, status, value) {
 function createStudioServer(options = {}) {
   const createDatasource = options.createDatasource || (config => new PostgresDatasource(config));
   const definitions = options.definitionStore || createDefinitionStore(options.definitionsDirectory);
-  const runs = options.runManager || createRunManager({ definitionStore: definitions });
+  const runs = options.runManager || createRunManager({ definitionStore: definitions, directory: options.runsDirectory });
   return http.createServer(async (req, res) => {
     const isDefinitionApi = (req.url || '').split('?')[0].startsWith('/api/studio/definitions');
     const isGenerationApi = (req.url || '').split('?')[0] === '/api/studio/runs';
@@ -60,7 +60,7 @@ function createStudioServer(options = {}) {
         return;
       }
       if (req.method !== 'GET') { json(res, 405, { error: 'Método no permitido' }); return; }
-      if (pathname === '/api/studio/runs') { json(res, 200, { runs: runs.list() }); return; }
+      if (pathname === '/api/studio/runs') { try { json(res, 200, { runs: await runs.list() }); } catch { json(res, 500, { error: 'Historial no disponible' }); } return; }
       const match = /^\/api\/studio\/runs\/([0-9a-f-]{36})\/file$/.exec(pathname);
       if (!match) { json(res, 404, { error: 'Ruta no encontrada' }); return; }
       try {
