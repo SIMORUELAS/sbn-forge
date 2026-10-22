@@ -7,6 +7,7 @@ const { PostgreSqlInspector } = require('../src/inspectors/postgresql');
 const { createDefinitionStore, MAX_BYTES } = require('./definition-store');
 const { toForgePreview } = require('./forge-preview');
 const { createGenerationPlan } = require('./generation-plan');
+const { createRunManager } = require('./run-manager');
 
 const HOST = '127.0.0.1';
 const PORT = Number(process.env.FORGE_STUDIO_PORT || 4173);
@@ -21,9 +22,11 @@ function json(res, status, value) {
 function createStudioServer(options = {}) {
   const createDatasource = options.createDatasource || (config => new PostgresDatasource(config));
   const definitions = options.definitionStore || createDefinitionStore(options.definitionsDirectory);
+  const runs = options.runManager || createRunManager({ definitionStore: definitions });
   return http.createServer(async (req, res) => {
     const isDefinitionApi = (req.url || '').split('?')[0].startsWith('/api/studio/definitions');
-    if (req.method !== 'GET' && req.method !== 'HEAD' && !(isDefinitionApi && req.method === 'POST')) {
+    const isGenerationApi = (req.url || '').split('?')[0] === '/api/studio/runs';
+    if (req.method !== 'GET' && req.method !== 'HEAD' && !((isDefinitionApi || isGenerationApi) && req.method === 'POST')) {
       res.writeHead(405, { Allow: 'GET, HEAD' });
       res.end();
       return;
@@ -31,6 +34,41 @@ function createStudioServer(options = {}) {
     let pathname;
     try { pathname = new URL(req.url, 'http://localhost').pathname; }
     catch { res.writeHead(400); res.end(); return; }
+    if (pathname === '/api/studio/runs' || pathname.startsWith('/api/studio/runs/')) {
+      if (req.method === 'POST' && pathname === '/api/studio/runs') {
+        const origin = req.headers.origin;
+        const host = req.headers.host;
+        if (process.env.FORGE_STUDIO_ALLOW_WEB_GENERATION !== '1') { json(res, 403, { error: 'Generación web deshabilitada' }); return; }
+        if (!host || !/^127\\.0\\.0\\.1:[0-9]+$/.test(host) || (origin && origin !== 'http://' + host)) {
+          json(res, 403, { error: 'Origen no autorizado' }); return;
+        }
+        if (!/^application\\/json(?:\\s*;|$)/i.test(req.headers['content-type'] || '')) {
+          json(res, 415, { error: 'Se requiere application/json' }); return;
+        }
+        try {
+          let raw = '';
+          for await (const chunk of req) {
+            raw += chunk.toString('utf8');
+            if (Buffer.byteLength(raw) > 4096) { json(res, 413, { error: 'Solicitud demasiado grande' }); return; }
+          }
+          const body = JSON.parse(raw);
+          if (!body || typeof body.name !== 'string' || !/^[a-zA-Z_][a-zA-Z0-9_-]{0,79}$/.test(body.name)) {
+            json(res, 400, { error: 'Nombre inválido' }); return;
+          }
+          json(res, 201, await runs.execute(body.name));
+        } catch (error) { json(res, error.status || (error.code === 'ENOENT' ? 404 : 400), { error: error.message }); }
+        return;
+      }
+      if (req.method !== 'GET') { json(res, 405, { error: 'Método no permitido' }); return; }
+      if (pathname === '/api/studio/runs') { json(res, 200, { runs: runs.list() }); return; }
+      const match = /^\\/api\\/studio\\/runs\\/([0-9a-f-]{36})\\/file$/.exec(pathname);
+      if (!match) { json(res, 404, { error: 'Ruta no encontrada' }); return; }
+      try {
+        const file = new URL(req.url, 'http://localhost').searchParams.get('path');
+        json(res, 200, await runs.read(match[1], file));
+      } catch (error) { json(res, error.status || 404, { error: 'Archivo no disponible' }); }
+      return;
+    }
     if (pathname.startsWith('/api/studio/generation-plan/')) {
       if (req.method !== 'GET') { json(res, 405, { error: 'Método no permitido' }); return; }
       try {
