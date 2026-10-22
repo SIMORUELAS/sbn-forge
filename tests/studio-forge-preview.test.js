@@ -21,7 +21,7 @@ test('adapts a saved Studio definition and preserves foreign keys', () => {
   expect(result.preview.columns[0]).toMatchObject({ primaryKey: true, writable: false });
   expect(result.preview.columns[1].foreignKey).toEqual({ schema: 'product_hub', table: 'managed_products', column: 'id' });
   expect(result.readyForGeneration).toBe(false);
-  expect(result.blockers).toContain(expect.stringContaining('Metadatos originales incompletos'));
+  expect(result.blockers).toContainEqual(expect.stringContaining('Metadatos originales incompletos'));
 });
 test('reports unsupported types without generating artifacts', () => {
   const definition = example();
