@@ -180,7 +180,11 @@ function buildDesignerDefinition() {
       const input = [...document.querySelectorAll('#designer-field-rows input')].find(el => el.dataset.column === column.name && el.dataset.property === property);
       options[property] = Boolean(input?.checked);
     }
-    return { name: column.name, dataType: column.dataType, nullable: column.nullable, ...options };
+    const field = { name: column.name, dataType: column.dataType, nullable: column.nullable, ...options };
+    for (const property of ['defaultValue', 'identity', 'maxLength', 'precision', 'scale']) {
+      if (Object.prototype.hasOwnProperty.call(column, property)) { field[property] = column[property]; }
+    }
+    return field;
   });
   return {
     version: 1,
