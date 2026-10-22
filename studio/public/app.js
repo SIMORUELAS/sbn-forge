@@ -19,6 +19,8 @@ function showSection(id) {
   document.getElementById('detail-view').hidden = id === 'inicio';
   document.getElementById('detail-title').textContent = title;
   document.getElementById('detail-description').textContent = description;
+  document.getElementById('inspector-workspace').hidden = id !== 'inspector';
+  document.getElementById('detail-placeholder').hidden = id === 'inspector';
   document.querySelectorAll('[data-view]').forEach(el => {
     const selected = el.dataset.view === id;
     el.classList.toggle('active', selected);
@@ -32,3 +34,55 @@ document.querySelectorAll('[data-go]').forEach(el => el.addEventListener('click'
 document.getElementById('back-home').addEventListener('click', () => showSection('inicio'));
 window.addEventListener('hashchange', () => showSection(window.location.hash.slice(1)));
 showSection(window.location.hash.slice(1));
+
+function addTextItem(parent, value) {
+  const item = document.createElement('li');
+  item.textContent = value;
+  parent.appendChild(item);
+}
+function renderMetadata(metadata) {
+  document.getElementById('inspect-heading').textContent = metadata.schema + '.' + metadata.table;
+  const columns = document.getElementById('inspect-columns');
+  columns.replaceChildren();
+  for (const column of metadata.columns || []) {
+    const row = document.createElement('tr');
+    for (const value of [column.name, column.nativeType || column.dataType, column.nullable ? 'Sí' : 'No']) {
+      const cell = document.createElement('td');
+      cell.textContent = String(value);
+      row.appendChild(cell);
+    }
+    columns.appendChild(row);
+  }
+  document.getElementById('inspect-primary-key').textContent = (metadata.primaryKey?.columns || []).join(', ') || 'Sin clave primaria';
+  const fks = document.getElementById('inspect-foreign-keys');
+  fks.replaceChildren();
+  for (const fk of metadata.foreignKeys || []) {
+    addTextItem(fks, fk.column + ' → ' + fk.referencedSchema + '.' + fk.referencedTable + '.' + fk.referencedColumn);
+  }
+  const indexes = document.getElementById('inspect-indexes');
+  indexes.replaceChildren();
+  for (const index of metadata.indexes || []) { addTextItem(indexes, index.name); }
+  document.getElementById('inspect-results').hidden = false;
+}
+document.getElementById('inspect-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  const schema = document.getElementById('inspect-schema').value.trim();
+  const table = document.getElementById('inspect-table').value.trim();
+  const message = document.getElementById('inspect-message');
+  const submit = event.currentTarget.querySelector('button[type="submit"]');
+  message.textContent = 'Inspeccionando tabla...';
+  document.getElementById('inspect-results').hidden = true;
+  submit.disabled = true;
+  try {
+    const params = new URLSearchParams({ schema, table });
+    const response = await fetch('/api/studio/inspect?' + params.toString());
+    const data = await response.json();
+    if (!response.ok) { throw new Error(data.error || 'No fue posible inspeccionar la tabla'); }
+    renderMetadata(data);
+    message.textContent = 'Inspección completada en modo de solo lectura.';
+  } catch (error) {
+    message.textContent = error.message;
+  } finally {
+    submit.disabled = false;
+  }
+});
