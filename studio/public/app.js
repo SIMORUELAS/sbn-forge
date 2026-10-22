@@ -21,7 +21,8 @@ function showSection(id) {
   document.getElementById('detail-description').textContent = description;
   document.getElementById('inspector-workspace').hidden = id !== 'inspector';
   document.getElementById('designer-workspace').hidden = id !== 'diseno';
-  document.getElementById('detail-placeholder').hidden = id === 'inspector' || id === 'diseno';
+  document.getElementById('generation-workspace').hidden = id !== 'generacion';
+  document.getElementById('detail-placeholder').hidden = id === 'inspector' || id === 'diseno' || id === 'generacion';
   document.querySelectorAll('[data-view]').forEach(el => {
     const selected = el.dataset.view === id;
     el.classList.toggle('active', selected);
@@ -288,3 +289,46 @@ document.getElementById('designer-preview').addEventListener('click', async () =
         : 'Contrato compatible, pero todavía NO está preparado para generación. Revisa blockers.';
   } catch (error) { message.textContent = error.message; }
 });
+
+async function refreshGenerationDefinitions() {
+  const response = await fetch('/api/studio/definitions');
+  const result = await response.json();
+  if (!response.ok) { throw new Error(result.error || 'No se pudieron consultar las definiciones'); }
+  const select = document.getElementById('generation-definition');
+  const previous = select.value;
+  select.replaceChildren();
+  const initial = document.createElement('option');
+  initial.value = '';
+  initial.textContent = 'Seleccionar definición…';
+  select.appendChild(initial);
+  for (const name of result.definitions) {
+    const option = document.createElement('option');
+    option.value = name;
+    option.textContent = name;
+    select.appendChild(option);
+  }
+  if (result.definitions.includes(previous)) { select.value = previous; }
+}
+document.getElementById('generation-refresh').addEventListener('click', async () => {
+  try {
+    await refreshGenerationDefinitions();
+    document.getElementById('generation-message').textContent = 'Definiciones actualizadas.';
+  } catch (error) { document.getElementById('generation-message').textContent = error.message; }
+});
+document.getElementById('generation-plan').addEventListener('click', async () => {
+  const name = document.getElementById('generation-definition').value;
+  const message = document.getElementById('generation-message');
+  document.getElementById('generation-result').hidden = true;
+  if (!name) { message.textContent = 'Selecciona una definición guardada.'; return; }
+  try {
+    const response = await fetch('/api/studio/generation-plan/' + encodeURIComponent(name));
+    const plan = await response.json();
+    if (!response.ok) { throw new Error(plan.error || 'No se pudo preparar el plan'); }
+    document.getElementById('generation-json').textContent = JSON.stringify(plan, null, 2);
+    document.getElementById('generation-result').hidden = false;
+    message.textContent = plan.readyForGeneration
+      ? 'Plan preparado para revisión. No se generaron archivos ni se publicó código.'
+      : 'Plan preliminar con bloqueos. Revisa los detalles antes de continuar.';
+  } catch (error) { message.textContent = error.message; }
+});
+refreshGenerationDefinitions().catch(() => {});
