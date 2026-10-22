@@ -9,8 +9,8 @@ const definition = {
   source: { type: 'postgresql', schema: 'product_hub', table: 'readme_test' },
   primaryKey: { name: 'readme_test_pkey', columns: ['id'] }, foreignKeys: [],
   fields: [
-    { name: 'id', dataType: 'uuid', nullable: false, visible: true, editable: false, required: false, defaultValue: 'gen_random_uuid()', identity: false },
-    { name: 'name', dataType: 'text', nullable: false, visible: true, editable: true, required: true, defaultValue: null, identity: false }
+    { name: 'id', dataType: 'uuid', nullable: false, visible: true, editable: false, required: false, defaultValue: 'gen_random_uuid()', identity: false, maxLength: null, precision: null, scale: null },
+    { name: 'name', dataType: 'text', nullable: false, visible: true, editable: true, required: true, defaultValue: null, identity: false, maxLength: null, precision: null, scale: null }
   ]
 };
 
