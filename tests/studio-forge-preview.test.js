@@ -29,3 +29,14 @@ test('reports unsupported types without generating artifacts', () => {
   expect(result.compatible).toBe(false);
   expect(result.warnings.join(' ')).toContain('geography');
 });
+
+test('accepts PostgreSQL timestamp with time zone while retaining creation warnings', () => {
+  const definition = example();
+  definition.fields.push({ name: 'updated_at', dataType: 'timestamp with time zone', nullable: false, visible: false, editable: false, required: false });
+  definition.fields.push({ name: 'project_status', dataType: 'character varying', nullable: false, visible: true, editable: true, required: false });
+  const result = toForgePreview(definition);
+  expect(result.compatible).toBe(true);
+  expect(result.preview.columns.find(column => column.name === 'updated_at').type).toBe('timestamp with time zone');
+  expect(result.warnings).toContain('Comprobar valor predeterminado o regla de creación para: project_status');
+  expect(result.warnings.join(' ')).not.toContain('Tipo no soportado');
+});
