@@ -39,10 +39,10 @@ function createStudioServer(options = {}) {
         const origin = req.headers.origin;
         const host = req.headers.host;
         if (process.env.FORGE_STUDIO_ALLOW_WEB_GENERATION !== '1') { json(res, 403, { error: 'Generación web deshabilitada' }); return; }
-        if (!host || !/^127\\.0\\.0\\.1:[0-9]+$/.test(host) || (origin && origin !== 'http://' + host)) {
+        if (!host || !/^127\.0\.0\.1:[0-9]+$/.test(host) || (origin && origin !== 'http://' + host)) {
           json(res, 403, { error: 'Origen no autorizado' }); return;
         }
-        if (!/^application\\/json(?:\\s*;|$)/i.test(req.headers['content-type'] || '')) {
+        if (!/^application\/json(?:\s*;|$)/i.test(req.headers['content-type'] || '')) {
           json(res, 415, { error: 'Se requiere application/json' }); return;
         }
         try {
@@ -61,7 +61,7 @@ function createStudioServer(options = {}) {
       }
       if (req.method !== 'GET') { json(res, 405, { error: 'Método no permitido' }); return; }
       if (pathname === '/api/studio/runs') { json(res, 200, { runs: runs.list() }); return; }
-      const match = /^\\/api\\/studio\\/runs\\/([0-9a-f-]{36})\\/file$/.exec(pathname);
+      const match = /^\/api\/studio\/runs\/([0-9a-f-]{36})\/file$/.exec(pathname);
       if (!match) { json(res, 404, { error: 'Ruta no encontrada' }); return; }
       try {
         const file = new URL(req.url, 'http://localhost').searchParams.get('path');
