@@ -281,8 +281,10 @@ document.getElementById('designer-preview').addEventListener('click', async () =
     if (!response.ok) { throw new Error(result.error || 'No fue posible previsualizar'); }
     document.getElementById('designer-preview-json').textContent = JSON.stringify(result, null, 2);
     panel.hidden = false;
-    message.textContent = result.compatible
-      ? 'Contrato Forge válido. Revisa las advertencias antes de generar.'
-      : 'Contrato Forge no compatible. Revisa las advertencias.';
+    message.textContent = !result.compatible
+      ? 'Contrato Forge no compatible. Revisa las advertencias.'
+      : result.readyForGeneration
+        ? 'Contrato compatible y metadatos completos para revisión de generación. No se ha generado código.'
+        : 'Contrato compatible, pero todavía NO está preparado para generación. Revisa blockers.';
   } catch (error) { message.textContent = error.message; }
 });
