@@ -14,7 +14,7 @@ describe('Studio read-only inspector API', () => {
     process.env.FORGE_STUDIO_DB_PASSWORD = 'test-only';
     const datasource = {
       query: jest.fn(async (sql) => {
-        if (sql.includes('AS exists')) return { rows: [{ exists: true }] };
+        if (sql.includes('AS exists')) { return { rows: [{ exists: true }] }; }
         return { rows: [] };
       }),
       close: jest.fn(async () => {})
@@ -26,15 +26,15 @@ describe('Studio read-only inspector API', () => {
   afterAll(async () => {
     await new Promise(resolve => server.close(resolve));
     for (const key of ['FORGE_STUDIO_DB_INSPECT','FORGE_STUDIO_DB_NAME','FORGE_STUDIO_DB_USER','FORGE_STUDIO_DB_PASSWORD']) {
-      if (old[key] === undefined) delete process.env[key];
-      else process.env[key] = old[key];
+      if (old[key] === undefined) { delete process.env[key]; }
+      else { process.env[key] = old[key]; }
     }
   });
   const request = (path, method = 'GET') => new Promise((resolve, reject) => {
     const req = http.request({ hostname: '127.0.0.1', port, path, method }, res => {
       let body = '';
       res.on('data', chunk => { body += chunk; });
-      res.on('end', () => resolve({ status: res.statusCode, data: JSON.parse(body) }));
+      res.on('end', () => resolve({ status: res.statusCode, data: body ? JSON.parse(body) : null }));
     });
     req.on('error', reject);
     req.end();
