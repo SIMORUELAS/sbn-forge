@@ -24,3 +24,12 @@
 #designer-fields tr:hover td{background:#f7f9ff}
 #designer-fields input[type="checkbox"]{width:16px;height:16px;accent-color:#5141e9}
 #designer-fields input[type="checkbox"]:disabled{opacity:.55;cursor:not-allowed}
+
+/* Persisted generation integrity */
+.run-entry{display:block;width:100%;text-align:left;border:1px solid #dfe7f7;border-radius:8px;background:#f7f9ff;padding:10px 12px;margin:6px 0;color:#173264;cursor:pointer}
+.run-entry:hover,.run-entry:focus-visible{border-color:#5141e9;background:#edf1ff}
+.artifact-table{width:100%;border-collapse:collapse;font-size:12px}
+.artifact-table th,.artifact-table td{text-align:left;border-bottom:1px solid #dfe7f7;padding:10px;overflow-wrap:anywhere}
+.artifact-table th{background:#f4f7ff;color:#405a85}
+.integrity-warning{color:#9c341e;font-weight:700}
+#generation-run-detail{margin:16px 0}
