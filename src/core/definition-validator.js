@@ -1,5 +1,5 @@
 'use strict';
-const VALID_TYPES = new Set(['bigint','integer','smallint','uuid','boolean','varchar','character varying','text','json','jsonb','timestamp','timestamp without time zone','date','numeric','decimal']);
+const VALID_TYPES = new Set(['bigint','integer','smallint','uuid','boolean','varchar','character varying','text','json','jsonb','timestamp','timestamp without time zone','timestamp with time zone','date','numeric','decimal']);
 function assert(condition, message) { if (!condition) {throw new Error(`Definición inválida: ${message}`);} }
 function validateDefinition(definition) {
   assert(definition && typeof definition === 'object' && !Array.isArray(definition), 'debe ser un objeto.');
