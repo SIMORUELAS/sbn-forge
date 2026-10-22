@@ -11,7 +11,7 @@ function httpError(message, status) { const error = new Error(message); error.st
 function inside(root, target) { return target.startsWith(root + path.sep); }
 function summary(run) {
   return { id: run.id, name: run.name, createdAt: run.createdAt, mode: run.mode,
-    totals: run.totals, artifacts: run.artifacts, published: false };
+    totals: run.totals, artifacts: run.artifacts, published: false, integrity: run.integrity || 'unchecked' };
 }
 
 function createRunManager({ definitionStore, generate = generateIsolated, limit = 10, directory = DEFAULT_ROOT } = {}) {
@@ -45,6 +45,28 @@ function createRunManager({ definitionStore, generate = generateIsolated, limit 
     return run.artifacts.every(item => item && typeof item.path === 'string' &&
       inside(runDirectory, path.resolve(runDirectory, item.path)) &&
       Number.isSafeInteger(item.bytes) && item.bytes >= 0);
+  }
+  async function inspect(run) {
+    const folder = path.resolve(root, run.id);
+    const folderStat = await fs.lstat(folder).catch(() => null);
+    if (!folderStat || !folderStat.isDirectory() || folderStat.isSymbolicLink()) { return 'missing'; }
+    for (const item of run.artifacts) {
+      const full = path.resolve(folder, item.path);
+      if (!inside(folder, full)) { return 'corrupt'; }
+      let current = path.dirname(full);
+      while (current !== folder) {
+        const directoryStat = await fs.lstat(current).catch(() => null);
+        if (!directoryStat || !directoryStat.isDirectory() || directoryStat.isSymbolicLink()) { return 'corrupt'; }
+        current = path.dirname(current);
+      }
+      const stat = await fs.lstat(full).catch(() => null);
+      if (!stat || !stat.isFile() || stat.isSymbolicLink() || stat.size !== item.bytes) { return 'corrupt'; }
+      if (item.sha256) {
+        const data = await fs.readFile(full);
+        if (crypto.createHash('sha256').update(data).digest('hex') !== item.sha256) { return 'corrupt'; }
+      }
+    }
+    return run.artifacts.every(item => Boolean(item.sha256)) ? 'verified' : 'legacy-unverified';
   }
   async function removeOwned(run) {
     const target = path.resolve(root, run.id);
@@ -96,23 +118,40 @@ function createRunManager({ definitionStore, generate = generateIsolated, limit 
           const stat = await fs.lstat(original);
           if (!stat.isDirectory() || stat.isSymbolicLink()) { throw new Error('Directorio generado inválido'); }
           await fs.rename(original, destination);
-          const run = { ...result, directory: destination, id, createdAt: new Date().toISOString(), published: false };
+          const artifacts = [];
+          for (const item of result.artifacts) {
+            const full = path.resolve(destination, item.path);
+            if (!inside(destination, full)) { throw new Error('Artefacto fuera del aislamiento'); }
+            const stat = await fs.lstat(full);
+            if (!stat.isFile() || stat.isSymbolicLink() || stat.size !== item.bytes) { throw new Error('Artefacto inconsistente'); }
+            const digest = crypto.createHash('sha256').update(await fs.readFile(full)).digest('hex');
+            artifacts.push({ ...item, sha256: digest });
+          }
+          const run = { ...result, artifacts, directory: destination, id, createdAt: new Date().toISOString(), published: false };
           if (!await validateRecord(run)) { throw new Error('Artefactos no válidos'); }
           await writeRecord(run);
           runs.set(id, run);
           await trim();
-          return summary(run);
+          return { ...summary(run), integrity: await inspect(run) };
         } catch (error) {
           await fs.rm(destination, { recursive: true, force: true }).catch(() => {});
           throw error;
         }
       } finally { busy = false; }
     },
-    async list() { await start(); return [...runs.values()].reverse().map(summary); },
+    async list() {
+      await start();
+      const output = [];
+      for (const run of [...runs.values()].reverse()) {
+        output.push({ ...summary(run), integrity: await inspect(run) });
+      }
+      return output;
+    },
     async read(id, artifactPath) {
       await start();
       const run = runs.get(id);
       if (!run) { throw httpError('Ejecución no encontrada', 404); }
+      if (await inspect(run) === 'corrupt' || await inspect(run) === 'missing') { throw httpError('Integridad de ejecución inválida', 409); }
       if (typeof artifactPath !== 'string' || !run.artifacts.some(item => item.path === artifactPath)) {
         throw httpError('Archivo no autorizado', 400);
       }
