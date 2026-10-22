@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { PostgresDatasource } = require('../src/datasources/postgresql');
 const { PostgreSqlInspector } = require('../src/inspectors/postgresql');
+const { createDefinitionStore, MAX_BYTES } = require('./definition-store');
 
 const HOST = '127.0.0.1';
 const PORT = Number(process.env.FORGE_STUDIO_PORT || 4173);
@@ -17,8 +18,10 @@ function json(res, status, value) {
 
 function createStudioServer(options = {}) {
   const createDatasource = options.createDatasource || (config => new PostgresDatasource(config));
+  const definitions = options.definitionStore || createDefinitionStore(options.definitionsDirectory);
   return http.createServer(async (req, res) => {
-    if (req.method !== 'GET' && req.method !== 'HEAD') {
+    const isDefinitionApi = (req.url || '').split('?')[0].startsWith('/api/studio/definitions');
+    if (req.method !== 'GET' && req.method !== 'HEAD' && !(isDefinitionApi && req.method === 'POST')) {
       res.writeHead(405, { Allow: 'GET, HEAD' });
       res.end();
       return;
@@ -26,6 +29,43 @@ function createStudioServer(options = {}) {
     let pathname;
     try { pathname = new URL(req.url, 'http://localhost').pathname; }
     catch { res.writeHead(400); res.end(); return; }
+    if (pathname === '/api/studio/definitions' || pathname.startsWith('/api/studio/definitions/')) {
+      if (req.method === 'HEAD') { res.writeHead(405, { Allow: 'GET, POST' }); res.end(); return; }
+      if (req.method === 'POST') {
+        if (pathname !== '/api/studio/definitions') { json(res, 405, { error: 'Método no permitido' }); return; }
+        const origin = req.headers.origin;
+        const host = req.headers.host;
+        if (origin && (!host || origin !== 'http://' + host || !/^127\\.0\\.0\\.1(?::[0-9]+)?$/.test(host))) {
+          json(res, 403, { error: 'Origen no autorizado' }); return;
+        }
+        if (!/^application\\/json(?:\\s*;|$)/i.test(req.headers['content-type'] || '')) {
+          json(res, 415, { error: 'Se requiere application/json' }); return;
+        }
+        try {
+          let raw = '';
+          for await (const chunk of req) {
+            raw += chunk.toString('utf8');
+            if (Buffer.byteLength(raw) > MAX_BYTES) { json(res, 413, { error: 'Definición demasiado grande' }); return; }
+          }
+          const saved = await definitions.save(JSON.parse(raw));
+          json(res, 200, { name: saved.name, saved: true });
+        } catch (error) {
+          json(res, error instanceof SyntaxError || /inválid|obligatorio|protegido|ausente|grande|versión|clave/i.test(error.message) ? 400 : 500,
+            { error: error instanceof SyntaxError ? 'JSON inválido' : error.message });
+        }
+        return;
+      }
+      if (req.method !== 'GET') { json(res, 405, { error: 'Método no permitido' }); return; }
+      try {
+        if (pathname === '/api/studio/definitions') { json(res, 200, { definitions: await definitions.list() }); return; }
+        const name = decodeURIComponent(pathname.slice('/api/studio/definitions/'.length));
+        if (name.includes('/')) { json(res, 400, { error: 'Nombre inválido' }); return; }
+        json(res, 200, await definitions.get(name));
+      } catch (error) {
+        json(res, error.code === 'ENOENT' ? 404 : /inválid/i.test(error.message) ? 400 : 500, { error: error.code === 'ENOENT' ? 'Definición no encontrada' : 'No fue posible leer la definición' });
+      }
+      return;
+    }
     // Explicit opt-in: database access is disabled unless configured locally.
     if (pathname === '/api/studio/inspect') {
       if (req.method !== 'GET') { json(res, 405, { error: 'Method not allowed' }); return; }
