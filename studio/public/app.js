@@ -332,3 +332,63 @@ document.getElementById('generation-plan').addEventListener('click', async () =>
   } catch (error) { message.textContent = error.message; }
 });
 refreshGenerationDefinitions().catch(() => {});
+
+let activeRun = null;
+async function refreshRuns() {
+  const response = await fetch('/api/studio/runs');
+  const data = await response.json();
+  if (!response.ok) { throw new Error(data.error || 'Historial no disponible'); }
+  const list = document.getElementById('generation-runs-list');
+  list.replaceChildren();
+  for (const run of data.runs) {
+    const li = document.createElement('li');
+    const button = document.createElement('button');
+    button.textContent = run.createdAt + ' · ' + run.name + ' · ' + run.totals.written + ' archivos';
+    button.addEventListener('click', () => selectRun(run));
+    li.appendChild(button);
+    list.appendChild(li);
+  }
+}
+function selectRun(run) {
+  activeRun = run;
+  const select = document.getElementById('generation-file');
+  select.replaceChildren();
+  for (const file of run.artifacts) {
+    const option = document.createElement('option');
+    option.value = file.path;
+    option.textContent = file.path + ' (' + file.bytes + ' bytes)';
+    select.appendChild(option);
+  }
+  document.getElementById('generation-file-content').textContent = '';
+}
+document.getElementById('generation-history').addEventListener('click', async () => {
+  try { await refreshRuns(); } catch (error) { document.getElementById('generation-message').textContent = error.message; }
+});
+document.getElementById('generation-execute').addEventListener('click', async () => {
+  const name = document.getElementById('generation-definition').value;
+  const message = document.getElementById('generation-message');
+  if (!name) { message.textContent = 'Selecciona una definición.'; return; }
+  if (!window.confirm('Generar únicamente en una carpeta temporal local, sin publicar?')) { return; }
+  const button = document.getElementById('generation-execute');
+  button.disabled = true;
+  try {
+    const response = await fetch('/api/studio/runs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
+    const result = await response.json();
+    if (!response.ok) { throw new Error(result.error || 'Generación no autorizada'); }
+    await refreshRuns();
+    selectRun(result);
+    message.textContent = 'Generados ' + result.totals.written + ' archivos aislados. No publicados.';
+  } catch (error) { message.textContent = error.message; }
+  finally { button.disabled = false; }
+});
+document.getElementById('generation-open-file').addEventListener('click', async () => {
+  const file = document.getElementById('generation-file').value;
+  if (!activeRun || !file) { return; }
+  try {
+    const response = await fetch('/api/studio/runs/' + activeRun.id + '/file?' + new URLSearchParams({ path: file }));
+    const data = await response.json();
+    if (!response.ok) { throw new Error(data.error || 'Archivo no disponible'); }
+    document.getElementById('generation-file-content').textContent = data.content;
+  } catch (error) { document.getElementById('generation-message').textContent = error.message; }
+});
+refreshRuns().catch(() => {});
