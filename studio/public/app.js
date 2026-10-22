@@ -264,3 +264,21 @@ document.getElementById('designer-open').addEventListener('click', async () => {
     document.getElementById('designer-name').value = definition.name;
   } catch (error) { message.textContent = error.message; }
 });
+
+document.getElementById('designer-preview').addEventListener('click', async () => {
+  const message = document.getElementById('designer-message');
+  const name = document.getElementById('designer-saved-list').value;
+  const panel = document.getElementById('designer-preview-result');
+  panel.hidden = true;
+  if (!name) { message.textContent = 'Selecciona una definición guardada para previsualizar.'; return; }
+  try {
+    const response = await fetch('/api/studio/preview/' + encodeURIComponent(name));
+    const result = await response.json();
+    if (!response.ok) { throw new Error(result.error || 'No fue posible previsualizar'); }
+    document.getElementById('designer-preview-json').textContent = JSON.stringify(result, null, 2);
+    panel.hidden = false;
+    message.textContent = result.compatible
+      ? 'Contrato Forge válido. Revisa las advertencias antes de generar.'
+      : 'Contrato Forge no compatible. Revisa las advertencias.';
+  } catch (error) { message.textContent = error.message; }
+});
