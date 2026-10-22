@@ -20,7 +20,8 @@ test('adapts a saved Studio definition and preserves foreign keys', () => {
   expect(result.preview.schema).toBe('product_hub');
   expect(result.preview.columns[0]).toMatchObject({ primaryKey: true, writable: false });
   expect(result.preview.columns[1].foreignKey).toEqual({ schema: 'product_hub', table: 'managed_products', column: 'id' });
-  expect(result.warnings).toContain(expect.stringContaining('no usar para generar migraciones'));
+  expect(result.readyForGeneration).toBe(false);
+  expect(result.blockers).toContain(expect.stringContaining('Metadatos originales incompletos'));
 });
 test('reports unsupported types without generating artifacts', () => {
   const definition = example();
@@ -39,4 +40,30 @@ test('accepts PostgreSQL timestamp with time zone while retaining creation warni
   expect(result.preview.columns.find(column => column.name === 'updated_at').type).toBe('timestamp with time zone');
   expect(result.warnings).toContain('Comprobar valor predeterminado o regla de creación para: project_status');
   expect(result.warnings.join(' ')).not.toContain('Tipo no soportado');
+});
+
+test('preserves defaults, identity and dimensions for generation readiness', () => {
+  const definition = example();
+  for (const field of definition.fields) {
+    Object.assign(field, { defaultValue: null, identity: false, maxLength: null, precision: null, scale: null });
+  }
+  definition.fields[0].defaultValue = 'gen_random_uuid()';
+  definition.fields[1].maxLength = 60;
+  definition.fields[2].defaultValue = 'now()';
+  const result = toForgePreview(definition);
+  expect(result.compatible).toBe(true);
+  expect(result.readyForGeneration).toBe(true);
+  expect(result.preview.columns[0]).toMatchObject({ hasDefault: true, default: 'gen_random_uuid()' });
+  expect(result.preview.columns[1].length).toBe(60);
+});
+test('blocks readiness when non-null editable field lacks default and is not required', () => {
+  const definition = example();
+  for (const field of definition.fields) {
+    Object.assign(field, { defaultValue: null, identity: false, maxLength: null, precision: null, scale: null });
+  }
+  definition.fields[1].required = false;
+  const result = toForgePreview(definition);
+  expect(result.compatible).toBe(true);
+  expect(result.readyForGeneration).toBe(false);
+  expect(result.blockers.join(' ')).toContain('managed_product_id');
 });
