@@ -5,6 +5,7 @@ const path = require('node:path');
 const { PostgresDatasource } = require('../src/datasources/postgresql');
 const { PostgreSqlInspector } = require('../src/inspectors/postgresql');
 const { createDefinitionStore, MAX_BYTES } = require('./definition-store');
+const { toForgePreview } = require('./forge-preview');
 
 const HOST = '127.0.0.1';
 const PORT = Number(process.env.FORGE_STUDIO_PORT || 4173);
@@ -29,6 +30,17 @@ function createStudioServer(options = {}) {
     let pathname;
     try { pathname = new URL(req.url, 'http://localhost').pathname; }
     catch { res.writeHead(400); res.end(); return; }
+    if (pathname.startsWith('/api/studio/preview/')) {
+      if (req.method !== 'GET') { json(res, 405, { error: 'Método no permitido' }); return; }
+      try {
+        const name = decodeURIComponent(pathname.slice('/api/studio/preview/'.length));
+        const saved = await definitions.get(name);
+        json(res, 200, toForgePreview(saved));
+      } catch (error) {
+        json(res, error.code === 'ENOENT' ? 404 : 400, { error: error.code === 'ENOENT' ? 'Definición no encontrada' : 'No fue posible previsualizar la definición' });
+      }
+      return;
+    }
     if (pathname === '/api/studio/definitions' || pathname.startsWith('/api/studio/definitions/')) {
       if (req.method === 'HEAD') { res.writeHead(405, { Allow: 'GET, POST' }); res.end(); return; }
       if (req.method === 'POST') {
