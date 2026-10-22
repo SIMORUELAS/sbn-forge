@@ -17,9 +17,12 @@ test('creates a deterministic read-only plan without writing artifacts', () => {
   const plan = createGenerationPlan(definition());
   expect(plan).toMatchObject({
     name: 'sample_module', compatible: true, readyForGeneration: true,
-    executable: false, mode: 'plan-only', totals: { planned: 5, written: 0, published: 0 }
+    executable: false, mode: 'plan-only', totals: { planned: 7, written: 0, published: 0 }
   });
-  expect(plan.artifacts).toHaveLength(5);
+  expect(plan.artifacts).toHaveLength(7);
+  expect(plan.artifacts.map(item => item.kind)).toEqual(['routes', 'controller', 'service', 'repository', 'schema', 'readme', 'manifest']);
+  expect(plan.engine.api).toBe('generateApi');
+  expect(plan.integrations[0].status).toBe('not-mapped');
   expect(plan.artifacts.every(item => item.action === 'planned')).toBe(true);
   expect(createGenerationPlan(definition())).toEqual(plan);
 });
