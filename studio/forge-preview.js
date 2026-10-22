@@ -45,7 +45,7 @@ function toForgePreview(input) {
     if (Number.isInteger(field.scale)) { column.scale = field.scale; }
     if (relations.has(field.name)) { column.foreignKey = relations.get(field.name); }
     if (!SUPPORTED.has(type)) { warnings.push('Tipo no soportado por validador Forge: ' + field.name + ' (' + type + ')'); }
-    if (!field.nullable && !field.required && field.editable && field.defaultValue == null && field.identity !== true) {
+    if (!field.nullable && !field.required && field.editable && (field.defaultValue === null || field.defaultValue === undefined) && field.identity !== true) {
       blockers.push('Comprobar valor predeterminado o regla de creación para: ' + field.name);
     }
     return column;
