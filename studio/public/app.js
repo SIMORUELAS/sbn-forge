@@ -134,13 +134,12 @@ function createDesignerCheckbox(column, property, checked, disabled) {
   cell.appendChild(input);
   return cell;
 }
-document.getElementById('designer-import').addEventListener('click', () => {
+function renderDesigner(metadata, savedDefinition = null) {
   const message = document.getElementById('designer-message');
   if (!lastInspectedMetadata) {
     message.textContent = 'Primero inspecciona una tabla en Inspector PostgreSQL.';
     return;
   }
-  const metadata = lastInspectedMetadata;
   const primaryKeys = new Set(metadata.primaryKey?.columns || []);
   document.getElementById('designer-name').value = metadata.table;
   document.getElementById('designer-source').textContent = metadata.schema + '.' + metadata.table;
@@ -153,21 +152,27 @@ document.getElementById('designer-import').addEventListener('click', () => {
     const type = document.createElement('td');
     type.textContent = column.nativeType || column.dataType;
     row.append(name, type);
+    const saved = savedDefinition?.fields?.find(field => field.name === column.name);
     const systemField = /^(created_at|created_by|updated_at|updated_by|deleted_at|deleted_by)$/.test(column.name);
     const protectedField = primaryKeys.has(column.name) || column.identity || systemField;
     const hasDefault = column.defaultValue !== null && column.defaultValue !== undefined;
     const required = !column.nullable && !hasDefault && !protectedField;
-    row.appendChild(createDesignerCheckbox(column, 'visible', !systemField, false));
-    row.appendChild(createDesignerCheckbox(column, 'editable', !protectedField, protectedField));
-    row.appendChild(createDesignerCheckbox(column, 'required', required, protectedField));
+    row.appendChild(createDesignerCheckbox(column, 'visible', saved ? saved.visible : !systemField, false));
+    row.appendChild(createDesignerCheckbox(column, 'editable', saved ? saved.editable : !protectedField, protectedField));
+    row.appendChild(createDesignerCheckbox(column, 'required', saved ? saved.required : required, protectedField));
     rows.appendChild(row);
   }
   document.getElementById('designer-fields').hidden = false;
   document.getElementById('designer-export').disabled = false;
-  message.textContent = 'Campos importados. Ajusta su configuración y exporta la definición.';
+  document.getElementById('designer-save').disabled = false;
+  message.textContent = savedDefinition ? 'Definición recuperada. Puedes modificarla y volver a guardarla.' : 'Campos importados. Ajusta su configuración y guarda o exporta la definición.';
+}
+document.getElementById('designer-import').addEventListener('click', () => {
+  if (!lastInspectedMetadata) { document.getElementById('designer-message').textContent = 'Primero inspecciona una tabla en Inspector PostgreSQL.'; return; }
+  renderDesigner(lastInspectedMetadata);
 });
-document.getElementById('designer-export').addEventListener('click', () => {
-  if (!lastInspectedMetadata) { return; }
+function buildDesignerDefinition() {
+  if (!lastInspectedMetadata) { throw new Error('Primero importa o abre una definición'); }
   const metadata = lastInspectedMetadata;
   const fields = (metadata.columns || []).map(column => {
     const options = {};
@@ -177,7 +182,7 @@ document.getElementById('designer-export').addEventListener('click', () => {
     }
     return { name: column.name, dataType: column.dataType, nullable: column.nullable, ...options };
   });
-  const definition = {
+  return {
     version: 1,
     name: document.getElementById('designer-name').value.trim() || metadata.table,
     source: { type: 'postgresql', schema: metadata.schema, table: metadata.table },
@@ -185,6 +190,10 @@ document.getElementById('designer-export').addEventListener('click', () => {
     foreignKeys: metadata.foreignKeys,
     fields
   };
+}
+document.getElementById('designer-export').addEventListener('click', () => {
+  const definition = buildDesignerDefinition();
+  const metadata = lastInspectedMetadata;
   const blob = new Blob([JSON.stringify(definition, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -193,4 +202,65 @@ document.getElementById('designer-export').addEventListener('click', () => {
   link.click();
   URL.revokeObjectURL(url);
   document.getElementById('designer-message').textContent = 'Definición exportada. Todavía no se ha generado ni publicado ningún módulo.';
+});
+
+async function refreshSavedDefinitions() {
+  const response = await fetch('/api/studio/definitions');
+  const data = await response.json();
+  if (!response.ok) { throw new Error(data.error || 'No fue posible consultar las definiciones'); }
+  const select = document.getElementById('designer-saved-list');
+  select.replaceChildren();
+  const initial = document.createElement('option');
+  initial.value = '';
+  initial.textContent = 'Seleccionar definición…';
+  select.appendChild(initial);
+  for (const name of data.definitions) {
+    const option = document.createElement('option');
+    option.value = name;
+    option.textContent = name;
+    select.appendChild(option);
+  }
+}
+document.getElementById('designer-refresh').addEventListener('click', async () => {
+  try {
+    await refreshSavedDefinitions();
+    document.getElementById('designer-message').textContent = 'Lista de definiciones actualizada.';
+  } catch (error) { document.getElementById('designer-message').textContent = error.message; }
+});
+document.getElementById('designer-save').addEventListener('click', async () => {
+  const message = document.getElementById('designer-message');
+  const button = document.getElementById('designer-save');
+  button.disabled = true;
+  try {
+    const response = await fetch('/api/studio/definitions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(buildDesignerDefinition())
+    });
+    const result = await response.json();
+    if (!response.ok) { throw new Error(result.error || 'No fue posible guardar la definición'); }
+    await refreshSavedDefinitions();
+    document.getElementById('designer-saved-list').value = result.name;
+    message.textContent = 'Definición guardada localmente: ' + result.name + '.';
+  } catch (error) { message.textContent = error.message; }
+  finally { button.disabled = false; }
+});
+document.getElementById('designer-open').addEventListener('click', async () => {
+  const message = document.getElementById('designer-message');
+  const name = document.getElementById('designer-saved-list').value;
+  if (!name) { message.textContent = 'Selecciona una definición guardada.'; return; }
+  try {
+    const response = await fetch('/api/studio/definitions/' + encodeURIComponent(name));
+    const definition = await response.json();
+    if (!response.ok) { throw new Error(definition.error || 'No fue posible abrir la definición'); }
+    lastInspectedMetadata = {
+      schema: definition.source.schema,
+      table: definition.source.table,
+      primaryKey: definition.primaryKey,
+      foreignKeys: definition.foreignKeys,
+      columns: definition.fields
+    };
+    renderDesigner(lastInspectedMetadata, definition);
+    document.getElementById('designer-name').value = definition.name;
+  } catch (error) { message.textContent = error.message; }
 });
