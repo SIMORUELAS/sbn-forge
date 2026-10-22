@@ -151,7 +151,8 @@ function createRunManager({ definitionStore, generate = generateIsolated, limit 
       await start();
       const run = runs.get(id);
       if (!run) { throw httpError('Ejecución no encontrada', 404); }
-      if (await inspect(run) === 'corrupt' || await inspect(run) === 'missing') { throw httpError('Integridad de ejecución inválida', 409); }
+      const integrity = await inspect(run);
+      if (integrity === 'corrupt' || integrity === 'missing') { throw httpError('Integridad de ejecución inválida', 409); }
       if (typeof artifactPath !== 'string' || !run.artifacts.some(item => item.path === artifactPath)) {
         throw httpError('Archivo no autorizado', 400);
       }
@@ -171,7 +172,13 @@ function createRunManager({ definitionStore, generate = generateIsolated, limit 
             stat.size > 256 * 1024 || stat.size !== lstat.size) {
           throw httpError('Archivo no disponible para revisión', 400);
         }
-        return { path: artifactPath, content: await handle.readFile('utf8') };
+        const data = await handle.readFile();
+        const item = run.artifacts.find(entry => entry.path === artifactPath);
+        if (data.length !== item.bytes ||
+            (item.sha256 && crypto.createHash('sha256').update(data).digest('hex') !== item.sha256)) {
+          throw httpError('Archivo modificado', 409);
+        }
+        return { path: artifactPath, content: data.toString('utf8') };
       } finally { await handle.close(); }
     }
   };
