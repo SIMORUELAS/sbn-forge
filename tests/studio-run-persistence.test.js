@@ -25,6 +25,10 @@ test('recovers history, retains only owned runs and denies unknown files', async
     const restored = createRunManager({ definitionStore, generate, directory: root, limit: 2 });
     expect((await restored.list()).map(item => item.id)).toEqual([second.id, first.id]);
     expect((await restored.read(first.id, 'modules/README.md')).content).toBe('one');
+    expect((await restored.list())[0].integrity).toBe('verified');
+    await fs.writeFile(path.join(root, first.id, 'modules', 'README.md'), 'bad');
+    expect((await restored.list()).find(item => item.id === first.id).integrity).toBe('corrupt');
+    await expect(restored.read(first.id, 'modules/README.md')).rejects.toMatchObject({ status: 409 });
     await expect(restored.read(first.id, '../external.txt')).rejects.toMatchObject({ status: 400 });
     await expect(restored.read(first.id, 'modules/other.txt')).rejects.toMatchObject({ status: 400 });
     const third = await restored.execute('three');
