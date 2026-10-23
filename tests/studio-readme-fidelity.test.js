@@ -21,7 +21,10 @@ test('generic README reflects actual files and does not claim security or absent
     const readmePath = run.artifacts.find(item => item.path.endsWith('/README.md')).path;
     const readme = await fs.readFile(path.join(run.directory, readmePath), 'utf8');
     expect(run.totals.written).toBe(7);
-    expect(readme).toContain('Sin configuración de seguridad explícita');
+    expect(readme).toContain('Autenticación JWT requerida');
+    expect(readme).toContain('request.jwtVerify()');
+    expect(readme).toContain('autorización por operación y el aislamiento de organización');
+    expect(readme).not.toContain('Sin configuración de seguridad explícita');
     expect(readme).toContain('el manifiesto es la fuente de verdad');
     expect(readme).toContain('readme-test.routes.js');
     expect(readme).not.toContain('API_EXAMPLES.md');
