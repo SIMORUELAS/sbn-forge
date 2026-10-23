@@ -42,6 +42,7 @@ async function inspectHost(hostRoot) {
         '. Coincidencia textual, no prueba de cumplimiento. Archivos examinados: ' + evidence.scanned +
         (evidence.truncated ? ' (inspección parcial)' : '') });
   }
+  checks.push({ check: 'route-declarations', status: 'unknown', message: 'Rutas literales detectadas: ' + evidence.routeDeclarations.length + '. ' + evidence.routeDeclarations.slice(0, 8).map(item => item.method + ' ' + item.path + ' (' + item.file + ')').join('; ') + '. Prefijos dinámicos y colisiones no certificados' });
   return { configured: true, checks };
 }
 module.exports = { inspectHost };
