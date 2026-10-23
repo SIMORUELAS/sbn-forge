@@ -16,6 +16,9 @@ async function generateIsolated(definition, options = {}) {
   const root = await fs.mkdtemp(path.join(options.tempRoot || os.tmpdir(), 'sbn-forge-studio-'));
   try {
     const context = createGeneratorContext(preview);
+    // Studio requires JWT on every generated route; do not rely on host-global hooks.
+    // Authorization and organization scope still require independent verification.
+    context.security = { ...(context.security || {}), requireJwt: true };
     const result = await generateApi(context, { output: root, force: false, writeMode: 'create' });
     const manifest = JSON.parse(await fs.readFile(result.manifestPath, 'utf8'));
     const expected = new Set(plan.artifacts.map(item => 'modules/' + item.path));
