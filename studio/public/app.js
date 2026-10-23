@@ -310,6 +310,7 @@ async function refreshGenerationDefinitions() {
     select.appendChild(option);
   }
   if (result.definitions.includes(previous)) { select.value = previous; }
+  document.getElementById('generation-message').textContent = select.value ? 'Definición seleccionada: ' + select.value : 'Selecciona una definición.';
 }
 document.getElementById('generation-refresh').addEventListener('click', async () => {
   try {
@@ -430,6 +431,16 @@ function selectRun(run) {
         ? 'Esta ejecución es anterior al registro de huellas SHA-256.'
         : 'Los archivos coinciden con las huellas registradas.');
   status.className = run.integrity === 'corrupt' || run.integrity === 'missing' ? 'integrity-warning' : '';
+  const diagnosticStatus = document.getElementById('generation-diagnostics-status');
+  const diagnosticChecks = document.getElementById('generation-diagnostics-checks');
+  diagnosticChecks.replaceChildren();
+  diagnosticStatus.textContent = run.diagnostics ? 'Resultado: ' + run.diagnostics.status : 'Diagnóstico no disponible para esta ejecución histórica.';
+  for (const check of run.diagnostics?.checks || []) {
+    const li = document.createElement('li');
+    li.textContent = check.status.toUpperCase() + ' · ' + check.check + ' · ' + (check.path || 'General') + ' · ' + check.message;
+    if (check.status === 'failed') { li.className = 'integrity-warning'; }
+    diagnosticChecks.appendChild(li);
+  }
   document.getElementById('generation-run-detail').hidden = false;
   document.getElementById('generation-open-file').disabled = run.integrity === 'corrupt' || run.integrity === 'missing';
   document.getElementById('generation-file-content').textContent = '';
@@ -493,3 +504,7 @@ document.getElementById('history-refresh').addEventListener('click', async () =>
   catch (error) { document.getElementById('history-message').textContent = error.message; }
 });
 document.getElementById('history-go-generation').addEventListener('click', () => showSection('generacion'));
+
+document.getElementById('generation-code-wrap').addEventListener('change', event => {
+  document.getElementById('generation-code-lines').classList.toggle('code-wrapped', event.target.checked);
+});
