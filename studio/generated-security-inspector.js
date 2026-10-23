@@ -2,6 +2,7 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const MAX_BYTES = 128 * 1024;
+const { extractRoutes } = require('./route-contract-check');
 const categories = [
   { check: 'generated-authentication-contract', kind: 'routes', pattern: /\b(?:jwtVerify|authenticate|requireAuth|verifyJwt|preHandler|onRequest)\b/i },
   { check: 'generated-authorization-contract', kind: 'routes', pattern: /\b(?:authorize|requireRole|permission|hasRole|requirePermission)\b/i },
@@ -10,6 +11,20 @@ const categories = [
 async function inspectGeneratedSecurity(directory, artifacts) {
   const checks = [];
   const root = path.resolve(directory);
+  const exposed = [];
+  let routeEvidenceIncomplete = false;
+  for (const item of artifacts.filter(entry => typeof entry.path === 'string' && entry.path.endsWith('.routes.js'))) {
+    const full = path.resolve(root, item.path);
+    if (!full.startsWith(root + path.sep)) { routeEvidenceIncomplete = true; continue; }
+    try {
+      const stat = await fs.lstat(full);
+      if (!stat.isFile() || stat.isSymbolicLink() || stat.size > MAX_BYTES) { routeEvidenceIncomplete = true; continue; }
+      exposed.push(...extractRoutes(await fs.readFile(full, 'utf8'), item.path));
+    } catch { routeEvidenceIncomplete = true; }
+  }
+  checks.push({ check: 'generated-route-security-exposure', status: 'unknown',
+    message: 'Operaciones HTTP detectadas: ' + exposed.length + '. ' + exposed.slice(0, 12).map(route => route.method + ' ' + route.path).join('; ') +
+      (routeEvidenceIncomplete ? '. Archivos no legibles' : '') + '. No se ha demostrado protección efectiva por operación ni por organización' });
   for (const category of categories) {
     const files = artifacts.filter(item => typeof item.path === 'string' && item.path.endsWith('.' + category.kind + '.js'));
     const found = [];
