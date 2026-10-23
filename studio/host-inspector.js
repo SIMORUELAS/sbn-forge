@@ -5,7 +5,7 @@ const { collectSourceEvidence } = require('./host-static-evidence');
 
 async function inspectHost(hostRoot) {
   const checks = [];
-  if (!hostRoot) return { configured: false, checks: [{ check: 'host-source', status: 'unknown', message: 'Ruta del host no configurada' }] };
+  if (!hostRoot) { return { configured: false, checks: [{ check: 'host-source', status: 'unknown', message: 'Ruta del host no configurada' }] }; }
   const root = path.resolve(hostRoot);
   const rootStat = await fs.lstat(root).catch(() => null);
   if (!rootStat || !rootStat.isDirectory() || rootStat.isSymbolicLink()) {
