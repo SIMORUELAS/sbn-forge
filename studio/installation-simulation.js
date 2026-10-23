@@ -2,6 +2,7 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { inspectHost } = require('./host-inspector');
+const { checkRouteContracts } = require('./route-contract-check');
 async function simulateInstallation(directory, artifacts, options = {}) {
   const names = artifacts.map(a => a.path);
   const checks = [];
@@ -23,6 +24,9 @@ async function simulateInstallation(directory, artifacts, options = {}) {
       if (index >= 0) { checks[index] = evidence; }
       else { checks.push(evidence); }
     }
+  }
+  if (host.configured && host.routeEvidence) {
+    checks.push(await checkRouteContracts(directory, artifacts, host.routeEvidence));
   }
   return { mode: 'dry-run', hostConfigured: host.configured, status: checks.some(c => c.status === 'blocked') ? 'blocked' : 'review-required', installable: false, published: false, databaseModified: false, checks };
 }
