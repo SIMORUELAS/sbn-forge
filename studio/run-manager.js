@@ -5,6 +5,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { generateIsolated } = require('./isolated-generation');
 const { diagnoseArtifacts } = require('./artifact-diagnostics');
+const { simulateInstallation } = require('./installation-simulation');
 
 const DEFAULT_ROOT = path.join(os.homedir(), '.sbn-forge-studio', 'runs');
 const ORPHAN_AGE_MS = 24 * 60 * 60 * 1000;
@@ -13,7 +14,7 @@ function httpError(message, status) { const error = new Error(message); error.st
 function inside(root, target) { return target.startsWith(root + path.sep); }
 function summary(run) {
   return { id: run.id, name: run.name, createdAt: run.createdAt, mode: run.mode,
-    totals: run.totals, artifacts: run.artifacts, published: false, integrity: run.integrity || 'unchecked', diagnostics: run.diagnostics || null };
+    totals: run.totals, artifacts: run.artifacts, published: false, integrity: run.integrity || 'unchecked', diagnostics: run.diagnostics || null, installation: run.installation || null };
 }
 
 function createRunManager({ definitionStore, generate = generateIsolated, limit = 10, directory = DEFAULT_ROOT } = {}) {
@@ -140,7 +141,8 @@ function createRunManager({ definitionStore, generate = generateIsolated, limit 
             artifacts.push({ ...item, sha256: digest });
           }
           const diagnostics = await diagnoseArtifacts(destination, artifacts);
-          const run = { ...result, artifacts, diagnostics, directory: destination, id, createdAt: new Date().toISOString(), published: false };
+          const installation = await simulateInstallation(destination, artifacts);
+          const run = { ...result, artifacts, diagnostics, installation, directory: destination, id, createdAt: new Date().toISOString(), published: false };
           if (!await validateRecord(run)) { throw new Error('Artefactos no válidos'); }
           await writeRecord(run);
           runs.set(id, run);
