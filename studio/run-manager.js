@@ -4,6 +4,7 @@ const os = require('node:os');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { generateIsolated } = require('./isolated-generation');
+const { diagnoseArtifacts } = require('./artifact-diagnostics');
 
 const DEFAULT_ROOT = path.join(os.homedir(), '.sbn-forge-studio', 'runs');
 const ORPHAN_AGE_MS = 24 * 60 * 60 * 1000;
@@ -12,7 +13,7 @@ function httpError(message, status) { const error = new Error(message); error.st
 function inside(root, target) { return target.startsWith(root + path.sep); }
 function summary(run) {
   return { id: run.id, name: run.name, createdAt: run.createdAt, mode: run.mode,
-    totals: run.totals, artifacts: run.artifacts, published: false, integrity: run.integrity || 'unchecked' };
+    totals: run.totals, artifacts: run.artifacts, published: false, integrity: run.integrity || 'unchecked', diagnostics: run.diagnostics || null };
 }
 
 function createRunManager({ definitionStore, generate = generateIsolated, limit = 10, directory = DEFAULT_ROOT } = {}) {
@@ -138,7 +139,8 @@ function createRunManager({ definitionStore, generate = generateIsolated, limit 
             const digest = crypto.createHash('sha256').update(await fs.readFile(full)).digest('hex');
             artifacts.push({ ...item, sha256: digest });
           }
-          const run = { ...result, artifacts, directory: destination, id, createdAt: new Date().toISOString(), published: false };
+          const diagnostics = await diagnoseArtifacts(destination, artifacts);
+          const run = { ...result, artifacts, diagnostics, directory: destination, id, createdAt: new Date().toISOString(), published: false };
           if (!await validateRecord(run)) { throw new Error('Artefactos no válidos'); }
           await writeRecord(run);
           runs.set(id, run);
@@ -162,11 +164,11 @@ function createRunManager({ definitionStore, generate = generateIsolated, limit 
       await start();
       const run = runs.get(id);
       if (!run) { throw httpError('Ejecución no encontrada', 404); }
-      const integrity = await inspect(run);
-      if (integrity === 'corrupt' || integrity === 'missing') { throw httpError('Integridad de ejecución inválida', 409); }
       if (typeof artifactPath !== 'string' || !run.artifacts.some(item => item.path === artifactPath)) {
         throw httpError('Archivo no autorizado', 400);
       }
+      const integrity = await inspect(run);
+      if (integrity === 'corrupt' || integrity === 'missing') { throw httpError('Integridad de ejecución inválida', 409); }
       const full = path.resolve(run.directory, artifactPath);
       if (!inside(run.directory, full)) { throw httpError('Ruta inválida', 400); }
       let current = path.dirname(full);
