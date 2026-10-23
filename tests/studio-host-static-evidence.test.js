@@ -10,8 +10,10 @@ test('collects bounded source references without following links or executing co
     await fs.writeFile(path.join(root, 'src', 'routes.js'),
       "fastify.get('/api/demo', handler); const organizationId = req.organizationId; jwtVerify(token); requireRole('admin');");
     await fs.writeFile(path.join(root, 'src', 'migration.ts'), 'const sql = "CREATE TABLE demo(id int)";');
+    await fs.writeFile(path.join(root, 'src', 'app - copia.js'), "fastify.get('/api/obsolete', handler);");
     const result = await collectSourceEvidence(root);
     expect(result.routes).toContain('src/routes.js');
+    expect(result.routeDeclarations).toEqual([{ method: 'GET', path: '/api/demo', file: 'src/routes.js' }]);
     expect(result.authentication).toContain('src/routes.js');
     expect(result.authorization).toContain('src/routes.js');
     expect(result.organization).toContain('src/routes.js');
