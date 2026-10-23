@@ -28,6 +28,7 @@ async function simulateInstallation(directory, artifacts, options = {}) {
   if (host.configured && host.routeEvidence) {
     checks.push(await checkRouteContracts(directory, artifacts, host.routeEvidence));
   }
+  checks.push({ check: 'security-integration-readiness', status: 'unknown', message: 'La presencia de referencias JWT, permisos y organización en el host no demuestra que las rutas generadas estén protegidas. Requiere verificar hooks efectivos, permisos por operación y aislamiento de datos antes de instalar' });
   return { mode: 'dry-run', hostConfigured: host.configured, status: checks.some(c => c.status === 'blocked') ? 'blocked' : 'review-required', installable: false, published: false, databaseModified: false, checks };
 }
 module.exports = { simulateInstallation };
