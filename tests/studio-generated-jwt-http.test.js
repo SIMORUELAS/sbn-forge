@@ -56,7 +56,9 @@ test('HTTP requests without JWT never reach any generated CRUD controller', asyn
     server = http.createServer(async (request, response) => {
       const route = operations.find(op => {
         if (op.method !== request.method) { return false; }
-        const pattern = '^' + op.url.replace(/:[A-Za-z_][A-Za-z0-9_]*/g, '[^/]+') + '
+        const pattern = '^' + op.url.replace(/:[A-Za-z_][A-Za-z0-9_]*/g, '[^/]+') + '$';
+        return new RegExp(pattern).test(request.url);
+      });
       if (!route) { response.writeHead(404); response.end(); return; }
       const reply = {
         code(status) { response.statusCode = status; return this; },
