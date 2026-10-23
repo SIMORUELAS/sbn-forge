@@ -23,6 +23,11 @@ test('generates and verifies real artifacts in a unique temporary directory', as
     expect(result.totals).toEqual({ planned: 7, written: 7, published: 0 });
     expect(result.artifacts).toHaveLength(7);
     expect(result.directory.startsWith(parent + path.sep)).toBe(true);
+    const routeArtifact = result.artifacts.find(item => item.path.endsWith('.routes.js'));
+    expect(routeArtifact).toBeDefined();
+    const routeSource = await fs.readFile(path.join(result.directory, routeArtifact.path), 'utf8');
+    expect(routeSource).toContain("fastify.addHook('onRequest', requireAuth)");
+    expect(routeSource).toContain('await request.jwtVerify()');
     for (const artifact of result.artifacts) {
       expect((await fs.stat(path.join(result.directory, artifact.path))).isFile()).toBe(true);
     }
