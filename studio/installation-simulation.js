@@ -1,7 +1,8 @@
 'use strict';
 const fs = require('node:fs/promises');
 const path = require('node:path');
-async function simulateInstallation(directory, artifacts) {
+const { inspectHost } = require('./host-inspector');
+async function simulateInstallation(directory, artifacts, options = {}) {
   const names = artifacts.map(a => a.path);
   const checks = [];
   for (const [check, suffix] of [['fastify-routes','.routes.js'],['postgresql-repository','.repository.js'],['schema-contract','.schema.js'],['manifest-contract','/sbn-forge.manifest.json']]) {
@@ -15,6 +16,14 @@ async function simulateInstallation(directory, artifacts) {
   for (const check of ['host-dependencies','authentication','authorization','organization-scope','route-conflicts','database-migrations']) {
     checks.push({ check, status: 'unknown', message: 'Requiere inspección de la aplicación host; no verificado' });
   }
-  return { mode: 'dry-run', status: checks.some(c => c.status === 'blocked') ? 'blocked' : 'review-required', installable: false, published: false, databaseModified: false, checks };
+  const host = await inspectHost(options.hostRoot);
+  if (host.configured) {
+    for (const evidence of host.checks) {
+      const index = checks.findIndex(item => item.check === evidence.check);
+      if (index >= 0) checks[index] = evidence;
+      else checks.push(evidence);
+    }
+  }
+  return { mode: 'dry-run', hostConfigured: host.configured, status: checks.some(c => c.status === 'blocked') ? 'blocked' : 'review-required', installable: false, published: false, databaseModified: false, checks };
 }
 module.exports = { simulateInstallation };
