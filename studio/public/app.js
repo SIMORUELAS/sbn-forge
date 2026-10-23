@@ -441,6 +441,18 @@ function selectRun(run) {
     if (check.status === 'failed') { li.className = 'integrity-warning'; }
     diagnosticChecks.appendChild(li);
   }
+  const installationStatus = document.getElementById('generation-installation-status');
+  const installationChecks = document.getElementById('generation-installation-checks');
+  installationChecks.replaceChildren();
+  installationStatus.textContent = run.installation
+    ? 'Resultado: ' + run.installation.status + ' · Instalación: deshabilitada · Publicación: no'
+    : 'Informe no disponible para esta ejecución histórica.';
+  for (const check of run.installation?.checks || []) {
+    const li = document.createElement('li');
+    li.textContent = check.status.toUpperCase() + ' · ' + check.check + ' · ' + check.message;
+    if (check.status === 'blocked') { li.className = 'integrity-warning'; }
+    installationChecks.appendChild(li);
+  }
   document.getElementById('generation-run-detail').hidden = false;
   document.getElementById('generation-open-file').disabled = run.integrity === 'corrupt' || run.integrity === 'missing';
   document.getElementById('generation-file-content').textContent = '';
