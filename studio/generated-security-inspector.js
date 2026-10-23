@@ -12,6 +12,7 @@ async function inspectGeneratedSecurity(directory, artifacts) {
   const checks = [];
   const root = path.resolve(directory);
   const exposed = [];
+  const routeSources = [];
   let routeEvidenceIncomplete = false;
   for (const item of artifacts.filter(entry => typeof entry.path === 'string' && entry.path.endsWith('.routes.js'))) {
     const full = path.resolve(root, item.path);
@@ -19,9 +20,17 @@ async function inspectGeneratedSecurity(directory, artifacts) {
     try {
       const stat = await fs.lstat(full);
       if (!stat.isFile() || stat.isSymbolicLink() || stat.size > MAX_BYTES) { routeEvidenceIncomplete = true; continue; }
-      exposed.push(...extractRoutes(await fs.readFile(full, 'utf8'), item.path));
+      const source = await fs.readFile(full, 'utf8');
+      routeSources.push(source);
+      exposed.push(...extractRoutes(source, item.path));
     } catch { routeEvidenceIncomplete = true; }
   }
+  const hostAuthPattern = /require\s*\(\s*['"][^'"]*middlewares\/auth['"]\s*\)/;
+  const preHandlerPattern = /preHandler\s*:\s*verifyJWT/;
+  const usesHostAuth = routeSources.some(source => hostAuthPattern.test(source) && preHandlerPattern.test(source));
+  checks.push({ check: 'generated-host-jwt-contract', status: 'unknown',
+    message: usesHostAuth ? 'Referencias al middleware verifyJWT detectadas; falta certificar cobertura de cada operación y resolución de imports' :
+      'No se identificó integración explícita con el middleware verifyJWT de SBN Portal; requiere adaptación antes de instalar' });
   checks.push({ check: 'generated-route-security-exposure', status: 'unknown',
     message: 'Operaciones HTTP detectadas: ' + exposed.length + '. ' + exposed.slice(0, 12).map(route => route.method + ' ' + route.path).join('; ') +
       (routeEvidenceIncomplete ? '. Archivos no legibles' : '') + '. No se ha demostrado protección efectiva por operación ni por organización' });
