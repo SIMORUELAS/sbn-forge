@@ -5,7 +5,7 @@ const MAX_FILES = 1200;
 const MAX_BYTES = 128 * 1024;
 const SKIP = new Set(['node_modules', '.git', 'dist', 'build', 'coverage', '.next', '.env', 'secrets', 'certificates']);
 const ALLOWED = /\.(?:js|cjs|mjs|ts)$/i;
-const BACKUP = /(?:^|[\\s._-])(?:copia|copy|backup|bak|resp|respaldo)(?:[\\s._-]|\\d|$)/i;
+const BACKUP = /(?:^|[\s._-])(?:copia|copy|backup|bak|resp|respaldo)(?:[\s._-]|\d|$)/i;
 async function collectSourceEvidence(root) {
   const evidence = { scanned: 0, truncated: false, routes: [], authentication: [], authorization: [], organization: [], migrations: [], routeDeclarations: [] };
   const queue = [{ dir: root, depth: 0 }];
@@ -29,7 +29,7 @@ async function collectSourceEvidence(root) {
       const relative = path.relative(root, full).replace(/\\/g, '/');
       const source = await fs.readFile(full, 'utf8');
       evidence.scanned++;
-      const routePattern = /\\b(?:fastify|app|server)\\.(get|post|put|patch|delete)\\s*\\(\\s*(['\"])(\\/[^'\"\\r\\n]*)\\2/g;
+      const routePattern = /\b(?:fastify|app|server)\.(get|post|put|patch|delete)\s*\(\s*(['"])(\/[^'"\r\n]*)\2/g;
       for (const match of source.matchAll(routePattern)) {
         if (evidence.routeDeclarations.length >= 100) { evidence.truncated = true; break; }
         evidence.routeDeclarations.push({ method: match[1].toUpperCase(), path: match[3], file: relative });
