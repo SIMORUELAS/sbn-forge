@@ -13,8 +13,7 @@ function extractRoutes(source, file) {
   const constants = new Map();
   const declaration = /\bconst\s+([A-Za-z_$][\w$]*)\s*=\s*(['"])(\/[^'"\r\n]*)\2\s*;/g;
   for (const match of source.matchAll(declaration)) { constants.set(match[1], match[3]); }
-  const pattern = /\b(?:fastify|app|server)\.(get|post|put|patch|delete)\s*\(\s*(?:(['"])(\/[^'"\r\n]*)\2|([A-Za-z_$][\w$]*)|`\$\{([A-Za-z_$][\w$]*)\}([^
-]*)`)/g;
+  const pattern = /\b(?:fastify|app|server)\.(get|post|put|patch|delete)\s*\(\s*(?:(['"])(\/[^'"\r\n]*)\2|([A-Za-z_$][\w$]*)|`\$\{([A-Za-z_$][\w$]*)\}([^`\r\n]*)`)/g;
   for (const match of source.matchAll(pattern)) {
     const raw = match[3] || (match[4] && constants.get(match[4])) ||
       (match[5] && constants.get(match[5]) && constants.get(match[5]) + match[6]);
