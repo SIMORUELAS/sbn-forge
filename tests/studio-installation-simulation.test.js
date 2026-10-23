@@ -21,11 +21,12 @@ test('dry-run records missing host evidence without installing or changing datab
     expect(report.installable).toBe(false);
     expect(report.published).toBe(false);
     expect(report.databaseModified).toBe(false);
-    expect(report.checks.filter(c => c.status === 'unknown')).toHaveLength(10);
+    expect(report.checks.filter(c => c.status === 'unknown')).toHaveLength(11);
     expect(report.checks).toContainEqual(expect.objectContaining({
       check: 'security-integration-readiness',
       status: 'unknown'
     }));
+    expect(report.checks).toContainEqual(expect.objectContaining({ check: 'generated-route-security-exposure', status: 'unknown' }));
     for (const check of ['generated-authentication-contract', 'generated-authorization-contract', 'generated-organization-contract']) {
       expect(report.checks).toContainEqual(expect.objectContaining({ check, status: 'unknown' }));
     }
