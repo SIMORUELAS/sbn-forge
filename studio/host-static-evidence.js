@@ -15,16 +15,16 @@ async function collectSourceEvidence(root) {
     entries.sort((a, b) => a.name.localeCompare(b.name));
     for (const entry of entries) {
       if (evidence.scanned >= MAX_FILES) { evidence.truncated = true; break; }
-      if (entry.isSymbolicLink() || entry.name.startsWith('.') || SKIP.has(entry.name)) continue;
+      if (entry.isSymbolicLink() || entry.name.startsWith('.') || SKIP.has(entry.name)) { continue; }
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) {
-        if (depth < 5) queue.push({ dir: full, depth: depth + 1 });
-        else evidence.truncated = true;
+        if (depth < 5) { queue.push({ dir: full, depth: depth + 1 }); }
+        else { evidence.truncated = true; }
         continue;
       }
-      if (!entry.isFile() || !ALLOWED.test(entry.name)) continue;
+      if (!entry.isFile() || !ALLOWED.test(entry.name)) { continue; }
       const stat = await fs.lstat(full).catch(() => null);
-      if (!stat || !stat.isFile() || stat.size > MAX_BYTES) continue;
+      if (!stat || !stat.isFile() || stat.size > MAX_BYTES) { continue; }
       const relative = path.relative(root, full).replace(/\\/g, '/');
       const source = await fs.readFile(full, 'utf8');
       evidence.scanned++;
@@ -36,11 +36,11 @@ async function collectSourceEvidence(root) {
         migrations: /\b(?:CREATE TABLE|ALTER TABLE|migration|knex\.schema)\b/i
       };
       for (const [key, pattern] of Object.entries(patterns)) {
-        if (pattern.test(source) && evidence[key].length < 8) evidence[key].push(relative);
+        if (pattern.test(source) && evidence[key].length < 8) { evidence[key].push(relative); }
       }
     }
   }
-  if (queue.length) evidence.truncated = true;
+  if (queue.length) { evidence.truncated = true; }
   return evidence;
 }
 module.exports = { collectSourceEvidence };
