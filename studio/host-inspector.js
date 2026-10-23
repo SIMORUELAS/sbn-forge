@@ -43,6 +43,6 @@ async function inspectHost(hostRoot) {
         (evidence.truncated ? ' (inspección parcial)' : '') });
   }
   checks.push({ check: 'route-declarations', status: 'unknown', message: 'Rutas literales detectadas: ' + evidence.routeDeclarations.length + '. ' + evidence.routeDeclarations.slice(0, 8).map(item => item.method + ' ' + item.path + ' (' + item.file + ')').join('; ') + '. Prefijos dinámicos y colisiones no certificados' });
-  return { configured: true, checks };
+  return { configured: true, checks, routeEvidence: { routeDeclarations: evidence.routeDeclarations, truncated: evidence.truncated } };
 }
 module.exports = { inspectHost };
