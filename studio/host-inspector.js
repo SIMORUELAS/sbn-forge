@@ -1,6 +1,7 @@
 'use strict';
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const { collectSourceEvidence } = require('./host-static-evidence');
 
 async function inspectHost(hostRoot) {
   const checks = [];
@@ -26,8 +27,20 @@ async function inspectHost(hostRoot) {
       checks.push({ check: 'host-dependencies', status: 'blocked', message: 'package.json no válido' });
     }
   }
-  for (const check of ['authentication', 'authorization', 'organization-scope', 'route-conflicts', 'database-migrations']) {
-    checks.push({ check, status: 'unknown', message: 'La inspección estática limitada no demuestra este requisito' });
+  const evidence = await collectSourceEvidence(root);
+  const descriptions = {
+    authentication: ['authentication', 'Referencias de autenticación'],
+    authorization: ['authorization', 'Referencias de autorización'],
+    'organization-scope': ['organization', 'Referencias de organización'],
+    'route-conflicts': ['routes', 'Archivos con registros de rutas (colisiones no certificadas)'],
+    'database-migrations': ['migrations', 'Referencias de migraciones']
+  };
+  for (const [check, [category, label]] of Object.entries(descriptions)) {
+    const files = evidence[category];
+    checks.push({ check, status: 'unknown',
+      message: label + ': ' + (files.length ? files.join(', ') : 'sin coincidencias') +
+        '. Coincidencia textual, no prueba de cumplimiento. Archivos examinados: ' + evidence.scanned +
+        (evidence.truncated ? ' (inspección parcial)' : '') });
   }
   return { configured: true, checks };
 }
