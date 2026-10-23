@@ -33,10 +33,16 @@ La ruta definitiva depende del registro en la aplicación host.
 
 ## Seguridad
 
+{{#if security.requireJwt}}
+Autenticación JWT requerida: las rutas registran un hook `onRequest` que invoca `request.jwtVerify()`. La aplicación host debe registrar `@fastify/jwt` y configurar su secreto.
+
+**Pendiente:** comprobar mediante pruebas HTTP las respuestas 401, la autorización por operación y el aislamiento de organización. Este guard no certifica permisos ni separación entre empresas.
+{{else}}
 {{#if security}}
 La configuración de seguridad se proporciona desde el contexto de generación y debe verificarse antes de desplegar.
 {{else}}
 **Sin configuración de seguridad explícita en este contexto.** El código generado no debe considerarse protegido hasta verificar autenticación, autorización y aislamiento de organización en la aplicación host.
+{{/if}}
 {{/if}}
 
 ## Capacidades detectadas
