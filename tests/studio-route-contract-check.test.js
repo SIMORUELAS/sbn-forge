@@ -28,3 +28,10 @@ test('blocks potential exact route collision without installing anything', async
     await fs.rm(directory, { recursive: true, force: true });
   }
 });
+
+test('extracts all five generated routes using static base and template paths', () => {
+  const source = "const base = '/product-development-projects';\nfastify.get(base, {}, controller.list);\nfastify.get(`${base}/:id`, {}, controller.getById);\nfastify.post(base, {}, controller.create);\nfastify.patch(`${base}/:id`, {}, controller.update);\nfastify.delete(`${base}/:id`, {}, controller.remove);";
+  const routes = extractRoutes(source, 'generated.routes.js');
+  expect(routes).toHaveLength(5);
+  expect(routes.map(route => route.method + ' ' + route.path)).toEqual(["GET /product-development-projects","GET /product-development-projects/:param","POST /product-development-projects","PATCH /product-development-projects/:param","DELETE /product-development-projects/:param"]);
+});
