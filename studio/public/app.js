@@ -22,7 +22,8 @@ function showSection(id) {
   document.getElementById('inspector-workspace').hidden = id !== 'inspector';
   document.getElementById('designer-workspace').hidden = id !== 'diseno';
   document.getElementById('generation-workspace').hidden = id !== 'generacion';
-  document.getElementById('detail-placeholder').hidden = id === 'inspector' || id === 'diseno' || id === 'generacion';
+  document.getElementById('history-workspace').hidden = id !== 'historial';
+  document.getElementById('detail-placeholder').hidden = id === 'inspector' || id === 'diseno' || id === 'generacion' || id === 'historial';
   document.querySelectorAll('[data-view]').forEach(el => {
     const selected = el.dataset.view === id;
     el.classList.toggle('active', selected);
@@ -30,6 +31,7 @@ function showSection(id) {
     else { el.removeAttribute('aria-current'); }
   });
   window.location.hash = id === 'inicio' ? '' : id;
+  if (id === 'historial' || id === 'generacion') { refreshRuns().catch(() => {}); }
 }
 document.querySelectorAll('[data-view]').forEach(el => el.addEventListener('click', () => showSection(el.dataset.view)));
 document.querySelectorAll('[data-go]').forEach(el => el.addEventListener('click', () => showSection(el.dataset.go)));
@@ -350,20 +352,44 @@ async function refreshRuns() {
   const counts = { verified: 0, 'legacy-unverified': 0, corrupt: 0, missing: 0 };
   for (const run of data.runs) {
     if (Object.prototype.hasOwnProperty.call(counts, run.integrity)) { counts[run.integrity]++; }
-    const li = document.createElement('li');
+    const tr = document.createElement('tr');
+    const values = [new Date(run.createdAt).toLocaleString('es-MX'), run.name,
+      integrityText(run), String(run.totals.written), 'No'];
+    for (const value of values) {
+      const td = document.createElement('td');
+      td.textContent = value;
+      tr.appendChild(td);
+    }
+    const action = document.createElement('td');
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'run-entry';
-    button.textContent = run.createdAt + ' · ' + run.name + ' · ' + run.totals.written +
-      ' archivos · ' + integrityText(run) + ' · Sin publicar';
-    button.addEventListener('click', () => selectRun(run));
-    li.appendChild(button);
-    list.appendChild(li);
+    button.textContent = 'Revisar';
+    button.addEventListener('click', () => {
+      showSection('generacion');
+      selectRun(run);
+    });
+    action.appendChild(button);
+    tr.appendChild(action);
+    list.appendChild(tr);
   }
   document.getElementById('generation-integrity-summary').textContent =
     data.runs.length + ' ejecuciones · ' + counts.verified + ' verificadas · ' +
     counts['legacy-unverified'] + ' históricas sin SHA-256 · ' +
     (counts.corrupt + counts.missing) + ' con incidencias';
+  const historyContainer = document.getElementById('history-table-container');
+  const table = list.closest('table');
+  const historyTable = table.cloneNode(true);
+  historyTable.querySelectorAll('tbody tr').forEach((tr, index) => {
+    const button = tr.querySelector('button');
+    if (button) {
+      const run = data.runs[index];
+      button.addEventListener('click', () => { showSection('generacion'); selectRun(run); });
+    }
+  });
+  historyContainer.replaceChildren(historyTable);
+  document.getElementById('history-message').textContent =
+    'Historial persistente: ' + data.runs.length + ' ejecuciones · sin publicación.';
   if (activeRun) {
     const updated = data.runs.find(run => run.id === activeRun.id);
     if (updated) { selectRun(updated); }
@@ -407,6 +433,7 @@ function selectRun(run) {
   document.getElementById('generation-run-detail').hidden = false;
   document.getElementById('generation-open-file').disabled = run.integrity === 'corrupt' || run.integrity === 'missing';
   document.getElementById('generation-file-content').textContent = '';
+  renderCode('', 'Sin archivo seleccionado');
 }
 document.getElementById('generation-history').addEventListener('click', async () => {
   try { await refreshRuns(); } catch (error) { document.getElementById('generation-message').textContent = error.message; }
@@ -437,6 +464,32 @@ document.getElementById('generation-open-file').addEventListener('click', async 
     const data = await response.json();
     if (!response.ok) { throw new Error(data.error || 'Archivo no disponible'); }
     document.getElementById('generation-file-content').textContent = data.content;
+    renderCode(data.content, file);
   } catch (error) { document.getElementById('generation-message').textContent = error.message; }
 });
 refreshRuns().catch(() => {});
+
+function renderCode(content, filename) {
+  document.getElementById('generation-code-filename').textContent = filename;
+  const container = document.getElementById('generation-code-lines');
+  container.replaceChildren();
+  if (!content) { return; }
+  const lines = content.split('\\n');
+  lines.forEach((line, index) => {
+    const row = document.createElement('div');
+    row.className = 'code-line';
+    const number = document.createElement('span');
+    number.className = 'code-number';
+    number.textContent = String(index + 1);
+    const text = document.createElement('span');
+    text.className = 'code-text';
+    text.textContent = line;
+    row.append(number, text);
+    container.appendChild(row);
+  });
+}
+document.getElementById('history-refresh').addEventListener('click', async () => {
+  try { await refreshRuns(); }
+  catch (error) { document.getElementById('history-message').textContent = error.message; }
+});
+document.getElementById('history-go-generation').addEventListener('click', () => showSection('generacion'));
