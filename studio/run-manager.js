@@ -141,7 +141,7 @@ function createRunManager({ definitionStore, generate = generateIsolated, limit 
             artifacts.push({ ...item, sha256: digest });
           }
           const diagnostics = await diagnoseArtifacts(destination, artifacts);
-          const installation = await simulateInstallation(destination, artifacts);
+          const installation = await simulateInstallation(destination, artifacts, { hostRoot: process.env.FORGE_STUDIO_HOST_ROOT });
           const run = { ...result, artifacts, diagnostics, installation, directory: destination, id, createdAt: new Date().toISOString(), published: false };
           if (!await validateRecord(run)) { throw new Error('Artefactos no válidos'); }
           await writeRecord(run);
