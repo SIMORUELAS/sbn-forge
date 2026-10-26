@@ -54,6 +54,16 @@ async function inspectGeneratedSecurity(directory, artifacts) {
         (unreadable || files.length === 0 ? '. Evidencia incompleta' : '') +
         '. La coincidencia no certifica hooks efectivos, permisos ni aislamiento entre organizaciones' });
   }
+  // A textual organization reference is not evidence that SQL is tenant-scoped.
+  // Keep the installation review-only until the generated repository is certified.
+  const repositories = artifacts.filter(item => typeof item.path === 'string' && item.path.endsWith('.repository.js'));
+  checks.push({
+    check: 'generated-tenant-query-isolation',
+    status: 'unknown',
+    message: 'Repositorios generados examinables: ' + repositories.length +
+      '. No existe evidencia ejecutable de predicados organizacionales obligatorios en SELECT, INSERT, UPDATE y DELETE. ' +
+      'Un organizationId en el contexto o una coincidencia textual no certifica aislamiento multiempresa; instalación deshabilitada.'
+  });
   return checks;
 }
 module.exports = { inspectGeneratedSecurity };
