@@ -2,6 +2,8 @@
 const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
+const { createRequire } = require('node:module');
+const nodeRequire = createRequire(__filename);
 const { generateIsolated } = require('../studio/isolated-generation');
 
 const metadata = { defaultValue: null, identity: false, maxLength: null, precision: null, scale: null };
@@ -26,8 +28,10 @@ describe('generated CRUD with real Fastify 5 and @fastify/jwt 10', () => {
   let fastify;
   let jwtPlugin;
   beforeAll(() => {
-    fastify = require('fastify');
-    jwtPlugin = require('@fastify/jwt');
+    // Load Fastify dependencies through Node's native module loader.
+    // Jest 29's CommonJS runtime cannot parse the ESM cookie dependency.
+    fastify = nodeRequire('fastify');
+    jwtPlugin = nodeRequire('@fastify/jwt');
   });
 
   async function withGeneratedApp(registerJwt, callback) {
