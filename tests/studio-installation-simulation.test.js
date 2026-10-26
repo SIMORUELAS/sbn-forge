@@ -21,7 +21,11 @@ test('dry-run records missing host evidence without installing or changing datab
     expect(report.installable).toBe(false);
     expect(report.published).toBe(false);
     expect(report.databaseModified).toBe(false);
-    expect(report.checks.filter(c => c.status === 'unknown')).toHaveLength(12);
+    expect(report.checks.filter(c => c.status === 'unknown')).toHaveLength(13);
+    expect(report.checks).toContainEqual(expect.objectContaining({
+      check: 'generated-tenant-query-isolation',
+      status: 'unknown'
+    }));
     expect(report.checks).toContainEqual(expect.objectContaining({
       check: 'security-integration-readiness',
       status: 'unknown'
