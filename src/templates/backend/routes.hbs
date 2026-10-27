@@ -50,6 +50,10 @@ async function {{names.variablePlural}}Routes(
     );
   }
 
+  if (options.requireTenantIsolation === true) {
+    throw new Error('TENANT_ISOLATION_NOT_CERTIFIED');
+  }
+
   repository.configure(
     database
   );
