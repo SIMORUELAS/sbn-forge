@@ -30,8 +30,22 @@ const SORTABLE_COLUMNS =
   ]);
 
 let db;
+let tenantColumn = null;
 
-function configure(database) {
+function tenantPredicate(context, values) {
+  if (!tenantColumn) return null;
+  const organizationId = context?.organizationId;
+  if (typeof organizationId !== 'string' || !organizationId.trim()) {
+    const error = new Error('Organización autenticada requerida.');
+    error.statusCode = 403;
+    error.code = 'TENANT_SCOPE_REQUIRED';
+    throw error;
+  }
+  values.push(organizationId);
+  return `${tenantColumn} = ${values.length}`;
+}
+
+function configure(database, options = {}) {
   if (
     !database ||
     typeof database.query !== 'function'
@@ -42,6 +56,11 @@ function configure(database) {
     );
   }
 
+  const requestedColumn = options.tenantColumn || null;
+  if (requestedColumn && !SORTABLE_COLUMNS.includes(requestedColumn)) {
+    throw new Error('TENANT_COLUMN_NOT_FOUND');
+  }
+  tenantColumn = requestedColumn;
   db = database;
 }
 
@@ -72,7 +91,7 @@ function safeSort(value) {
     : TABLE_METADATA.primaryKeyColumns[0];
 }
 
-async function list(query = {}) {
+async function list(query = {}, context = {}) {
   const limit =
     Math.min(
       Math.max(
@@ -99,6 +118,8 @@ async function list(query = {}) {
 
   const where = [];
   const values = [];
+  const tenantWhere = tenantPredicate(context, values);
+  if (tenantWhere) where.push(tenantWhere);
 
   {{#if capabilities.softDelete}}
   if (!query.include_deleted) {
@@ -165,7 +186,7 @@ async function list(query = {}) {
   };
 }
 
-async function getById(id) {
+async function getById(id, context = {}) {
   const keyValues =
     TABLE_METADATA.primaryKeyColumns.map(
       column =>
@@ -182,10 +203,12 @@ async function getById(id) {
       )
       .join(' AND ');
 
+  const tenantWhere = tenantPredicate(context, keyValues);
   const sql = `
     SELECT *
     FROM ${QUALIFIED_TABLE}
     WHERE ${keyWhere}
+    ${tenantWhere ? `AND ${tenantWhere}` : ''}
     {{#if capabilities.softDelete}}AND deleted_at IS NULL{{/if}}
     LIMIT 1
   `;
@@ -204,6 +227,11 @@ async function create(
 ) {
   const data =
     pickWritable(input);
+  if (tenantColumn) {
+    const scopeValues = [];
+    tenantPredicate(context, scopeValues);
+    data[tenantColumn] = scopeValues[0];
+  }
 
   {{#each primaryKeyInfo.columns}}
   {{#unless generated}}
@@ -251,6 +279,7 @@ async function create(
       updated_from = {{#if columnMap.created_from}}EXCLUDED.created_from{{else}}'api'{{/if}}{{/if}}{{#if capabilities.optimisticLock}},
       version_no = {{database.schema}}.{{database.table}}.version_no + 1{{/if}}
     WHERE {{database.schema}}.{{database.table}}.deleted_at IS NOT NULL
+      ${tenantColumn ? `AND {{database.schema}}.{{database.table}}.${tenantColumn} = EXCLUDED.${tenantColumn}` : ''}
     {{/unless}}
     {{/if}}
     RETURNING *
@@ -276,7 +305,8 @@ async function create(
   return getById(
     TABLE_METADATA.primaryKeyColumns.length === 1
       ? key[TABLE_METADATA.primaryKeyColumns[0]]
-      : key
+      : key,
+    context
   );
   {{else}}
   return result.rows[0];
@@ -293,6 +323,7 @@ async function update(
 ) {
   const data =
     pickWritable(input);
+  if (tenantColumn) delete data[tenantColumn];
 
   {{#if columnMap.updated_by}}
   data.updated_by =
@@ -354,6 +385,7 @@ async function update(
       .join(' AND ');
 
   values.push(...keyValues);
+  const tenantWhere = tenantPredicate(context, values);
 
   const setClause =
     keys
@@ -367,6 +399,7 @@ async function update(
     UPDATE ${QUALIFIED_TABLE}
     SET ${setClause}
     WHERE ${keyWhere}
+    ${tenantWhere ? `AND ${tenantWhere}` : ''}
   `;
 
   {{#if capabilities.optimisticLock}}
@@ -420,6 +453,7 @@ async function remove(
 
   {{#if capabilities.softDelete}}
   const values = [...keyValues];
+  const tenantWhere = tenantPredicate(context, values);
   {{#if columnMap.deleted_by}}
   values.push(context.userId || null);
   {{/if}}
@@ -431,15 +465,18 @@ async function remove(
       deleted_by = $${values.length}{{/if}}{{#if capabilities.optimisticLock}},
       version_no = version_no + 1{{/if}}
     WHERE ${keyWhere}
+      ${tenantWhere ? `AND ${tenantWhere}` : ''}
       AND deleted_at IS NULL
     RETURNING *
   `;
   {{else}}
   const values = [...keyValues];
+  const tenantWhere = tenantPredicate(context, values);
 
   const sql = `
     DELETE FROM ${QUALIFIED_TABLE}
     WHERE ${keyWhere}
+    ${tenantWhere ? `AND ${tenantWhere}` : ''}
     RETURNING *
   `;
   {{/if}}
