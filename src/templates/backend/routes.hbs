@@ -67,13 +67,37 @@ async function {{names.variablePlural}}Routes(
   fastify.addHook('onRequest', requireAuth);
 {{/if}}
 
+  // Integración explícita con el host. Nunca inferir permisos desde headers.
+  // Si se activa, el adaptador debe resolver permisos desde una fuente confiable.
+  const authorizeOperation = options.authorizeOperation;
+  const requireCrudPermissions = options.requireCrudPermissions === true;
+  if (requireCrudPermissions && typeof authorizeOperation !== 'function') {
+    throw new Error('Se requiere options.authorizeOperation para activar permisos CRUD.');
+  }
+  const permissionGuard = operation => async (request, reply) => {
+    if (!requireCrudPermissions) return;
+    if (!request.user || !request.user.id || !request.user.organization_id) {
+      return reply.code(401).send({ code: 'AUTHENTICATION_REQUIRED' });
+    }
+    const permitted = await authorizeOperation({
+      operation,
+      userId: request.user.id,
+      organizationId: request.user.organization_id,
+      request
+    });
+    if (permitted !== true) {
+      return reply.code(403).send({ code: 'PERMISSION_DENIED' });
+    }
+  };
+
   const base =
     '{{names.routeBase}}';
 
   fastify.get(
     base,
     {
-      schema: schemas.list
+      schema: schemas.list,
+      preHandler: permissionGuard('list')
     },
     controller.list
   );
@@ -81,7 +105,8 @@ async function {{names.variablePlural}}Routes(
   fastify.get(
     `${base}{{#if primaryKeyInfo.isComposite}}{{primaryKeyInfo.routePath}}{{else}}/:id{{/if}}`,
     {
-      schema: schemas.getById
+      schema: schemas.getById,
+      preHandler: permissionGuard('read')
     },
     controller.getById
   );
@@ -89,7 +114,8 @@ async function {{names.variablePlural}}Routes(
   fastify.post(
     base,
     {
-      schema: schemas.create
+      schema: schemas.create,
+      preHandler: permissionGuard('create')
     },
     controller.create
   );
@@ -97,7 +123,8 @@ async function {{names.variablePlural}}Routes(
   fastify.patch(
     `${base}{{#if primaryKeyInfo.isComposite}}{{primaryKeyInfo.routePath}}{{else}}/:id{{/if}}`,
     {
-      schema: schemas.update
+      schema: schemas.update,
+      preHandler: permissionGuard('update')
     },
     controller.update
   );
@@ -105,7 +132,8 @@ async function {{names.variablePlural}}Routes(
   fastify.delete(
     `${base}{{#if primaryKeyInfo.isComposite}}{{primaryKeyInfo.routePath}}{{else}}/:id{{/if}}`,
     {
-      schema: schemas.remove
+      schema: schemas.remove,
+      preHandler: permissionGuard('delete')
     },
     controller.remove
   );
