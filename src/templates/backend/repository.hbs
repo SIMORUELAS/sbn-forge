@@ -42,7 +42,7 @@ function tenantPredicate(context, values) {
     throw error;
   }
   values.push(organizationId);
-  return `${tenantColumn} = ${values.length}`;
+  return tenantColumn + " = " + String.fromCharCode(36) + values.length;
 }
 
 function configure(database, options = {}) {
