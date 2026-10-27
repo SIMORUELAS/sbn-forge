@@ -50,13 +50,24 @@ async function {{names.variablePlural}}Routes(
     );
   }
 
-  if (options.requireTenantIsolation === true) {
+  // Only an explicit, validated direct tenant column is supported.
+  const tenantColumn = options.tenantColumn || null;
+  if (options.requireTenantIsolation === true && !tenantColumn) {
     throw new Error('TENANT_ISOLATION_NOT_CERTIFIED');
   }
+  if (tenantColumn && options.requireTenantIsolation !== true) {
+    throw new Error('TENANT_ISOLATION_MUST_BE_REQUIRED');
+  }
+  if (options.requireTenantIsolation === true && options.requireCrudPermissions !== true) {
+    throw new Error('TENANT_AUTHORIZATION_REQUIRED');
+  }
+  {{#unless security.requireJwt}}
+  if (options.requireTenantIsolation === true) {
+    throw new Error('TENANT_JWT_VERIFICATION_REQUIRED');
+  }
+  {{/unless}}
 
-  repository.configure(
-    database
-  );
+  repository.configure(database, { tenantColumn });
 
 {{#if security.requireJwt}}
   // Guard de autenticación por módulo: no depende de hooks globales.
