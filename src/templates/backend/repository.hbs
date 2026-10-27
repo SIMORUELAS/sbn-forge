@@ -227,12 +227,6 @@ async function create(
 ) {
   const data =
     pickWritable(input);
-  if (tenantColumn) {
-    const scopeValues = [];
-    tenantPredicate(context, scopeValues);
-    data[tenantColumn] = scopeValues[0];
-  }
-
   {{#each primaryKeyInfo.columns}}
   {{#unless generated}}
   if (Object.prototype.hasOwnProperty.call(input, '{{name}}')) {
@@ -241,6 +235,11 @@ async function create(
   {{/unless}}
   {{/each}}
 
+  if (tenantColumn) {
+    const scopeValues = [];
+    tenantPredicate(context, scopeValues);
+    data[tenantColumn] = scopeValues[0];
+  }
 
   {{#if columnMap.created_by}}
   data.created_by =
