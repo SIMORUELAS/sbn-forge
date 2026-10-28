@@ -2,6 +2,7 @@
 const crypto = require('node:crypto');
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const { createEvidenceRecord } = require('./security-evidence-record');
 
 const REQUIRED = Object.freeze([
   'generated-host-jwt-contract',
@@ -39,9 +40,15 @@ async function assessSecurityCertification(directory, artifacts, checks, evidenc
     return { check, status: found?.status || 'missing' };
   });
   const allPassed = required.every(item => item.status === 'passed');
-  const evidenceMatches = Boolean(evidence && evidence.fingerprint === fingerprint &&
-    evidence.postgresqlTenantIsolation === 'passed' &&
-    evidence.jwtCrudIntegration === 'passed');
+  let evidenceRecord = null;
+  try {
+    if (evidence?.tests) {
+      evidenceRecord = createEvidenceRecord(evidence);
+    }
+  } catch {
+    evidenceRecord = null;
+  }
+  const evidenceMatches = Boolean(evidenceRecord && evidenceRecord.fingerprint === fingerprint);
   // Test runs against the generic generator are not evidence for a particular generated artifact.
   // Installation remains disabled until trusted per-artifact verification is implemented.
   return {
@@ -50,6 +57,7 @@ async function assessSecurityCertification(directory, artifacts, checks, evidenc
     fingerprint,
     required,
     evidenceMatches,
+    evidence: evidenceRecord ? { digest: evidenceRecord.digest, trust: evidenceRecord.trust, executedAt: evidenceRecord.executedAt, runner: evidenceRecord.runner, tests: evidenceRecord.tests } : null,
     reason: allPassed && evidenceMatches ? 'TRUSTED_CERTIFICATION_NOT_IMPLEMENTED' : 'SECURITY_EVIDENCE_INCOMPLETE'
   };
 }
