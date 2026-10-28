@@ -43,9 +43,13 @@ describePg('generated tenant isolation against disposable PostgreSQL schema', ()
 
   afterAll(async () => {
     try {
-      if (client && schema) await client.query('DROP SCHEMA IF EXISTS "' + schema + '" CASCADE');
+      if (client && schema) {
+        await client.query('DROP SCHEMA IF EXISTS "' + schema + '" CASCADE');
+      }
     } finally {
-      if (client) await client.end();
+      if (client) {
+        await client.end();
+      }
     }
   });
 
