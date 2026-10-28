@@ -72,6 +72,14 @@ describe('generated tenant SQL executed against recording database adapter', () 
     expect(calls[0].params).toContain(a);
     expect(calls[0].params).not.toContain(b);
   });
+  test('cross-tenant upsert collision returns explicit conflict rather than success with null', async () => {
+    const { repository } = build();
+    repository.configure({
+      query: async () => ({ rows: [], rowCount: 0 })
+    }, { tenantColumn: 'organization_id' });
+    await expect(repository.create({ ...key, organization_id: b }, { organizationId: a }))
+      .rejects.toMatchObject({ code: 'TENANT_CONFLICT', statusCode: 409 });
+  });
   test('missing authenticated organization fails before querying', async () => {
     const { repository, calls } = build();
     await expect(repository.list({})).rejects.toMatchObject({ code: 'TENANT_SCOPE_REQUIRED' });
