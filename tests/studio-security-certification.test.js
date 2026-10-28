@@ -15,11 +15,16 @@ test('certification is bound to artifact bytes and never grants installation', a
     expect(initial.evidenceMatches).toBe(false);
     const evidence = {
       fingerprint: initial.fingerprint,
-      postgresqlTenantIsolation: 'passed',
-      jwtCrudIntegration: 'passed'
+      executedAt: '2026-10-28T12:00:00.000Z',
+      runner: 'local-jest',
+      tests: {
+        postgresqlTenantIsolation: { suite: 'tenant-postgresql', status: 'passed', passed: 3, failed: 0 },
+        jwtCrudIntegration: { suite: 'fastify-jwt', status: 'passed', passed: 1, failed: 0 }
+      }
     };
     const matching = await assessSecurityCertification(root, [artifact], checks, evidence);
     expect(matching.evidenceMatches).toBe(true);
+    expect(matching.evidence.trust).toBe('unverified');
     expect(matching.installable).toBe(false);
     expect(matching.reason).toBe('TRUSTED_CERTIFICATION_NOT_IMPLEMENTED');
     await fs.writeFile(path.join(root, artifact.path), 'module.exports = { changed: true };');
