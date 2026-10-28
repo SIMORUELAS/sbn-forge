@@ -1,6 +1,7 @@
 'use strict';
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const os = require('node:os');
 const { spawn } = require('node:child_process');
 const { assessSecurityCertification } = require('./security-certification');
 const { createEvidenceRecord } = require('./security-evidence-record');
@@ -13,10 +14,10 @@ const SUITES = Object.freeze({
 function runJestSuite(repoRoot, suite, env, timeoutMs) {
   return new Promise((resolve, reject) => {
     const executable = require.resolve('jest/bin/jest', { paths: [repoRoot] });
-    const child = spawn(process.execPath, [executable, suite, '--runInBand', '--no-cache', '--json', '--outputFile=' + path.join(repoRoot, '.forge-certification-' + process.pid + '-' + suite.replace(/[^a-z0-9]/gi, '_') + '.json')], {
+    const child = spawn(process.execPath, [executable, suite, '--runInBand', '--no-cache', '--json', '--outputFile=' + path.join(os.tmpdir(), '.forge-certification-' + process.pid + '-' + suite.replace(/[^a-z0-9]/gi, '_') + '.json')], {
       cwd: repoRoot, env: { ...process.env, ...env }, stdio: ['ignore', 'ignore', 'ignore'], windowsHide: true
     });
-    const output = path.join(repoRoot, '.forge-certification-' + process.pid + '-' + suite.replace(/[^a-z0-9]/gi, '_') + '.json');
+    const output = path.join(os.tmpdir(), '.forge-certification-' + process.pid + '-' + suite.replace(/[^a-z0-9]/gi, '_') + '.json');
     const timer = setTimeout(() => child.kill(), timeoutMs);
     child.once('error', reject);
     child.once('close', async code => {
