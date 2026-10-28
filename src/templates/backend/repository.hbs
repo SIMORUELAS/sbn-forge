@@ -301,12 +301,19 @@ async function create(
   const key = Object.fromEntries(
     TABLE_METADATA.primaryKeyColumns.map(column => [column, data[column]])
   );
-  return getById(
+  const existing = await getById(
     TABLE_METADATA.primaryKeyColumns.length === 1
       ? key[TABLE_METADATA.primaryKeyColumns[0]]
       : key,
     context
   );
+  if (!existing && tenantColumn) {
+    const error = new Error('Conflicto de clave o registro fuera de la organización autorizada.');
+    error.statusCode = 409;
+    error.code = 'TENANT_CONFLICT';
+    throw error;
+  }
+  return existing;
   {{else}}
   return result.rows[0];
   {{/unless}}
