@@ -11,14 +11,18 @@ async function prepareArtifactSecurityContracts(run) {
   const root = await fs.realpath(run.directory);
   const select = suffix => {
     const found = run.artifacts.filter(item => typeof item.path === 'string' && item.path.endsWith(suffix));
-    if (found.length !== 1) throw new Error('GENERATED_ARTIFACT_REQUIRED: ' + suffix);
+    if (found.length !== 1) {
+      throw new Error('GENERATED_ARTIFACT_REQUIRED: ' + suffix);
+    }
     return found[0].path;
   };
   const repository = select('.repository.js');
   const routes = select('.routes.js');
   for (const relative of [repository, routes]) {
     const full = path.resolve(root, relative);
-    if (!full.startsWith(root + path.sep)) throw new Error('INVALID_GENERATED_ARTIFACT_PATH');
+    if (!full.startsWith(root + path.sep)) {
+      throw new Error('INVALID_GENERATED_ARTIFACT_PATH');
+    }
     const stat = await fs.lstat(full);
     if (!stat.isFile() || stat.isSymbolicLink() ||
         !(await fs.realpath(full)).startsWith(root + path.sep)) {
@@ -26,10 +30,14 @@ async function prepareArtifactSecurityContracts(run) {
     }
   }
   const folder = path.dirname(repository);
-  if (path.dirname(routes) !== folder) throw new Error('ARTIFACT_MODULE_MISMATCH');
+  if (path.dirname(routes) !== folder) {
+    throw new Error('ARTIFACT_MODULE_MISMATCH');
+  }
   const relative = path.join(folder, 'security-contracts.test.js');
   const target = path.resolve(root, relative);
-  if (!target.startsWith(root + path.sep)) throw new Error('INVALID_GENERATED_TEST_PATH');
+  if (!target.startsWith(root + path.sep)) {
+    throw new Error('INVALID_GENERATED_TEST_PATH');
+  }
   const source = `'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
