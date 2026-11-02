@@ -109,3 +109,32 @@ test('executor rejects incomplete source checks before starting either artifact 
     await fs.rm(root, { recursive: true, force: true });
   }
 });
+
+test('artifact Jest runner fails closed on failed, skipped, todo and empty suites', async () => {
+  const { runJestSuite } = require('../studio/security-evidence-executor');
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-jest-negative-'));
+  const cases = [
+    ['failed', "test('fails', () => { throw new Error('failure'); });"],
+    ['skipped', "test.skip('skipped', () => {});"],
+    ['todo', "test.todo('todo');"],
+    ['empty', "module.exports = {};"]
+  ];
+  try {
+    for (const [name, source] of cases) {
+      const suite = path.join(root, name + '.test.js');
+      await fs.writeFile(suite, source);
+      await expect(runJestSuite(process.cwd(), suite, {}, 30000))
+        .rejects.toThrow('CERTIFICATION_SUITE_NOT_PASSED');
+    }
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+}, 150000);
+
+test('artifact Jest runner rejects invalid timeouts without executing a suite', async () => {
+  const { runJestSuite } = require('../studio/security-evidence-executor');
+  for (const timeout of [0, -1, 999, 300001, NaN, 1000.5]) {
+    await expect(runJestSuite(process.cwd(), 'not-executed.test.js', {}, timeout))
+      .rejects.toThrow('INVALID_CERTIFICATION_TIMEOUT');
+  }
+});
