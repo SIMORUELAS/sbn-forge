@@ -39,7 +39,7 @@ test('generated repository enforces tenant predicates for CRUD and overrides ten
     await repository.remove('record-a', context);
     expect(calls).toHaveLength(5);
     for (const call of [calls[0], calls[1], calls[3], calls[4]]) {
-      expect(call.sql).toContain('organization_id');
+      expect(call.sql).toMatch(new RegExp('organization_id\\s*=\\s*\\\\$\\d+'));
       expect(call.values).toContain('org-a');
       expect(call.values).not.toContain('org-b');
     }
