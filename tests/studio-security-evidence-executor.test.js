@@ -165,3 +165,29 @@ test('artifact Jest runner rejects suites that exceed their execution deadline',
     await fs.rm(root, { recursive: true, force: true });
   }
 }, 15000);
+
+test('artifact suite resolution rejects symlinks and nested path escapes', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-suite-boundary-'));
+  const external = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-suite-outside-'));
+  try {
+    await fs.writeFile(path.join(root, 'valid.test.js'), "test('valid', () => {});");
+    await fs.writeFile(path.join(external, 'outside.test.js'), "test('outside', () => {});");
+    await expect(resolveArtifactSuites(root, {
+      postgresqlTenantIsolation: '../' + path.basename(external) + '/outside.test.js',
+      jwtCrudIntegration: 'valid.test.js'
+    })).rejects.toThrow('INVALID_ARTIFACT_SUITE_PATH');
+    const linked = path.join(root, 'linked.test.js');
+    try {
+      await fs.symlink(path.join(external, 'outside.test.js'), linked);
+      await expect(resolveArtifactSuites(root, {
+        postgresqlTenantIsolation: 'linked.test.js',
+        jwtCrudIntegration: 'valid.test.js'
+      })).rejects.toThrow('INVALID_ARTIFACT_SUITE');
+    } catch (error) {
+      if (!['EPERM', 'EACCES', 'ENOTSUP'].includes(error.code)) throw error;
+    }
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+    await fs.rm(external, { recursive: true, force: true });
+  }
+});
