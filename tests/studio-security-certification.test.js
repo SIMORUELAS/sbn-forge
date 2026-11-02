@@ -39,3 +39,23 @@ test('certification is bound to artifact bytes and never grants installation', a
     await fs.rm(root, { recursive: true, force: true });
   }
 });
+
+test('invalid artifact lists and duplicate certification checks fail closed', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-cert-invalid-'));
+  try {
+    await fs.writeFile(path.join(root, 'module.js'), 'module.exports = {};');
+    for (const artifacts of [undefined, null, [], [null], [{}], [{ path: '' }]]) {
+      const result = await assessSecurityCertification(root, artifacts, []);
+      expect(result.installable).toBe(false);
+      expect(result.reason).toBe('INVALID_ARTIFACT_SET');
+    }
+    const checks = REQUIRED.map(check => ({ check, status: 'passed' }));
+    const duplicated = await assessSecurityCertification(root, [{ path: 'module.js' }], [
+      ...checks, { check: REQUIRED[0], status: 'passed' }
+    ]);
+    expect(duplicated.installable).toBe(false);
+    expect(duplicated.required.every(item => item.status === 'missing')).toBe(true);
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
