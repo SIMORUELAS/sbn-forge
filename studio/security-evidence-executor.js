@@ -97,6 +97,9 @@ async function executeSecurityEvidence({ repoRoot, artifactRoot, artifacts, chec
   if (!/(^test$|_test$|^test_)/i.test(databaseName)) {
     throw new Error('DEDICATED_TEST_DATABASE_REQUIRED');
   }
+  if (!repoRoot || !artifactRoot) {
+    throw new Error('INVALID_CERTIFICATION_ROOT');
+  }
   const artifactSuites = await resolveArtifactSuites(artifactRoot, suitePaths);
   if (!Array.isArray(artifacts) || artifacts.some(item => !item || typeof item.path !== 'string')) {
     throw new Error('INVALID_ARTIFACT_SET');
