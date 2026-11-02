@@ -72,6 +72,7 @@ async function runJestSuite(repoRoot, suite, env, timeoutMs) {
     const report = JSON.parse(await fs.readFile(output, 'utf8'));
     if (report.success !== true || report.numFailedTests !== 0 ||
       report.numPendingTests !== 0 || report.numTodoTests !== 0 || report.numPassedTests < 1 ||
+      report.numTotalTests !== report.numPassedTests ||
       report.numTotalTestSuites !== 1 || report.numPassedTestSuites !== 1 ||
       report.numPendingTestSuites !== 0 || report.numFailedTestSuites !== 0 ||
       !Array.isArray(report.testResults) || report.testResults.length !== 1 ||
