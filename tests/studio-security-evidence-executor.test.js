@@ -226,3 +226,15 @@ test('artifact Jest runner rejects partially executed suites with passing and sk
     await fs.rm(root, { recursive: true, force: true });
   }
 }, 40000);
+
+test('Jest certification reports the exact suite path that was executed', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-suite-report-'));
+  try {
+    const suite = path.join(root, 'identity.test.js');
+    await fs.writeFile(suite, "test('identity', () => expect(true).toBe(true));");
+    const result = await runJestSuite(process.cwd(), suite, {}, 30000);
+    expect(result).toMatchObject({ suite: 'identity.test.js', status: 'passed', passed: 1 });
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+}, 40000);
