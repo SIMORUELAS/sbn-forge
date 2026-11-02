@@ -31,3 +31,25 @@ test('evidence is unverified and detects modification', async () => {
     await fs.rm(root, { recursive: true, force: true });
   }
 });
+
+test('evidence cannot reuse a single suite to satisfy PostgreSQL and JWT checks', async () => {
+  const duplicated = {
+    ...evidence,
+    tests: {
+      ...evidence.tests,
+      jwtCrudIntegration: { suite: evidence.tests.postgresqlTenantIsolation.suite, status: 'passed', passed: 2, failed: 0 }
+    }
+  };
+  expect(() => createEvidenceRecord(duplicated))
+    .toThrow('DUPLICATE_CERTIFICATION_EVIDENCE_SUITE');
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-evidence-duplicate-'));
+  try {
+    await fs.writeFile(path.join(root, 'duplicate.json'), JSON.stringify({
+      ...duplicated, digest: 'a'.repeat(64), trust: 'verified'
+    }));
+    await expect(readEvidenceRecord(root, 'duplicate.json'))
+      .rejects.toThrow('DUPLICATE_CERTIFICATION_EVIDENCE_SUITE');
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
