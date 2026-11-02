@@ -142,4 +142,4 @@ async function executeSecurityEvidence({ repoRoot, artifactRoot, artifacts, chec
   });
 }
 
-module.exports = { executeSecurityEvidence, resolveArtifactSuites, SUITES };
+module.exports = { executeSecurityEvidence, resolveArtifactSuites, runJestSuite, SUITES };
