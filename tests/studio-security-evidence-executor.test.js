@@ -138,3 +138,30 @@ test('artifact Jest runner rejects invalid timeouts without executing a suite', 
       .rejects.toThrow('INVALID_CERTIFICATION_TIMEOUT');
   }
 });
+
+test('artifact Jest runner accepts one fully executed passing suite', async () => {
+  const { runJestSuite } = require('../studio/security-evidence-executor');
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-jest-positive-'));
+  try {
+    const suite = path.join(root, 'positive.test.js');
+    await fs.writeFile(suite, "test('first', () => expect(2 + 2).toBe(4)); test('second', () => expect(true).toBe(true));");
+    await expect(runJestSuite(process.cwd(), suite, {}, 30000)).resolves.toEqual({
+      suite: 'positive.test.js', status: 'passed', passed: 2, failed: 0
+    });
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+}, 40000);
+
+test('artifact Jest runner rejects suites that exceed their execution deadline', async () => {
+  const { runJestSuite } = require('../studio/security-evidence-executor');
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-jest-timeout-'));
+  try {
+    const suite = path.join(root, 'timeout.test.js');
+    await fs.writeFile(suite, "test('never completes', () => new Promise(() => {}), 30000);");
+    await expect(runJestSuite(process.cwd(), suite, {}, 1000))
+      .rejects.toThrow('CERTIFICATION_SUITE_NOT_PASSED');
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+}, 15000);
