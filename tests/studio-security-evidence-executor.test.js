@@ -81,7 +81,7 @@ test('executor refuses to run certification when required source security checks
       suitePaths: { postgresqlTenantIsolation: 'tenant.test.js', jwtCrudIntegration: 'jwt.test.js' },
       artifacts: [{ path: 'tenant.test.js' }, { path: 'jwt.test.js' }],
       checks: []
-    })).rejects.toThrow('ARTIFACT_FINGERPRINT_REQUIRED');
+    })).rejects.toThrow('REQUIRED_SECURITY_CHECKS_NOT_PASSED');
   } finally {
     await fs.rm(root, { recursive: true, force: true });
   }
