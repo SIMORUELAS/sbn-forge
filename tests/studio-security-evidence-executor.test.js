@@ -212,3 +212,17 @@ test('artifact suite resolver rejects duplicate canonical paths despite differen
     await fs.rm(root, { recursive: true, force: true });
   }
 });
+
+test('artifact Jest runner rejects partially executed suites with passing and skipped assertions', async () => {
+  const { runJestSuite } = require('../studio/security-evidence-executor');
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-jest-partial-'));
+  try {
+    const suite = path.join(root, 'partial.test.js');
+    await fs.writeFile(suite,
+      "test('passes', () => expect(true).toBe(true)); test.skip('unverified tenant case', () => {});");
+    await expect(runJestSuite(process.cwd(), suite, {}, 30000))
+      .rejects.toThrow('CERTIFICATION_SUITE_NOT_PASSED');
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+}, 40000);
