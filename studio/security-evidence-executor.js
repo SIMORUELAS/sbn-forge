@@ -51,7 +51,7 @@ async function runJestSuite(repoRoot, suite, env, timeoutMs) {
     const executable = require.resolve('jest/bin/jest', { paths: [repoRoot] });
     const code = await new Promise((resolve, reject) => {
       const child = spawn(process.execPath, [
-        executable, '--config', JSON.stringify({ rootDir: path.dirname(suite), testMatch: ['**/*.test.js'] }),
+        executable, '--config', JSON.stringify({ rootDir: path.dirname(suite), testMatch: ['**/*.test.js'], modulePaths: [path.join(repoRoot, 'node_modules')] }),
         '--runTestsByPath', suite, '--runInBand', '--no-cache',
         '--json', '--outputFile=' + output
       ], {
@@ -70,7 +70,7 @@ async function runJestSuite(repoRoot, suite, env, timeoutMs) {
     }
     const report = JSON.parse(await fs.readFile(output, 'utf8'));
     if (report.success !== true || report.numFailedTests !== 0 ||
-      report.numPendingTests !== 0 || report.numPassedTests < 1 ||
+      report.numPendingTests !== 0 || report.numTodoTests !== 0 || report.numPassedTests < 1 ||
       report.numTotalTestSuites !== 1 || report.numPassedTestSuites !== 1 ||
       report.numPendingTestSuites !== 0 || report.numFailedTestSuites !== 0 ||
       !Array.isArray(report.testResults) || report.testResults.length !== 1 ||
