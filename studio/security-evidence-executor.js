@@ -68,6 +68,12 @@ async function executeSecurityEvidence({ repoRoot, artifactRoot, artifacts, chec
     throw new Error('DEDICATED_TEST_DATABASE_REQUIRED');
   }
   const artifactSuites = await resolveArtifactSuites(artifactRoot, suitePaths);
+  const declared = new Set((artifacts || []).map(item => item.path));
+  for (const name of SUITES) {
+    if (!declared.has(suitePaths[name])) {
+      throw new Error('ARTIFACT_SUITE_NOT_FINGERPRINTED: ' + name);
+    }
+  }
   const before = await assessSecurityCertification(artifactRoot, artifacts, checks);
   if (!before.fingerprint) {
     throw new Error('ARTIFACT_FINGERPRINT_REQUIRED');
