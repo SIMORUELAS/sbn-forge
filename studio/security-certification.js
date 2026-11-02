@@ -16,7 +16,10 @@ const REQUIRED = Object.freeze([
 
 async function assessSecurityCertification(directory, artifacts, checks, evidence = null) {
   const root = path.resolve(directory);
-  const paths = artifacts.filter(item => typeof item.path === 'string').map(item => item.path).sort();
+  if (!Array.isArray(artifacts) || artifacts.some(item => !item || typeof item.path !== 'string' || !item.path.trim())) {
+    return { status: 'blocked', installable: false, reason: 'INVALID_ARTIFACT_SET' };
+  }
+  const paths = artifacts.map(item => item.path).sort();
   if (!paths.length || new Set(paths).size !== paths.length) {
     return { status: 'blocked', installable: false, reason: 'INVALID_ARTIFACT_SET' };
   }
@@ -42,8 +45,9 @@ async function assessSecurityCertification(directory, artifacts, checks, evidenc
     }
   }
   const fingerprint = crypto.createHash('sha256').update(JSON.stringify(hashes)).digest('hex');
+  const validChecks = Array.isArray(checks) && checks.every(item => item && typeof item.check === 'string' && typeof item.status === 'string') && new Set(checks.map(item => item.check)).size === checks.length;
   const required = REQUIRED.map(check => {
-    const found = checks.find(item => item.check === check);
+    const found = validChecks ? checks.find(item => item.check === check) : null;
     return { check, status: found?.status || 'missing' };
   });
   const allPassed = required.every(item => item.status === 'passed');
