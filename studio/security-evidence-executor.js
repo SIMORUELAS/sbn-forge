@@ -51,7 +51,8 @@ async function runJestSuite(repoRoot, suite, env, timeoutMs) {
     const executable = require.resolve('jest/bin/jest', { paths: [repoRoot] });
     const code = await new Promise((resolve, reject) => {
       const child = spawn(process.execPath, [
-        executable, '--runTestsByPath', suite, '--runInBand', '--no-cache',
+        executable, '--config', JSON.stringify({ rootDir: path.dirname(suite), testMatch: ['**/*.test.js'] }),
+        '--runTestsByPath', suite, '--runInBand', '--no-cache',
         '--json', '--outputFile=' + output
       ], {
         cwd: repoRoot, env: { ...process.env, ...env },
@@ -76,7 +77,7 @@ async function runJestSuite(repoRoot, suite, env, timeoutMs) {
       report.testResults[0].status !== 'passed') {
       throw new Error('CERTIFICATION_SUITE_NOT_PASSED: ' + suite);
     }
-    return { suite: path.relative(repoRoot, suite), status: 'passed', passed: report.numPassedTests, failed: 0 };
+    return { suite: path.basename(suite), status: 'passed', passed: report.numPassedTests, failed: 0 };
   } finally {
     await fs.rm(temporary, { recursive: true, force: true });
   }
