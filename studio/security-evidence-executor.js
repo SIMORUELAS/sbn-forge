@@ -81,7 +81,9 @@ async function executeSecurityEvidence({ repoRoot, artifactRoot, artifacts, chec
   let databaseName;
   try {
     const url = new URL(databaseUrl);
-    if (!['postgres:', 'postgresql:'].includes(url.protocol)) throw new Error('invalid protocol');
+    if (!['postgres:', 'postgresql:'].includes(url.protocol)) {
+      throw new Error('invalid protocol');
+    }
     databaseName = decodeURIComponent(url.pathname.slice(1));
   } catch {
     throw new Error('DEDICATED_TEST_DATABASE_REQUIRED');
