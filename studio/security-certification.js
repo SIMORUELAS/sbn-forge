@@ -16,8 +16,10 @@ const REQUIRED = Object.freeze([
 
 async function assessSecurityCertification(directory, artifacts, checks, evidence = null) {
   const root = path.resolve(directory);
-  const paths = artifacts.filter(item => typeof item.path === 'string' &&
-    /\.(routes|repository|schema)\.js$/.test(item.path)).map(item => item.path).sort();
+  const paths = artifacts.filter(item => typeof item.path === 'string').map(item => item.path).sort();
+  if (!paths.length || new Set(paths).size !== paths.length) {
+    return { status: 'blocked', installable: false, reason: 'INVALID_ARTIFACT_SET' };
+  }
   const hashes = {};
   for (const name of paths) {
     const full = path.resolve(root, name);
@@ -26,8 +28,13 @@ async function assessSecurityCertification(directory, artifacts, checks, evidenc
     }
     try {
       const stat = await fs.lstat(full);
-      if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 128 * 1024) {
+      if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 1024 * 1024) {
         return { status: 'blocked', installable: false, reason: 'INVALID_ARTIFACT' };
+      }
+      const canonicalRoot = await fs.realpath(root);
+      const canonicalFile = await fs.realpath(full);
+      if (!canonicalFile.startsWith(canonicalRoot + path.sep)) {
+        return { status: 'blocked', installable: false, reason: 'INVALID_ARTIFACT_PATH' };
       }
       hashes[name] = crypto.createHash('sha256').update(await fs.readFile(full)).digest('hex');
     } catch {
