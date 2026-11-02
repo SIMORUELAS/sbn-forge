@@ -23,6 +23,9 @@ function validateRecord(record) {
       throw new Error('INCOMPLETE_CERTIFICATION_EVIDENCE');
     }
   }
+  if (new Set(TESTS.map(name => record.tests[name].suite)).size !== TESTS.length) {
+    throw new Error('DUPLICATE_CERTIFICATION_EVIDENCE_SUITE');
+  }
   return {
     version: 1,
     fingerprint: record.fingerprint,
