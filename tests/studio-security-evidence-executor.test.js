@@ -86,3 +86,26 @@ test('executor refuses to run certification when required source security checks
     await fs.rm(root, { recursive: true, force: true });
   }
 });
+
+test('executor rejects incomplete source checks before starting either artifact suite', async () => {
+  const { REQUIRED } = require('../studio/security-certification');
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-incomplete-checks-'));
+  try {
+    await fs.writeFile(path.join(root, 'tenant.test.js'), "test('tenant', () => {});");
+    await fs.writeFile(path.join(root, 'jwt.test.js'), "test('jwt', () => {});");
+    const base = {
+      repoRoot: process.cwd(), artifactRoot: root,
+      databaseUrl: 'postgresql://localhost/forge_test',
+      suitePaths: { postgresqlTenantIsolation: 'tenant.test.js', jwtCrudIntegration: 'jwt.test.js' },
+      artifacts: [{ path: 'tenant.test.js' }, { path: 'jwt.test.js' }]
+    };
+    const checks = REQUIRED.map(check => ({ check, status: 'passed' }));
+    for (const status of ['missing', 'failed', 'pending']) {
+      await expect(executeSecurityEvidence({
+        ...base, checks: checks.map((item, index) => index === 0 ? { ...item, status } : item)
+      })).rejects.toThrow('REQUIRED_SECURITY_CHECKS_NOT_PASSED');
+    }
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
