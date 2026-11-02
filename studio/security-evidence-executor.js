@@ -75,7 +75,10 @@ async function runJestSuite(repoRoot, suite, env, timeoutMs) {
       report.numTotalTestSuites !== 1 || report.numPassedTestSuites !== 1 ||
       report.numPendingTestSuites !== 0 || report.numFailedTestSuites !== 0 ||
       !Array.isArray(report.testResults) || report.testResults.length !== 1 ||
-      report.testResults[0].status !== 'passed') {
+      report.testResults[0].status !== 'passed' ||
+      !Array.isArray(report.testResults[0].assertionResults) ||
+      report.testResults[0].assertionResults.length !== report.numPassedTests ||
+      report.testResults[0].assertionResults.some(item => item.status !== 'passed')) {
       throw new Error('CERTIFICATION_SUITE_NOT_PASSED: ' + suite);
     }
     return { suite: path.basename(suite), status: 'passed', passed: report.numPassedTests, failed: 0 };
