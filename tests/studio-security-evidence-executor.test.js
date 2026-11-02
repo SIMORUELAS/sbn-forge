@@ -29,3 +29,11 @@ test('artifact certification rejects missing, external and generator-only test s
     await fs.rm(root, { recursive: true, force: true });
   }
 });
+
+test('malformed and non-PostgreSQL URLs cannot initiate certification', async () => {
+  const base = { repoRoot: process.cwd(), artifactRoot: process.cwd(), artifacts: [], checks: [] };
+  for (const databaseUrl of ['not a URL', 'https://localhost/forge_test', 'postgresql://localhost/production']) {
+    await expect(executeSecurityEvidence({ ...base, databaseUrl }))
+      .rejects.toThrow('DEDICATED_TEST_DATABASE_REQUIRED');
+  }
+});
