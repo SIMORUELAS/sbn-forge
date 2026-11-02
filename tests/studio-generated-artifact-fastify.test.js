@@ -26,7 +26,7 @@ test('real generated Fastify routes reject missing JWT and unauthorized CRUD bef
     const run = await generateIsolated(definition, { tempRoot: parent });
     const routeFile = path.join(run.directory, run.artifacts.find(item => item.path.endsWith('.routes.js')).path);
     const routeSource = await fs.readFile(routeFile, 'utf8');
-    const routeBase = routeSource.match(/const base\\s*=\\s*'([^']+)'/)?.[1];
+    const routeBase = routeSource.split('const base')[1]?.split("'")[1];
     expect(routeBase).toBeTruthy();
     const routes = require(routeFile);
     loaded.push(routeFile);
