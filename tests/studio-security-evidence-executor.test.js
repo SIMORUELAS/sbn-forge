@@ -37,3 +37,16 @@ test('malformed and non-PostgreSQL URLs cannot initiate certification', async ()
       .rejects.toThrow('DEDICATED_TEST_DATABASE_REQUIRED');
   }
 });
+
+test('artifact certification rejects reuse of one suite for two independent checks', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-duplicate-suites-'));
+  try {
+    await fs.writeFile(path.join(root, 'same.test.js'), "test('not sufficient', () => {});");
+    await expect(resolveArtifactSuites(root, {
+      postgresqlTenantIsolation: 'same.test.js',
+      jwtCrudIntegration: 'same.test.js'
+    })).rejects.toThrow('DUPLICATE_ARTIFACT_SUITE');
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
