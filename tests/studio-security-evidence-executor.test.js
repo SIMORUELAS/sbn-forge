@@ -191,3 +191,24 @@ test('artifact suite resolution rejects symlinks and nested path escapes', async
     await fs.rm(external, { recursive: true, force: true });
   }
 });
+
+test('artifact suite resolver rejects duplicate canonical paths despite different relative spellings', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-canonical-suites-'));
+  try {
+    await fs.mkdir(path.join(root, 'nested'));
+    await fs.writeFile(path.join(root, 'tenant.test.js'), "test('tenant', () => {});");
+    await expect(resolveArtifactSuites(root, {
+      postgresqlTenantIsolation: 'tenant.test.js',
+      jwtCrudIntegration: 'nested/../tenant.test.js'
+    })).rejects.toThrow('DUPLICATE_ARTIFACT_SUITE');
+    await fs.writeFile(path.join(root, 'jwt.test.js'), "test('jwt', () => {});");
+    const resolved = await resolveArtifactSuites(root, {
+      postgresqlTenantIsolation: 'tenant.test.js',
+      jwtCrudIntegration: 'jwt.test.js'
+    });
+    expect(resolved.postgresqlTenantIsolation).toBe(await fs.realpath(path.join(root, 'tenant.test.js')));
+    expect(resolved.jwtCrudIntegration).toBe(await fs.realpath(path.join(root, 'jwt.test.js')));
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
