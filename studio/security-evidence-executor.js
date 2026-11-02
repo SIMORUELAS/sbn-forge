@@ -31,11 +31,12 @@ async function resolveArtifactSuites(artifactRoot, suitePaths) {
     } catch {
       throw new Error('INVALID_ARTIFACT_SUITE');
     }
-    if (seen.has(full)) {
+    const canonical = await fs.realpath(full);
+    if (seen.has(canonical)) {
       throw new Error('DUPLICATE_ARTIFACT_SUITE');
     }
-    seen.add(full);
-    resolved[name] = full;
+    seen.add(canonical);
+    resolved[name] = canonical;
   }
   return resolved;
 }
