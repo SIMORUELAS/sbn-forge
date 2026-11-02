@@ -114,7 +114,7 @@ async function executeSecurityEvidence({ repoRoot, artifactRoot, artifacts, chec
     }
   }
   const before = await assessSecurityCertification(artifactRoot, artifacts, checks);
-  if (!before.fingerprint) {
+  if (!before.fingerprint || before.required?.some(item => item.status !== 'passed')) {
     throw new Error('ARTIFACT_FINGERPRINT_REQUIRED');
   }
   const tests = {};
