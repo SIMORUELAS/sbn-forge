@@ -69,3 +69,20 @@ test('executor rejects missing roots and duplicated declarations before executin
     await fs.rm(root, { recursive: true, force: true });
   }
 });
+
+test('executor refuses to run certification when required source security checks are missing', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-check-gate-'));
+  try {
+    await fs.writeFile(path.join(root, 'tenant.test.js'), "test('tenant', () => {});");
+    await fs.writeFile(path.join(root, 'jwt.test.js'), "test('jwt', () => {});");
+    await expect(executeSecurityEvidence({
+      repoRoot: process.cwd(), artifactRoot: root,
+      databaseUrl: 'postgresql://localhost/forge_test',
+      suitePaths: { postgresqlTenantIsolation: 'tenant.test.js', jwtCrudIntegration: 'jwt.test.js' },
+      artifacts: [{ path: 'tenant.test.js' }, { path: 'jwt.test.js' }],
+      checks: []
+    })).rejects.toThrow('ARTIFACT_FINGERPRINT_REQUIRED');
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
