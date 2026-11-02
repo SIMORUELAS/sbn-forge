@@ -55,7 +55,7 @@ async function runJestSuite(repoRoot, suite, env, timeoutMs) {
         '--runTestsByPath', suite, '--runInBand', '--no-cache',
         '--json', '--outputFile=' + output
       ], {
-        cwd: repoRoot, env: { ...process.env, ...env },
+        cwd: repoRoot, env: { ...env, PATH: process.env.PATH, SystemRoot: process.env.SystemRoot, TEMP: process.env.TEMP, TMP: process.env.TMP, HOME: process.env.HOME, USERPROFILE: process.env.USERPROFILE, NODE_ENV: 'test' },
         stdio: ['ignore', 'ignore', 'ignore'], windowsHide: true
       });
       const timer = setTimeout(() => {
