@@ -53,3 +53,34 @@ test('evidence cannot reuse a single suite to satisfy PostgreSQL and JWT checks'
     await fs.rm(root, { recursive: true, force: true });
   }
 });
+
+test('evidence rejects partial, pending and invalid test counts', () => {
+  const variants = [
+    { status: 'pending', passed: 1, failed: 0, suite: 'jwt-http' },
+    { status: 'passed', passed: 0, failed: 0, suite: 'jwt-http' },
+    { status: 'passed', passed: 1, failed: 1, suite: 'jwt-http' },
+    { status: 'passed', passed: 1.5, failed: 0, suite: 'jwt-http' },
+    { status: 'passed', passed: 1, failed: 0, suite: '' }
+  ];
+  for (const invalid of variants) {
+    expect(() => createEvidenceRecord({
+      ...evidence, tests: { ...evidence.tests, jwtCrudIntegration: invalid }
+    })).toThrow('INCOMPLETE_CERTIFICATION_EVIDENCE');
+  }
+  expect(() => createEvidenceRecord({
+    ...evidence, tests: { postgresqlTenantIsolation: evidence.tests.postgresqlTenantIsolation }
+  })).toThrow('INCOMPLETE_CERTIFICATION_EVIDENCE');
+});
+
+test('read evidence always remains unverified even if a stored record claims trust', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-evidence-trust-'));
+  try {
+    const record = createEvidenceRecord(evidence);
+    await fs.writeFile(path.join(root, 'evidence.json'), JSON.stringify({ ...record, trust: 'verified' }));
+    const loaded = await readEvidenceRecord(root, 'evidence.json');
+    expect(loaded.trust).toBe('unverified');
+    expect(loaded.digest).toBe(record.digest);
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
