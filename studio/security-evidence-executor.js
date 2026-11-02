@@ -105,6 +105,9 @@ async function executeSecurityEvidence({ repoRoot, artifactRoot, artifacts, chec
     throw new Error('INVALID_ARTIFACT_SET');
   }
   const declared = new Set(artifacts.map(item => item.path));
+  if (declared.size !== artifacts.length) {
+    throw new Error('DUPLICATE_ARTIFACT_DECLARATION');
+  }
   for (const name of SUITES) {
     if (!declared.has(suitePaths[name])) {
       throw new Error('ARTIFACT_SUITE_NOT_FINGERPRINTED: ' + name);
