@@ -11,6 +11,7 @@ const SUITES = Object.freeze(['postgresqlTenantIsolation', 'jwtCrudIntegration']
 async function resolveArtifactSuites(artifactRoot, suitePaths) {
   const root = await fs.realpath(artifactRoot);
   const resolved = {};
+  const seen = new Set();
   for (const name of SUITES) {
     const relative = suitePaths?.[name];
     if (typeof relative !== 'string' || !relative.endsWith('.test.js') || path.isAbsolute(relative)) {
@@ -30,6 +31,10 @@ async function resolveArtifactSuites(artifactRoot, suitePaths) {
     } catch {
       throw new Error('INVALID_ARTIFACT_SUITE');
     }
+    if (seen.has(full)) {
+      throw new Error('DUPLICATE_ARTIFACT_SUITE');
+    }
+    seen.add(full);
     resolved[name] = full;
   }
   return resolved;
@@ -92,7 +97,10 @@ async function executeSecurityEvidence({ repoRoot, artifactRoot, artifacts, chec
     throw new Error('DEDICATED_TEST_DATABASE_REQUIRED');
   }
   const artifactSuites = await resolveArtifactSuites(artifactRoot, suitePaths);
-  const declared = new Set((artifacts || []).map(item => item.path));
+  if (!Array.isArray(artifacts) || artifacts.some(item => !item || typeof item.path !== 'string')) {
+    throw new Error('INVALID_ARTIFACT_SET');
+  }
+  const declared = new Set(artifacts.map(item => item.path));
   for (const name of SUITES) {
     if (!declared.has(suitePaths[name])) {
       throw new Error('ARTIFACT_SUITE_NOT_FINGERPRINTED: ' + name);
