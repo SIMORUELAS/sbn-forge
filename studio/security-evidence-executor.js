@@ -77,6 +77,7 @@ async function runJestSuite(repoRoot, suite, env, timeoutMs) {
       report.numPendingTestSuites !== 0 || report.numFailedTestSuites !== 0 ||
       !Array.isArray(report.testResults) || report.testResults.length !== 1 ||
       report.testResults[0].status !== 'passed' ||
+      report.testResults[0].name !== suite ||
       !Array.isArray(report.testResults[0].assertionResults) ||
       report.testResults[0].assertionResults.length !== report.numPassedTests ||
       report.testResults[0].assertionResults.some(item => item.status !== 'passed')) {
