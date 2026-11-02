@@ -6,10 +6,34 @@ const { spawn } = require('node:child_process');
 const { assessSecurityCertification } = require('./security-certification');
 const { createEvidenceRecord } = require('./security-evidence-record');
 
-const SUITES = Object.freeze({
-  postgresqlTenantIsolation: 'tests/studio-generated-tenant-postgresql.integration.test.js',
-  jwtCrudIntegration: 'tests/studio-generated-fastify-jwt.integration.test.js'
-});
+const SUITES = Object.freeze(['postgresqlTenantIsolation', 'jwtCrudIntegration']);
+
+async function resolveArtifactSuites(artifactRoot, suitePaths) {
+  const root = await fs.realpath(artifactRoot);
+  const resolved = {};
+  for (const name of SUITES) {
+    const relative = suitePaths?.[name];
+    if (typeof relative !== 'string' || !relative.endsWith('.test.js') || path.isAbsolute(relative)) {
+      throw new Error('ARTIFACT_SPECIFIC_SUITE_REQUIRED: ' + name);
+    }
+    const full = path.resolve(root, relative);
+    if (!full.startsWith(root + path.sep)) {
+      throw new Error('INVALID_ARTIFACT_SUITE_PATH');
+    }
+    let stat;
+    try {
+      stat = await fs.lstat(full);
+      if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 128 * 1024 ||
+        !(await fs.realpath(full)).startsWith(root + path.sep)) {
+        throw new Error('INVALID_ARTIFACT_SUITE');
+      }
+    } catch {
+      throw new Error('INVALID_ARTIFACT_SUITE');
+    }
+    resolved[name] = full;
+  }
+  return resolved;
+}
 
 function runJestSuite(repoRoot, suite, env, timeoutMs) {
   return new Promise((resolve, reject) => {
@@ -39,16 +63,17 @@ function runJestSuite(repoRoot, suite, env, timeoutMs) {
   });
 }
 
-async function executeSecurityEvidence({ repoRoot, artifactRoot, artifacts, checks, databaseUrl, timeoutMs = 60000 }) {
+async function executeSecurityEvidence({ repoRoot, artifactRoot, artifacts, checks, databaseUrl, suitePaths, timeoutMs = 60000 }) {
   if (!databaseUrl || !/(^test$|_test$|^test_)/i.test(new URL(databaseUrl).pathname.slice(1))) {
     throw new Error('DEDICATED_TEST_DATABASE_REQUIRED');
   }
+  const artifactSuites = await resolveArtifactSuites(artifactRoot, suitePaths);
   const before = await assessSecurityCertification(artifactRoot, artifacts, checks);
   if (!before.fingerprint) {
     throw new Error('ARTIFACT_FINGERPRINT_REQUIRED');
   }
   const tests = {};
-  for (const [name, suite] of Object.entries(SUITES)) {
+  for (const [name, suite] of Object.entries(artifactSuites)) {
     tests[name] = await runJestSuite(repoRoot, suite, {
       SBN_FORGE_RUN_TENANT_PG_INTEGRATION: '1',
       SBN_FORGE_TENANT_TEST_DATABASE_URL: databaseUrl
@@ -61,9 +86,9 @@ async function executeSecurityEvidence({ repoRoot, artifactRoot, artifacts, chec
   return createEvidenceRecord({
     fingerprint: after.fingerprint,
     executedAt: new Date().toISOString(),
-    runner: 'sbn-forge-local-jest',
+    runner: 'sbn-forge-artifact-jest-unverified',
     tests
   });
 }
 
-module.exports = { executeSecurityEvidence, SUITES };
+module.exports = { executeSecurityEvidence, resolveArtifactSuites, SUITES };
