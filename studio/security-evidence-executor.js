@@ -128,6 +128,9 @@ async function executeSecurityEvidence({ repoRoot, artifactRoot, artifacts, chec
     }, timeoutMs);
   }
   const after = await assessSecurityCertification(artifactRoot, artifacts, checks);
+  if (after.required.some(item => item.status !== 'passed')) {
+    throw new Error('REQUIRED_SECURITY_CHECKS_NOT_PASSED');
+  }
   if (before.fingerprint !== after.fingerprint) {
     throw new Error('ARTIFACT_CHANGED_DURING_CERTIFICATION');
   }
