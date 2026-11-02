@@ -25,6 +25,9 @@ test('real generated Fastify routes reject missing JWT and unauthorized CRUD bef
   try {
     const run = await generateIsolated(definition, { tempRoot: parent });
     const routeFile = path.join(run.directory, run.artifacts.find(item => item.path.endsWith('.routes.js')).path);
+    const routeSource = await fs.readFile(routeFile, 'utf8');
+    const routeBase = routeSource.match(/const base\\s*=\\s*'([^']+)'/)?.[1];
+    expect(routeBase).toBeTruthy();
     const routes = require(routeFile);
     loaded.push(routeFile);
     app = fastify({ logger: false });
@@ -38,12 +41,14 @@ test('real generated Fastify routes reject missing JWT and unauthorized CRUD bef
       authorizeOperation: async () => false
     });
     await app.ready();
+    const recordId = '11111111-1111-4111-8111-111111111111';
+    const validBody = { name: 'x', organization_id: '22222222-2222-4222-8222-222222222222' };
     const operations = [
-      { method: 'GET', url: '/artifact-auth-test' },
-      { method: 'GET', url: '/artifact-auth-test/123' },
-      { method: 'POST', url: '/artifact-auth-test', payload: { name: 'x' } },
-      { method: 'PATCH', url: '/artifact-auth-test/123', payload: { name: 'x' } },
-      { method: 'DELETE', url: '/artifact-auth-test/123' }
+      { method: 'GET', url: routeBase },
+      { method: 'GET', url: routeBase + '/' + recordId },
+      { method: 'POST', url: routeBase, payload: validBody },
+      { method: 'PATCH', url: routeBase + '/' + recordId, payload: { name: 'x' } },
+      { method: 'DELETE', url: routeBase + '/' + recordId }
     ];
     const token = app.jwt.sign({ id: 'user-a', organization_id: 'org-a' });
     for (const operation of operations) {
