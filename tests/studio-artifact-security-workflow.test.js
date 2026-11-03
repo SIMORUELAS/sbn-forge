@@ -39,3 +39,17 @@ test('rejects non-isolated generation before any preparation', async () => {
   })).rejects.toThrow('ISOLATED_SECURITY_WORKFLOW_REQUIRED');
   expect(prepareArtifactIntegrationSuites).not.toHaveBeenCalled();
 });
+
+test('propagates evidence failure without issuing certification', async () => {
+  const run = { mode: 'isolated-local', published: false, databaseModified: false, directory: '/tmp/module' };
+  prepareArtifactIntegrationSuites.mockResolvedValue({
+    artifacts: [{ path: 'module/jwt-crud.test.js' }],
+    suitePaths: { jwtCrudIntegration: 'module/jwt-crud.test.js' }
+  });
+  executeSecurityEvidence.mockRejectedValue(new Error('CERTIFICATION_SUITE_NOT_PASSED'));
+  await expect(evaluateIsolatedArtifactSecurity({
+    run, definition: {}, repoRoot: '/tmp/repo',
+    databaseUrl: 'postgresql://localhost/forge_test', checks: []
+  })).rejects.toThrow('CERTIFICATION_SUITE_NOT_PASSED');
+  expect(assessSecurityCertification).not.toHaveBeenCalled();
+});
