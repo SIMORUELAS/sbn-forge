@@ -69,6 +69,8 @@ test('prepares dedicated PostgreSQL tenant suite and refuses unsupported models'
     expect(source).toContain('CREATE SCHEMA');
     expect(source).toContain('TENANT_SCOPE_REQUIRED');
     expect(source).toContain('UNEXPECTED_GENERATED_SQL_TARGET');
+    expect(source).toContain('sql.indexOf(target, end) !== -1');
+    expect(source).toContain('sql.slice(0, index)');
     expect(source).toContain('const id = created.id');
     expect(source).toContain('expect(created).toBeTruthy()');
     expect(source).toContain('product_hub.integration_target_sample');
