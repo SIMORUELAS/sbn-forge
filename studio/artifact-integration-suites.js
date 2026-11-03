@@ -79,7 +79,7 @@ async function prepareArtifactJwtIntegrationSuite(run) {
     "  expect(child.status).toBe(0);",
     "  expect(JSON.parse(child.stdout)).toEqual({ operations: 5, queries: 0 });",
     "}, 30000);"
-  ].join('\\n') + '\\n';
+  ].join('\n') + '\n';
   await fs.writeFile(path.resolve(root, relative), source, { flag: 'wx' });
   return {
     kind: 'artifact-jwt-integration-suite',
