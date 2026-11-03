@@ -26,4 +26,55 @@ async function inspectArtifactIntegrationTargets(run) {
   return { root, targets, folder: path.dirname(targets.repository) };
 }
 
-module.exports = { inspectArtifactIntegrationTargets };
+
+async function prepareArtifactJwtIntegrationSuite(run) {
+  const { root, targets, folder } = await inspectArtifactIntegrationTargets(run);
+  const relative = path.join(folder, 'jwt-crud.test.js');
+  const routeName = path.basename(targets.routes);
+  const source = [
+    "'use strict';",
+    "const fastify = require('fastify');",
+    "const jwt = require('@fastify/jwt');",
+    "const fs = require('node:fs');",
+    "const routes = require('./" + routeName + "');",
+    "test('generated routes reject unauthenticated and unauthorized CRUD', async () => {",
+    "  const app = fastify({ logger: false });",
+    "  let queries = 0;",
+    "  try {",
+    "    await app.register(jwt, { secret: 'isolated-forge-artifact-test-secret' });",
+    "    await app.register(routes, {",
+    "      database: { async query() { queries++; return { rows: [], rowCount: 0 }; } },",
+    "      tenantColumn: 'organization_id', requireTenantIsolation: true,",
+    "      requireCrudPermissions: true, authorizeOperation: async () => false",
+    "    });",
+    "    await app.ready();",
+    "    const source = fs.readFileSync(require.resolve('./" + routeName + "'), 'utf8');",
+    "    const base = source.match(/const base\\s*=\\s*'([^']+)'/)?.[1];",
+    "    expect(base).toBeTruthy();",
+    "    const id = '11111111-1111-4111-8111-111111111111';",
+    "    const ops = [",
+    "      { method: 'GET', url: base },",
+    "      { method: 'GET', url: base + '/' + id },",
+    "      { method: 'POST', url: base, payload: { name: 'test' } },",
+    "      { method: 'PATCH', url: base + '/' + id, payload: { name: 'test' } },",
+    "      { method: 'DELETE', url: base + '/' + id }",
+    "    ];",
+    "    const token = app.jwt.sign({ id: 'user-a', organization_id: 'org-a' });",
+    "    for (const op of ops) {",
+    "      expect((await app.inject(op)).statusCode).toBe(401);",
+    "      expect((await app.inject({ ...op, headers: { authorization: 'Bearer ' + token } })).statusCode).toBe(403);",
+    "    }",
+    "    expect(queries).toBe(0);",
+    "  } finally { await app.close(); }",
+    "});"
+  ].join('\n') + '\n';
+  await fs.writeFile(path.resolve(root, relative), source, { flag: 'wx' });
+  return {
+    kind: 'artifact-jwt-integration-suite',
+    installable: false, integrationVerified: false,
+    suitePaths: { jwtCrudIntegration: relative },
+    artifacts: [...run.artifacts, { path: relative, bytes: Buffer.byteLength(source) }]
+  };
+}
+
+module.exports = { inspectArtifactIntegrationTargets, prepareArtifactJwtIntegrationSuite };
