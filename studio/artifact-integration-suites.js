@@ -109,10 +109,12 @@ async function prepareArtifactPostgresqlSuite(run, definition) {
     "  await client.connect();",
     "  const schema = 'forge_cert_' + process.pid + '_' + require('node:crypto').randomBytes(4).toString('hex');",
     "  const quoted = String.fromCharCode(34) + schema + String.fromCharCode(34);",
+    "  let schemaCreated = false;",
     "  try {",
     "    const db = (await client.query('SELECT current_database() AS name')).rows[0].name;",
     "    if (!/(^test$|_test$|^test_)/i.test(db)) throw new Error('DEDICATED_TEST_DATABASE_REQUIRED');",
     "    await client.query('CREATE SCHEMA ' + quoted);",
+    "    schemaCreated = true;",
     "    await client.query('CREATE TABLE ' + quoted + '.records (id uuid PRIMARY KEY, organization_id uuid NOT NULL, name text NOT NULL)');",
     "    const proxy = { query(sql, values) {",
     "      const target = " + JSON.stringify('"' + sourceSchema + '"."' + sourceTable + '"') + ";",
@@ -134,7 +136,7 @@ async function prepareArtifactPostgresqlSuite(run, definition) {
     "    expect((await repository.getById(id, { organizationId: tenantA })).name).toBe('owned by A');",
     "    await expect(repository.list({})).rejects.toMatchObject({ code: 'TENANT_SCOPE_REQUIRED' });",
     "  } finally {",
-    "    try { await client.query('DROP SCHEMA IF EXISTS ' + quoted + ' CASCADE'); } finally { await client.end(); }",
+    "    try { if (schemaCreated) await client.query('DROP SCHEMA ' + quoted + ' CASCADE'); } finally { await client.end(); }",
     "  }",
     "}, 30000);"
   ].join('\n') + '\n';
