@@ -115,7 +115,7 @@ async function prepareArtifactPostgresqlSuite(run, definition) {
     "    if (!/(^test$|_test$|^test_)/i.test(db)) throw new Error('DEDICATED_TEST_DATABASE_REQUIRED');",
     "    await client.query('CREATE SCHEMA ' + quoted);",
     "    schemaCreated = true;",
-    "    await client.query('CREATE TABLE ' + quoted + '.records (id uuid PRIMARY KEY, organization_id uuid NOT NULL, name text NOT NULL)');",
+    "    await client.query('CREATE TABLE ' + quoted + '.records (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), organization_id uuid NOT NULL, name text NOT NULL)');",
     "    const proxy = { query(sql, values) {",
     "      const target = " + JSON.stringify(sourceSchema + '.' + sourceTable) + ";",
     "      if (typeof sql !== 'string') throw new Error('UNEXPECTED_GENERATED_SQL_TARGET');",
