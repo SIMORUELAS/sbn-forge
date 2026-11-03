@@ -67,7 +67,19 @@ async function runJestSuite(repoRoot, suite, env, timeoutMs) {
       child.once('close', exitCode => { clearTimeout(timer); resolve(exitCode); });
     });
     if (timedOut || code !== 0) {
-      throw new Error('CERTIFICATION_SUITE_NOT_PASSED: ' + suite);
+      let details = '';
+      try {
+        const report = JSON.parse(await fs.readFile(output, 'utf8'));
+        details = (report.testResults || []).flatMap(result =>
+          (result.assertionResults || []).filter(item => item.status === 'failed')
+            .flatMap(item => item.failureMessages || [])
+            .concat(result.message ? [result.message] : [])
+        ).join('\n').slice(0, 6000);
+      } catch {
+        details = 'Jest did not produce a readable JSON report';
+      }
+      throw new Error('CERTIFICATION_SUITE_NOT_PASSED: ' + suite +
+        (timedOut ? ' (timeout)' : '') + (details ? '\n' + details : ''));
     }
     const report = JSON.parse(await fs.readFile(output, 'utf8'));
     if (report.success !== true || report.numFailedTests !== 0 ||
