@@ -24,6 +24,7 @@ test('certification is bound to artifact bytes and never grants installation', a
     };
     const matching = await assessSecurityCertification(root, [artifact], checks, evidence);
     expect(matching.evidenceMatches).toBe(true);
+    expect(matching.status).toBe('blocked');
     expect(matching.evidence.trust).toBe('unverified');
     expect(matching.installable).toBe(false);
     expect(matching.reason).toBe('TRUSTED_CERTIFICATION_NOT_IMPLEMENTED');
@@ -79,6 +80,7 @@ test('certification rejects tampered evidence digest even when the artifact fing
     });
     const valid = await assessSecurityCertification(root, artifacts, checks, evidence);
     expect(valid.evidenceMatches).toBe(true);
+    expect(valid.status).toBe('blocked');
     expect(valid.installable).toBe(false);
     const tampered = await assessSecurityCertification(root, artifacts, checks, {
       ...evidence, tests: {
@@ -94,6 +96,34 @@ test('certification rejects tampered evidence digest even when the artifact fing
     });
     expect(forgedDigest.evidenceMatches).toBe(false);
     expect(forgedDigest.status).toBe('blocked');
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test('self-declared passing checks and self-hashed evidence never elevate certification', async () => {
+  const { createEvidenceRecord } = require('../studio/security-evidence-record');
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-self-asserted-'));
+  try {
+    await fs.writeFile(path.join(root, 'module.js'), 'module.exports = {};');
+    const artifacts = [{ path: 'module.js' }];
+    const checks = REQUIRED.map(check => ({ check, status: 'passed' }));
+    const initial = await assessSecurityCertification(root, artifacts, checks);
+    const forged = createEvidenceRecord({
+      fingerprint: initial.fingerprint,
+      executedAt: new Date().toISOString(),
+      runner: 'claimed-trusted-runner',
+      tests: {
+        postgresqlTenantIsolation: { suite: 'tenant.test.js', status: 'passed', passed: 1, failed: 0 },
+        jwtCrudIntegration: { suite: 'jwt.test.js', status: 'passed', passed: 1, failed: 0 }
+      }
+    });
+    const result = await assessSecurityCertification(root, artifacts, checks, forged);
+    expect(result.evidenceMatches).toBe(true);
+    expect(result.evidence.trust).toBe('unverified');
+    expect(result.status).toBe('blocked');
+    expect(result.installable).toBe(false);
+    expect(result.reason).toBe('TRUSTED_CERTIFICATION_NOT_IMPLEMENTED');
   } finally {
     await fs.rm(root, { recursive: true, force: true });
   }
