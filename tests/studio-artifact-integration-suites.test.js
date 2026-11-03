@@ -67,6 +67,7 @@ test('prepares dedicated PostgreSQL tenant suite and refuses unsupported models'
     expect(prepared.suitePaths.postgresqlTenantIsolation).toMatch(/tenant-postgresql\.test\.js$/);
     const source = await fs.readFile(path.join(run.directory, prepared.suitePaths.postgresqlTenantIsolation), 'utf8');
     expect(source).toContain('CREATE SCHEMA');
+    expect(source).toContain('id uuid PRIMARY KEY DEFAULT gen_random_uuid()');
     expect(source).toContain('TENANT_SCOPE_REQUIRED');
     expect(source).toContain('UNEXPECTED_GENERATED_SQL_TARGET');
     expect(source).toContain('sql.indexOf(target, end) !== -1');
