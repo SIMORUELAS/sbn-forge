@@ -49,6 +49,7 @@ test('prepares a fingerprintable JWT CRUD suite beside generated routes', async 
     const source = await fs.readFile(path.join(run.directory, relative), 'utf8');
     expect(source).toContain('authorizeOperation: async () => false');
     expect(source).toContain('expect(queries).toBe(0)');
+    expect(source).toContain("organization_id: '22222222-2222-4222-8222-222222222222'");
     await expect(prepareArtifactJwtIntegrationSuite(run)).rejects.toMatchObject({ code: 'EEXIST' });
   } finally {
     await fs.rm(parent, { recursive: true, force: true });
