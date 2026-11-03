@@ -54,3 +54,16 @@ test('signed evidence cannot be reused for a modified artifact or different trus
     expect(result.installable).toBe(false);
   }
 });
+
+test('accepts PEM private keys but rejects a public KeyObject as a signer', () => {
+  const { privateKey, publicKey } = crypto.generateKeyPairSync('ed25519');
+  const pem = privateKey.export({ type: 'pkcs8', format: 'pem' });
+  const signed = issueCertificationAttestation({ evidence, expectedFingerprint: fingerprint, privateKey: pem });
+  expect(verifyIssuedCertification({
+    evidence, attestation: signed.attestation, trustedPublicKey: publicKey,
+    expectedFingerprint: fingerprint
+  }).verified).toBe(true);
+  expect(() => issueCertificationAttestation({
+    evidence, expectedFingerprint: fingerprint, privateKey: publicKey
+  })).toThrow('INVALID_CERTIFICATION_SIGNING_KEY');
+});
