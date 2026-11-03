@@ -50,3 +50,19 @@ test('rejects forged, tampered and mismatched attestations', () => {
     expect(result.installable).toBe(false);
   }
 });
+
+test('accepts a public KeyObject trust anchor but rejects private KeyObjects and RSA keys', () => {
+  const data = fixture();
+  const publicKey = crypto.createPublicKey(data.trustedPublicKey);
+  expect(verifyCertificationAttestation({
+    ...data, trustedPublicKey: publicKey, expectedFingerprint: fingerprint
+  })).toMatchObject({ verified: true, installable: false });
+  const privateKey = crypto.generateKeyPairSync('ed25519').privateKey;
+  expect(verifyCertificationAttestation({
+    ...data, trustedPublicKey: privateKey, expectedFingerprint: fingerprint
+  })).toMatchObject({ verified: false, installable: false, reason: 'INVALID_TRUST_KEY_TYPE' });
+  const rsaPublicKey = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 }).publicKey;
+  expect(verifyCertificationAttestation({
+    ...data, trustedPublicKey: rsaPublicKey, expectedFingerprint: fingerprint
+  })).toMatchObject({ verified: false, installable: false, reason: 'UNSUPPORTED_TRUST_KEY' });
+});
