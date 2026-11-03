@@ -77,4 +77,66 @@ async function prepareArtifactJwtIntegrationSuite(run) {
   };
 }
 
-module.exports = { inspectArtifactIntegrationTargets, prepareArtifactJwtIntegrationSuite };
+async function prepareArtifactPostgresqlSuite(run, definition) {
+  const { root, targets, folder } = await inspectArtifactIntegrationTargets(run);
+  const fields = definition?.fields;
+  const supported = Array.isArray(fields) && fields.length === 3 &&
+    ['id', 'organization_id', 'name'].every(name => fields.some(field => field.name === name)) &&
+    fields.find(field => field.name === 'id').dataType === 'uuid' &&
+    fields.find(field => field.name === 'organization_id').dataType === 'uuid' &&
+    fields.find(field => field.name === 'name').dataType === 'text';
+  if (!supported) throw new Error('POSTGRESQL_SUITE_MODEL_UNSUPPORTED');
+  const sourceSchema = definition?.source?.schema;
+  const sourceTable = definition?.source?.table;
+  if (![sourceSchema, sourceTable].every(value => typeof value === 'string' && /^[a-z_][a-z0-9_]*$/i.test(value))) {
+    throw new Error('INVALID_POSTGRESQL_ARTIFACT_SOURCE');
+  }
+  const relative = path.join(folder, 'tenant-postgresql.test.js');
+  const repositoryName = path.basename(targets.repository);
+  const source = [
+    "'use strict';",
+    "const { Client } = require('pg');",
+    "const repository = require('./" + repositoryName + "');",
+    "const databaseUrl = process.env.SBN_FORGE_TENANT_TEST_DATABASE_URL;",
+    "test('artifact repository isolates tenants using dedicated PostgreSQL', async () => {",
+    "  if (process.env.SBN_FORGE_RUN_TENANT_PG_INTEGRATION !== '1' || !databaseUrl) throw new Error('DEDICATED_TEST_DATABASE_REQUIRED');",
+    "  const client = new Client({ connectionString: databaseUrl, connectionTimeoutMillis: 5000 });",
+    "  await client.connect();",
+    "  const schema = 'forge_cert_' + process.pid + '_' + require('node:crypto').randomBytes(4).toString('hex');",
+    "  const quoted = String.fromCharCode(34) + schema + String.fromCharCode(34);",
+    "  try {",
+    "    const db = (await client.query('SELECT current_database() AS name')).rows[0].name;",
+    "    if (!/(^test$|_test$|^test_)/i.test(db)) throw new Error('DEDICATED_TEST_DATABASE_REQUIRED');",
+    "    await client.query('CREATE SCHEMA ' + quoted);",
+    "    await client.query('CREATE TABLE ' + quoted + '.records (id uuid PRIMARY KEY, organization_id uuid NOT NULL, name text NOT NULL)');",
+    "    const proxy = { query(sql, values) {",
+    "      const target = " + JSON.stringify('"' + sourceSchema + '"."' + sourceTable + '"') + ";",
+    "      if (!sql.includes(target)) throw new Error('UNEXPECTED_GENERATED_SQL_TARGET');",
+    "      return client.query(sql.split(target).join(quoted + '.records'), values);",
+    "    } };",
+    "    repository.configure(proxy, { tenantColumn: 'organization_id' });",
+    "    const tenantA = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';",
+    "    const tenantB = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';",
+    "    const id = '11111111-1111-4111-8111-111111111111';",
+    "    const created = await repository.create({ id, name: 'owned by A', organization_id: tenantB }, { organizationId: tenantA });",
+    "    expect(created.organization_id).toBe(tenantA);",
+    "    expect((await repository.list({}, { organizationId: tenantB })).data).toHaveLength(0);",
+    "    expect(await repository.getById(id, { organizationId: tenantB })).toBeNull();",
+    "    expect(await repository.update(id, { name: 'tampered' }, { organizationId: tenantB })).toBeNull();",
+    "    expect(await repository.remove(id, { organizationId: tenantB })).toBe(false);",
+    "    expect((await repository.getById(id, { organizationId: tenantA })).name).toBe('owned by A');",
+    "    await expect(repository.list({})).rejects.toMatchObject({ code: 'TENANT_SCOPE_REQUIRED' });",
+    "  } finally {",
+    "    try { await client.query('DROP SCHEMA IF EXISTS ' + quoted + ' CASCADE'); } finally { await client.end(); }",
+    "  }",
+    "}, 30000);"
+  ].join('\n') + '\n';
+  await fs.writeFile(path.resolve(root, relative), source, { flag: 'wx' });
+  return {
+    kind: 'artifact-postgresql-integration-suite', installable: false, integrationVerified: false,
+    suitePaths: { postgresqlTenantIsolation: relative },
+    artifacts: [...run.artifacts, { path: relative, bytes: Buffer.byteLength(source) }]
+  };
+}
+
+module.exports = { inspectArtifactIntegrationTargets, prepareArtifactJwtIntegrationSuite, prepareArtifactPostgresqlSuite };
