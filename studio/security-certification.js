@@ -67,9 +67,10 @@ async function assessSecurityCertification(directory, artifacts, checks, evidenc
   }
   const evidenceMatches = Boolean(evidenceRecord && evidenceRecord.fingerprint === fingerprint);
   // Test runs against the generic generator are not evidence for a particular generated artifact.
+  // Unverified evidence must not elevate certification status, even when its digest matches.
   // Installation remains disabled until trusted per-artifact verification is implemented.
   return {
-    status: allPassed && evidenceMatches ? 'review-required' : 'blocked',
+    status: 'blocked',
     installable: false,
     fingerprint,
     required,
