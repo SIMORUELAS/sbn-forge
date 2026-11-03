@@ -45,7 +45,7 @@ describePg('isolated Studio artifact repository against dedicated PostgreSQL', (
       primaryKey: { name: 'records_pkey', columns: ['id'] },
       foreignKeys: [],
       fields: [
-        { name: 'id', dataType: 'uuid', nullable: false, visible: true, editable: true, required: true, ...metadata },
+        { name: 'id', dataType: 'uuid', nullable: false, visible: true, editable: false, required: false, ...metadata, defaultValue: 'gen_random_uuid()' },
         { name: 'organization_id', dataType: 'uuid', nullable: false, visible: true, editable: true, required: true, ...metadata },
         { name: 'name', dataType: 'text', nullable: false, visible: true, editable: true, required: true, ...metadata }
       ]
@@ -56,7 +56,7 @@ describePg('isolated Studio artifact repository against dedicated PostgreSQL', (
     repository = require(repositoryFile);
     await client.query('CREATE SCHEMA "' + schema + '"');
     schemaCreated = true;
-    await client.query('CREATE TABLE "' + schema + '".records (id uuid PRIMARY KEY, organization_id uuid NOT NULL, name text NOT NULL)');
+    await client.query('CREATE TABLE "' + schema + '".records (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), organization_id uuid NOT NULL, name text NOT NULL)');
     repository.configure(client, { tenantColumn: 'organization_id' });
   }, 20000);
 
@@ -79,13 +79,15 @@ describePg('isolated Studio artifact repository against dedicated PostgreSQL', (
   });
 
   test('generated artifact enforces tenant isolation on real PostgreSQL CRUD', async () => {
-    const created = await repository.create({ id: recordId, name: 'owned by A', organization_id: tenantB }, { organizationId: tenantA });
+    const created = await repository.create({ name: 'owned by A', organization_id: tenantB }, { organizationId: tenantA });
+    expect(created.id).toBeTruthy();
+    const createdId = created.id;
     expect(created.organization_id).toBe(tenantA);
     expect((await repository.list({}, { organizationId: tenantB })).data).toHaveLength(0);
-    expect(await repository.getById(recordId, { organizationId: tenantB })).toBeNull();
-    expect(await repository.update(recordId, { name: 'tampered', organization_id: tenantB }, { organizationId: tenantB })).toBeNull();
-    expect(await repository.remove(recordId, { organizationId: tenantB })).toBe(false);
-    expect((await repository.getById(recordId, { organizationId: tenantA })).name).toBe('owned by A');
+    expect(await repository.getById(createdId, { organizationId: tenantB })).toBeNull();
+    expect(await repository.update(createdId, { name: 'tampered', organization_id: tenantB }, { organizationId: tenantB })).toBeNull();
+    expect(await repository.remove(createdId, { organizationId: tenantB })).toBe(false);
+    expect((await repository.getById(createdId, { organizationId: tenantA })).name).toBe('owned by A');
   });
 
   test('generated artifact rejects missing tenant context', async () => {
