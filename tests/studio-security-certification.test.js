@@ -59,3 +59,42 @@ test('invalid artifact lists and duplicate certification checks fail closed', as
     await fs.rm(root, { recursive: true, force: true });
   }
 });
+
+test('certification rejects tampered evidence digest even when the artifact fingerprint matches', async () => {
+  const { createEvidenceRecord } = require('../studio/security-evidence-record');
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-cert-digest-'));
+  try {
+    await fs.writeFile(path.join(root, 'module.js'), 'module.exports = {};');
+    const artifacts = [{ path: 'module.js' }];
+    const checks = REQUIRED.map(check => ({ check, status: 'passed' }));
+    const initial = await assessSecurityCertification(root, artifacts, checks);
+    const evidence = createEvidenceRecord({
+      fingerprint: initial.fingerprint,
+      executedAt: '2026-11-03T12:00:00.000Z',
+      runner: 'sbn-forge-artifact-jest-unverified',
+      tests: {
+        postgresqlTenantIsolation: { suite: 'tenant.test.js', status: 'passed', passed: 2, failed: 0 },
+        jwtCrudIntegration: { suite: 'jwt.test.js', status: 'passed', passed: 2, failed: 0 }
+      }
+    });
+    const valid = await assessSecurityCertification(root, artifacts, checks, evidence);
+    expect(valid.evidenceMatches).toBe(true);
+    expect(valid.installable).toBe(false);
+    const tampered = await assessSecurityCertification(root, artifacts, checks, {
+      ...evidence, tests: {
+        ...evidence.tests,
+        jwtCrudIntegration: { ...evidence.tests.jwtCrudIntegration, passed: 99 }
+      }
+    });
+    expect(tampered.evidenceMatches).toBe(false);
+    expect(tampered.status).toBe('blocked');
+    expect(tampered.installable).toBe(false);
+    const forgedDigest = await assessSecurityCertification(root, artifacts, checks, {
+      ...evidence, digest: '0'.repeat(64)
+    });
+    expect(forgedDigest.evidenceMatches).toBe(false);
+    expect(forgedDigest.status).toBe('blocked');
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
