@@ -3,7 +3,7 @@ const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
 const { generateIsolated } = require('../studio/isolated-generation');
-const { inspectArtifactIntegrationTargets, prepareArtifactJwtIntegrationSuite } = require('../studio/artifact-integration-suites');
+const { inspectArtifactIntegrationTargets, prepareArtifactJwtIntegrationSuite, prepareArtifactPostgresqlSuite } = require('../studio/artifact-integration-suites');
 
 const metadata = { defaultValue: null, identity: false, maxLength: null, precision: null, scale: null };
 const definition = {
@@ -50,6 +50,27 @@ test('prepares a fingerprintable JWT CRUD suite beside generated routes', async 
     expect(source).toContain('authorizeOperation: async () => false');
     expect(source).toContain('expect(queries).toBe(0)');
     await expect(prepareArtifactJwtIntegrationSuite(run)).rejects.toMatchObject({ code: 'EEXIST' });
+  } finally {
+    await fs.rm(parent, { recursive: true, force: true });
+  }
+});
+
+test('prepares dedicated PostgreSQL tenant suite and refuses unsupported models', async () => {
+  const parent = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-pg-suite-'));
+  try {
+    const run = await generateIsolated(definition, { tempRoot: parent });
+    const prepared = await prepareArtifactPostgresqlSuite(run, definition);
+    expect(prepared.installable).toBe(false);
+    expect(prepared.integrationVerified).toBe(false);
+    expect(prepared.artifacts).toHaveLength(run.artifacts.length + 1);
+    expect(prepared.suitePaths.postgresqlTenantIsolation).toMatch(/tenant-postgresql\.test\.js$/);
+    const source = await fs.readFile(path.join(run.directory, prepared.suitePaths.postgresqlTenantIsolation), 'utf8');
+    expect(source).toContain('CREATE SCHEMA');
+    expect(source).toContain('TENANT_SCOPE_REQUIRED');
+    expect(source).toContain('UNEXPECTED_GENERATED_SQL_TARGET');
+    await expect(prepareArtifactPostgresqlSuite(run, definition)).rejects.toMatchObject({ code: 'EEXIST' });
+    await expect(prepareArtifactPostgresqlSuite(run, { ...definition, fields: definition.fields.slice(0, 2) }))
+      .rejects.toThrow('POSTGRESQL_SUITE_MODEL_UNSUPPORTED');
   } finally {
     await fs.rm(parent, { recursive: true, force: true });
   }
