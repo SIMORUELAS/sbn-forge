@@ -69,6 +69,8 @@ test('prepares dedicated PostgreSQL tenant suite and refuses unsupported models'
     expect(source).toContain('CREATE SCHEMA');
     expect(source).toContain('TENANT_SCOPE_REQUIRED');
     expect(source).toContain('UNEXPECTED_GENERATED_SQL_TARGET');
+    expect(source).toContain('const requested = new URL(databaseUrl)');
+    expect(source.indexOf('const requested = new URL(databaseUrl)')).toBeLessThan(source.indexOf('await client.connect()'));
     await expect(prepareArtifactPostgresqlSuite(run, definition)).rejects.toMatchObject({ code: 'EEXIST' });
     await expect(prepareArtifactPostgresqlSuite(run, { ...definition, fields: definition.fields.slice(0, 2) }))
       .rejects.toThrow('POSTGRESQL_SUITE_MODEL_UNSUPPORTED');
