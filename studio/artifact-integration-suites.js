@@ -76,7 +76,12 @@ async function prepareArtifactJwtIntegrationSuite(run) {
     "  const child = spawnSync(process.execPath, ['-e', '(' + runner.toString() + ')().catch(e => { console.error(e); process.exitCode = 1; })', routePath],",
     "    { cwd: process.cwd(), encoding: 'utf8', timeout: 20000, windowsHide: true });",
     "  expect(child.error).toBeUndefined();",
-    "  expect(child.status).toBe(0);",
+    "  if (child.status !== 0) {",
+    "    throw new Error('GENERATED_JWT_HTTP_CHECK_FAILED: exit=' + child.status +",
+    "      ' signal=' + (child.signal || 'none') +",
+    "      ' stderr=' + String(child.stderr || '').slice(0, 5000) +",
+    "      ' stdout=' + String(child.stdout || '').slice(0, 1000));",
+    "  }",
     "  expect(JSON.parse(child.stdout)).toEqual({ operations: 5, queries: 0 });",
     "}, 30000);"
   ].join('\n') + '\n';
