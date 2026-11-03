@@ -55,6 +55,12 @@ async function assessSecurityCertification(directory, artifacts, checks, evidenc
   try {
     if (evidence?.tests) {
       evidenceRecord = createEvidenceRecord(evidence);
+      // A supplied digest is a claim about the original record; never silently
+      // replace a mismatched digest with a freshly computed one.
+      if (Object.prototype.hasOwnProperty.call(evidence, 'digest') &&
+          evidence.digest !== evidenceRecord.digest) {
+        evidenceRecord = null;
+      }
     }
   } catch {
     evidenceRecord = null;
