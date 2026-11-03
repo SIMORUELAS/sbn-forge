@@ -15,8 +15,11 @@ function issueCertificationAttestation({ evidence, expectedFingerprint, privateK
   }
   let key;
   try {
-    key = crypto.createPrivateKey(privateKey);
+    key = privateKey instanceof crypto.KeyObject ? privateKey : crypto.createPrivateKey(privateKey);
   } catch {
+    throw new Error('INVALID_CERTIFICATION_SIGNING_KEY');
+  }
+  if (key.type !== 'private') {
     throw new Error('INVALID_CERTIFICATION_SIGNING_KEY');
   }
   if (key.asymmetricKeyType !== 'ed25519') {
