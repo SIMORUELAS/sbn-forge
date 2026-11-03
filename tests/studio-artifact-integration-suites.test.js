@@ -3,6 +3,7 @@ const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
 const { generateIsolated } = require('../studio/isolated-generation');
+const { runJestSuite } = require('../studio/security-evidence-executor');
 const { inspectArtifactIntegrationTargets, prepareArtifactJwtIntegrationSuite, prepareArtifactPostgresqlSuite, prepareArtifactIntegrationSuites } = require('../studio/artifact-integration-suites');
 
 const metadata = { defaultValue: null, identity: false, maxLength: null, precision: null, scale: null };
@@ -123,3 +124,17 @@ test('unsupported models do not leave partially generated integration suites', a
     await fs.rm(parent, { recursive: true, force: true });
   }
 });
+
+
+test('executes generated artifact JWT suite using the certification runner', async () => {
+  const parent = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-jwt-execution-'));
+  try {
+    const run = await generateIsolated(definition, { tempRoot: parent });
+    const prepared = await prepareArtifactJwtIntegrationSuite(run);
+    const suite = path.join(run.directory, prepared.suitePaths.jwtCrudIntegration);
+    const result = await runJestSuite(process.cwd(), suite, {}, 30000);
+    expect(result).toMatchObject({ suite: 'jwt-crud.test.js', status: 'passed', passed: 1 });
+  } finally {
+    await fs.rm(parent, { recursive: true, force: true });
+  }
+}, 40000);
