@@ -52,7 +52,7 @@ async function runJestSuite(repoRoot, suite, env, timeoutMs) {
     const executable = require.resolve('jest/bin/jest', { paths: [repoRoot] });
     const code = await new Promise((resolve, reject) => {
       const child = spawn(process.execPath, [
-        executable, '--config', JSON.stringify({ rootDir: path.dirname(suite), testMatch: ['**/*.test.js'], moduleDirectories: ['node_modules'], modulePaths: [path.join(repoRoot, 'node_modules')] }),
+        '--experimental-vm-modules', executable, '--config', JSON.stringify({ rootDir: path.dirname(suite), testMatch: ['**/*.test.js'], moduleDirectories: ['node_modules'], modulePaths: [path.join(repoRoot, 'node_modules')] }),
         '--runTestsByPath', suite, '--runInBand', '--no-cache',
         '--json', '--outputFile=' + output
       ], {
