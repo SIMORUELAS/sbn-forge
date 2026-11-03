@@ -143,3 +143,43 @@ test('executes generated artifact JWT suite using the certification runner', asy
     await fs.rm(parent, { recursive: true, force: true });
   }
 }, 40000);
+
+
+const describeRealCertification = process.env.SBN_FORGE_RUN_TENANT_PG_INTEGRATION === '1' &&
+  process.env.SBN_FORGE_TENANT_TEST_DATABASE_URL ? describe : describe.skip;
+
+describeRealCertification('full isolated artifact certification against dedicated PostgreSQL', () => {
+  test('runs both generated suites, binds evidence to SHA-256 and invalidates changed artifacts', async () => {
+    const { evaluateIsolatedArtifactSecurity } = require('../studio/artifact-security-workflow');
+    const { REQUIRED, assessSecurityCertification } = require('../studio/security-certification');
+    const parent = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-full-certification-'));
+    try {
+      const run = await generateIsolated(definition, { tempRoot: parent });
+      // These are explicit test fixtures, not independently audited source-security findings.
+      const checks = REQUIRED.map(check => ({ check, status: 'passed' }));
+      const result = await evaluateIsolatedArtifactSecurity({
+        run, definition, repoRoot: process.cwd(),
+        databaseUrl: process.env.SBN_FORGE_TENANT_TEST_DATABASE_URL,
+        checks, timeoutMs: 60000
+      });
+      expect(result.evidence.fingerprint).toMatch(/^[a-f0-9]{64}$/);
+      expect(result.evidence.digest).toMatch(/^[a-f0-9]{64}$/);
+      expect(result.evidence.tests.postgresqlTenantIsolation).toMatchObject({ status: 'passed', failed: 0 });
+      expect(result.evidence.tests.jwtCrudIntegration).toMatchObject({ status: 'passed', failed: 0 });
+      expect(result.assessment.evidenceMatches).toBe(true);
+      expect(result.assessment.fingerprint).toBe(result.evidence.fingerprint);
+      expect(result.assessment.installable).toBe(false);
+      expect(result.assessment.reason).toBe('TRUSTED_CERTIFICATION_NOT_IMPLEMENTED');
+      const moduleFile = result.artifacts.find(item => item.path.endsWith('.repository.js'));
+      expect(moduleFile).toBeTruthy();
+      await fs.appendFile(path.join(run.directory, moduleFile.path), '\n// modified after certification\n');
+      const changed = await assessSecurityCertification(run.directory, result.artifacts, checks, result.evidence);
+      expect(changed.fingerprint).not.toBe(result.evidence.fingerprint);
+      expect(changed.evidenceMatches).toBe(false);
+      expect(changed.status).toBe('blocked');
+      expect(changed.installable).toBe(false);
+    } finally {
+      await fs.rm(parent, { recursive: true, force: true });
+    }
+  }, 150000);
+});
