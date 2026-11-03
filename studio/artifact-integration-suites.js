@@ -139,4 +139,47 @@ async function prepareArtifactPostgresqlSuite(run, definition) {
   };
 }
 
-module.exports = { inspectArtifactIntegrationTargets, prepareArtifactJwtIntegrationSuite, prepareArtifactPostgresqlSuite };
+
+async function prepareArtifactIntegrationSuites(run, definition) {
+  const { root, folder } = await inspectArtifactIntegrationTargets(run);
+  const fields = definition?.fields;
+  if (!Array.isArray(fields) || fields.length !== 3 ||
+      !['id', 'organization_id', 'name'].every(name => fields.some(field => field.name === name)) ||
+      fields.find(field => field.name === 'id').dataType !== 'uuid' ||
+      fields.find(field => field.name === 'organization_id').dataType !== 'uuid' ||
+      fields.find(field => field.name === 'name').dataType !== 'text') {
+    throw new Error('POSTGRESQL_SUITE_MODEL_UNSUPPORTED');
+  }
+  const names = ['jwt-crud.test.js', 'tenant-postgresql.test.js'];
+  const paths = names.map(name => path.join(folder, name));
+  for (const relative of paths) {
+    try {
+      await fs.lstat(path.resolve(root, relative));
+      throw new Error('ARTIFACT_SUITE_ALREADY_EXISTS');
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+  }
+  const created = [];
+  try {
+    const jwt = await prepareArtifactJwtIntegrationSuite(run);
+    created.push(paths[0]);
+    const pg = await prepareArtifactPostgresqlSuite(run, definition);
+    created.push(paths[1]);
+    return {
+      kind: 'artifact-integration-suites-prepared',
+      installable: false,
+      integrationVerified: false,
+      suitePaths: { ...pg.suitePaths, ...jwt.suitePaths },
+      artifacts: [...run.artifacts, ...jwt.artifacts.slice(run.artifacts.length),
+        ...pg.artifacts.slice(run.artifacts.length)]
+    };
+  } catch (error) {
+    for (const relative of created) {
+      await fs.rm(path.resolve(root, relative), { force: true });
+    }
+    throw error;
+  }
+}
+
+module.exports = { inspectArtifactIntegrationTargets, prepareArtifactJwtIntegrationSuite, prepareArtifactPostgresqlSuite, prepareArtifactIntegrationSuites };
