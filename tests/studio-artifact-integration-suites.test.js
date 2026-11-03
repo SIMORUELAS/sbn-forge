@@ -3,7 +3,7 @@ const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
 const { generateIsolated } = require('../studio/isolated-generation');
-const { inspectArtifactIntegrationTargets, prepareArtifactJwtIntegrationSuite, prepareArtifactPostgresqlSuite } = require('../studio/artifact-integration-suites');
+const { inspectArtifactIntegrationTargets, prepareArtifactJwtIntegrationSuite, prepareArtifactPostgresqlSuite, prepareArtifactIntegrationSuites } = require('../studio/artifact-integration-suites');
 
 const metadata = { defaultValue: null, identity: false, maxLength: null, precision: null, scale: null };
 const definition = {
@@ -71,6 +71,41 @@ test('prepares dedicated PostgreSQL tenant suite and refuses unsupported models'
     await expect(prepareArtifactPostgresqlSuite(run, definition)).rejects.toMatchObject({ code: 'EEXIST' });
     await expect(prepareArtifactPostgresqlSuite(run, { ...definition, fields: definition.fields.slice(0, 2) }))
       .rejects.toThrow('POSTGRESQL_SUITE_MODEL_UNSUPPORTED');
+  } finally {
+    await fs.rm(parent, { recursive: true, force: true });
+  }
+});
+
+test('prepares both isolated suites as separate fingerprintable artifacts', async () => {
+  const parent = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-both-suites-'));
+  try {
+    const run = await generateIsolated(definition, { tempRoot: parent });
+    const result = await prepareArtifactIntegrationSuites(run, definition);
+    expect(result.installable).toBe(false);
+    expect(result.integrationVerified).toBe(false);
+    expect(result.artifacts).toHaveLength(run.artifacts.length + 2);
+    expect(result.suitePaths.postgresqlTenantIsolation).not.toBe(result.suitePaths.jwtCrudIntegration);
+    for (const relative of Object.values(result.suitePaths)) {
+      expect(result.artifacts.some(item => item.path === relative)).toBe(true);
+      expect((await fs.stat(path.join(run.directory, relative))).size).toBeGreaterThan(0);
+    }
+    await expect(prepareArtifactIntegrationSuites(run, definition))
+      .rejects.toThrow('ARTIFACT_SUITE_ALREADY_EXISTS');
+  } finally {
+    await fs.rm(parent, { recursive: true, force: true });
+  }
+});
+
+test('unsupported models do not leave partially generated integration suites', async () => {
+  const parent = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-both-reject-'));
+  try {
+    const run = await generateIsolated(definition, { tempRoot: parent });
+    await expect(prepareArtifactIntegrationSuites(run, {
+      ...definition, fields: definition.fields.slice(0, 2)
+    })).rejects.toThrow('POSTGRESQL_SUITE_MODEL_UNSUPPORTED');
+    const inspected = await inspectArtifactIntegrationTargets(run);
+    await expect(fs.stat(path.join(inspected.root, inspected.folder, 'jwt-crud.test.js')))
+      .rejects.toMatchObject({ code: 'ENOENT' });
   } finally {
     await fs.rm(parent, { recursive: true, force: true });
   }
