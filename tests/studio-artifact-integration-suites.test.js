@@ -3,7 +3,7 @@ const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
 const { generateIsolated } = require('../studio/isolated-generation');
-const { inspectArtifactIntegrationTargets } = require('../studio/artifact-integration-suites');
+const { inspectArtifactIntegrationTargets, prepareArtifactJwtIntegrationSuite } = require('../studio/artifact-integration-suites');
 
 const metadata = { defaultValue: null, identity: false, maxLength: null, precision: null, scale: null };
 const definition = {
@@ -31,6 +31,25 @@ test('locates repository and routes belonging to the same isolated generated mod
     await expect(inspectArtifactIntegrationTargets({
       ...run, artifacts: [...run.artifacts, run.artifacts.find(item => item.path.endsWith('.routes.js'))]
     })).rejects.toThrow('GENERATED_ARTIFACT_REQUIRED');
+  } finally {
+    await fs.rm(parent, { recursive: true, force: true });
+  }
+});
+
+test('prepares a fingerprintable JWT CRUD suite beside generated routes', async () => {
+  const parent = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-jwt-suite-'));
+  try {
+    const run = await generateIsolated(definition, { tempRoot: parent });
+    const prepared = await prepareArtifactJwtIntegrationSuite(run);
+    expect(prepared.installable).toBe(false);
+    expect(prepared.integrationVerified).toBe(false);
+    expect(prepared.artifacts).toHaveLength(run.artifacts.length + 1);
+    const relative = prepared.suitePaths.jwtCrudIntegration;
+    expect(relative).toMatch(/jwt-crud\.test\.js$/);
+    const source = await fs.readFile(path.join(run.directory, relative), 'utf8');
+    expect(source).toContain('authorizeOperation: async () => false');
+    expect(source).toContain('expect(queries).toBe(0)');
+    await expect(prepareArtifactJwtIntegrationSuite(run)).rejects.toMatchObject({ code: 'EEXIST' });
   } finally {
     await fs.rm(parent, { recursive: true, force: true });
   }
