@@ -1,5 +1,5 @@
 'use strict';
-const { executeSecurityEvidence, resolveArtifactSuites, SUITES } = require('../studio/security-evidence-executor');
+const { executeSecurityEvidence, resolveArtifactSuites, runJestSuite, SUITES } = require('../studio/security-evidence-executor');
 
 test('executor requires dedicated test database and never runs without it', async () => {
   const base = { repoRoot: process.cwd(), artifactRoot: process.cwd(), artifacts: [], checks: [] };
