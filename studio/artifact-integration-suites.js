@@ -60,7 +60,7 @@ async function prepareArtifactJwtIntegrationSuite(run) {
     "      const ops = [",
     "        { method: 'GET', url: base },",
     "        { method: 'GET', url: base + '/' + id },",
-    "        { method: 'POST', url: base, payload: { name: 'test', organization_id: '22222222-2222-4222-8222-222222222222' } },",
+    "        { method: 'POST', url: base, payload: { id, name: 'test', organization_id: '22222222-2222-4222-8222-222222222222' } },",
     "        { method: 'PATCH', url: base + '/' + id, payload: { name: 'test' } },",
     "        { method: 'DELETE', url: base + '/' + id }",
     "      ];",
