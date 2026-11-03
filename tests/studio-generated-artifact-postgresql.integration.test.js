@@ -19,8 +19,19 @@ describePg('isolated Studio artifact repository against dedicated PostgreSQL', (
   let schema;
   let repository;
   let repositoryFile;
+  let schemaCreated = false;
 
   beforeAll(async () => {
+    let requested;
+    try {
+      requested = new URL(connectionString);
+      if (!['postgres:', 'postgresql:'].includes(requested.protocol) ||
+          !/(^test$|_test$|^test_)/i.test(decodeURIComponent(requested.pathname.slice(1)))) {
+        throw new Error('TENANT_PG_TEST_DATABASE_REQUIRED');
+      }
+    } catch {
+      throw new Error('TENANT_PG_TEST_DATABASE_REQUIRED');
+    }
     client = new Client({ connectionString, connectionTimeoutMillis: 5000 });
     await client.connect();
     const result = await client.query('SELECT current_database() AS name');
@@ -44,14 +55,15 @@ describePg('isolated Studio artifact repository against dedicated PostgreSQL', (
     repositoryFile = path.join(run.directory, run.artifacts.find(item => item.path.endsWith('.repository.js')).path);
     repository = require(repositoryFile);
     await client.query('CREATE SCHEMA "' + schema + '"');
+    schemaCreated = true;
     await client.query('CREATE TABLE "' + schema + '".records (id uuid PRIMARY KEY, organization_id uuid NOT NULL, name text NOT NULL)');
     repository.configure(client, { tenantColumn: 'organization_id' });
   }, 20000);
 
   afterAll(async () => {
     try {
-      if (client && schema) {
-        await client.query('DROP SCHEMA IF EXISTS "' + schema + '" CASCADE');
+      if (client && schemaCreated) {
+        await client.query('DROP SCHEMA "' + schema + '" CASCADE');
       }
     } finally {
       if (client) {
