@@ -52,7 +52,9 @@ test('prepares a fingerprintable JWT CRUD suite beside generated routes', async 
     expect(source).toContain('assert.equal(queries, 0)');
     expect(source).toContain('spawnSync(process.execPath');
     expect(source).toContain('assert.equal((await app.inject(op)).statusCode, 401)');
-    expect(source).toContain('assert.equal((await app.inject({ ...op, headers: { authorization:');
+    expect(source).toContain("const authorized = await app.inject({ ...op, headers: { authorization:");
+    expect(source).toContain('assert.equal(authorized.statusCode, 403');
+    expect(source).toContain("payload: { id, name: 'test', organization_id:");
     expect(source).toContain("organization_id: '22222222-2222-4222-8222-222222222222'");
     await expect(prepareArtifactJwtIntegrationSuite(run)).rejects.toMatchObject({ code: 'EEXIST' });
   } finally {
