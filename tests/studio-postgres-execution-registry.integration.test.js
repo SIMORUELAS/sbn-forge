@@ -3,7 +3,8 @@ const crypto = require('node:crypto');
 const { Pool } = require('pg');
 const { SCHEMA_SQL, createPostgresExecutionRegistry } = require('../studio/postgres-execution-registry');
 const { publicKeyFingerprint } = require('../studio/registered-execution-verifier');
-const { requireDedicatedTestDatabase, assertAuthorizedTestDatabase } = require('../studio/execution-registry-test-guard');
+const { requireDedicatedTestDatabase } = require('../studio/execution-registry-test-guard');
+const { inspectExecutionRegistryTestEnvironment } = require('../studio/execution-registry-environment-preflight');
 
 const enabled = process.env.SBN_FORGE_RUN_EXECUTION_REGISTRY_PG_INTEGRATION === '1';
 const databaseUrl = process.env.SBN_FORGE_EXECUTION_REGISTRY_TEST_DATABASE_URL;
@@ -25,7 +26,11 @@ suite('PostgreSQL execution registry integration (dedicated test database only)'
       max: 5, connectionTimeoutMillis: 5000
     });
     try {
-      await assertAuthorizedTestDatabase(pool, expectedDatabase);
+      if (process.env.SBN_FORGE_EXECUTION_REGISTRY_RUN_APPROVED !== '1') {
+        throw new Error('EXPLICIT_EXECUTION_REGISTRY_RUN_APPROVAL_REQUIRED');
+      }
+      // Recheck authorization and restricted-role privileges even if Jest is run directly.
+      await inspectExecutionRegistryTestEnvironment();
       await pool.query(SCHEMA_SQL);
       registry = createPostgresExecutionRegistry(pool);
     } catch (error) {
