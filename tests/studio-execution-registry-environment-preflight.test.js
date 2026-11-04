@@ -78,5 +78,5 @@ test.each([
   await expect(inspectExecutionRegistryTestEnvironment({ env, createPool }))
     .rejects.toThrow('TEST_DATABASE_PRIVILEGE_POLICY_NOT_MET');
   expect(pool.end).toHaveBeenCalledTimes(1);
-  expect(pool.query.mock.calls.every(([sql]) => /^\\s*SELECT/i.test(sql))).toBe(true);
+  expect(pool.query.mock.calls.every(([sql]) => /^\s*SELECT/i.test(sql))).toBe(true);
 });
