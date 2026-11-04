@@ -9,7 +9,8 @@ const env = {
 const permitted = {
   database_name: 'forge_execution_test', database_user: 'test_runner',
   can_create_schema: true, public_usage: true,
-  can_read_marker: true, can_write_marker: false
+  public_create: false, privileged_role: false,
+  can_read_marker: true, can_write_marker: false, can_alter_marker: false
 };
 let pool, createPool;
 beforeEach(() => {
@@ -64,4 +65,18 @@ test('missing authorization and query failures close connection', async () => {
   await expect(inspectExecutionRegistryTestEnvironment({ env, createPool }))
     .rejects.toThrow('TEST_DATABASE_NOT_INDEPENDENTLY_AUTHORIZED');
   expect(pool.end).toHaveBeenCalled();
+});
+
+test.each([
+  ['privileged PostgreSQL role', { privileged_role: true }],
+  ['public schema CREATE privilege', { public_create: true }],
+  ['authorization marker DDL privileges', { can_alter_marker: true }]
+])('rejects %s without changing PostgreSQL', async (_, changes) => {
+  pool.query.mockReset()
+    .mockResolvedValueOnce({ rows: [{ database_name: 'forge_execution_test', authorized: true }] })
+    .mockResolvedValueOnce({ rows: [{ ...permitted, ...changes }] });
+  await expect(inspectExecutionRegistryTestEnvironment({ env, createPool }))
+    .rejects.toThrow('TEST_DATABASE_PRIVILEGE_POLICY_NOT_MET');
+  expect(pool.end).toHaveBeenCalledTimes(1);
+  expect(pool.query.mock.calls.every(([sql]) => /^\\s*SELECT/i.test(sql))).toBe(true);
 });
