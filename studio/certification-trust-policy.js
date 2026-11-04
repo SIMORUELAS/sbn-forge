@@ -29,6 +29,7 @@ async function evaluateCertificationTrust({
     fingerprint: assessment.fingerprint || null,
     checksComplete,
     checksTrust: 'unverified',
+    independentlyVerifiedChecks: [],
     integrityVerified,
     signatureVerified,
     evidenceAuthentic,
