@@ -12,6 +12,7 @@ const permitted = {
   database_name: 'forge_test', database_user: 'integration_runner',
   can_create_schema: true, public_usage: true,
   public_create: false, privileged_role: false,
+  database_owner_member: false, marker_owner_member: false,
   can_read_marker: true, can_write_marker: false, can_alter_marker: false
 };
 let pool, createPool, execute;
@@ -90,7 +91,9 @@ test.each([
   ['wrong connected database', { ...permitted, database_name: 'production' }],
   ['privileged login', { ...permitted, privileged_role: true }],
   ['public schema writable', { ...permitted, public_create: true }],
-  ['authorization marker DDL', { ...permitted, can_alter_marker: true }]
+  ['authorization marker DDL', { ...permitted, can_alter_marker: true }],
+  ['database owner membership', { ...permitted, database_owner_member: true }],
+  ['marker owner membership', { ...permitted, marker_owner_member: true }]
 ])('blocks integration when preflight detects %s', async (_, unsafeRow) => {
   pool.query.mockReset()
     .mockResolvedValueOnce({ rows: [{ database_name: 'forge_test', authorized: true }] })
