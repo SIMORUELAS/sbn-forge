@@ -22,6 +22,9 @@ async function inspectExecutionRegistryTestEnvironment({
              current_user AS database_user,
              has_database_privilege(current_user, current_database(), 'CREATE') AS can_create_schema,
              has_schema_privilege(current_user, 'public', 'USAGE') AS public_usage,
+             has_schema_privilege(current_user, 'public', 'CREATE') AS public_create,
+             (SELECT rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls
+                FROM pg_roles WHERE rolname = current_user) AS privileged_role,
              has_table_privilege(
                current_user,
                'public.sbn_forge_execution_registry_test_authorization',
@@ -31,7 +34,12 @@ async function inspectExecutionRegistryTestEnvironment({
                current_user,
                'public.sbn_forge_execution_registry_test_authorization',
                'INSERT, UPDATE, DELETE'
-             ) AS can_write_marker
+             ) AS can_write_marker,
+             has_table_privilege(
+               current_user,
+               'public.sbn_forge_execution_registry_test_authorization',
+               'TRUNCATE, REFERENCES, TRIGGER'
+             ) AS can_alter_marker
     `);
     if (!result || !Array.isArray(result.rows) || result.rows.length !== 1) {
       throw new Error('INVALID_TEST_DATABASE_PREFLIGHT_RESULT');
@@ -40,8 +48,11 @@ async function inspectExecutionRegistryTestEnvironment({
     if (row.database_name !== expectedDatabase ||
         row.can_create_schema !== true ||
         row.public_usage !== true ||
+        row.public_create !== false ||
+        row.privileged_role !== false ||
         row.can_read_marker !== true ||
-        row.can_write_marker !== false) {
+        row.can_write_marker !== false ||
+        row.can_alter_marker !== false) {
       throw new Error('TEST_DATABASE_PRIVILEGE_POLICY_NOT_MET');
     }
     return {
@@ -50,6 +61,8 @@ async function inspectExecutionRegistryTestEnvironment({
       databaseUser: row.database_user,
       authorizationVerified: true,
       markerReadOnly: true,
+      restrictedRoleVerified: true,
+      publicSchemaWriteBlocked: true,
       schemaCreationPermitted: true,
       certificationAuthorized: false,
       installable: false
