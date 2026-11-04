@@ -2,9 +2,9 @@
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { Pool } = require('pg');
-const {
-  requireDedicatedTestDatabase, assertAuthorizedTestDatabase
-} = require('./execution-registry-test-guard');
+const { requireDedicatedTestDatabase } = require('./execution-registry-test-guard');
+const { inspectExecutionRegistryTestEnvironment } =
+  require('./execution-registry-environment-preflight');
 
 const INTEGRATION_SUITE = path.resolve(__dirname, '../tests/studio-postgres-execution-registry.integration.test.js');
 
@@ -20,12 +20,9 @@ async function runAuthorizedExecutionRegistryIntegration({
   const connectionString = requireDedicatedTestDatabase(
     env.SBN_FORGE_EXECUTION_REGISTRY_TEST_DATABASE_URL, expectedDatabase
   );
-  const pool = createPool({ connectionString, max: 1, connectionTimeoutMillis: 5000 });
-  try {
-    await assertAuthorizedTestDatabase(pool, expectedDatabase);
-  } finally {
-    await pool.end();
-  }
+  // Run the full read-only authorization and privilege preflight before Jest.
+  // The preflight owns and closes its PostgreSQL connection on every path.
+  await inspectExecutionRegistryTestEnvironment({ env, createPool });
 
   const jestPath = require.resolve('jest/bin/jest');
   const result = execute(process.execPath, [
