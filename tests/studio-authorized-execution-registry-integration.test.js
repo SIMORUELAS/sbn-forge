@@ -29,7 +29,7 @@ test('runs only after external marker authorization, with safe direct process in
   expect(await runAuthorizedExecutionRegistryIntegration({ env, createPool, execute }))
     .toEqual({ passed: true, certificationAuthorized: false, installable: false });
   expect(pool.query).toHaveBeenCalledTimes(2);
-  expect(pool.query.mock.calls.every(([sql]) => /^\\s*SELECT/i.test(sql))).toBe(true);
+  expect(pool.query.mock.calls.every(([sql]) => /^\s*SELECT/i.test(sql))).toBe(true);
   expect(pool.end).toHaveBeenCalledTimes(1);
   expect(execute).toHaveBeenCalledTimes(1);
   const [command, args, options] = execute.mock.calls[0];
