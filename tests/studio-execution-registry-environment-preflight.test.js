@@ -10,6 +10,7 @@ const permitted = {
   database_name: 'forge_execution_test', database_user: 'test_runner',
   can_create_schema: true, public_usage: true,
   public_create: false, privileged_role: false,
+  database_owner_member: false, marker_owner_member: false,
   can_read_marker: true, can_write_marker: false, can_alter_marker: false
 };
 let pool, createPool;
@@ -70,7 +71,9 @@ test('missing authorization and query failures close connection', async () => {
 test.each([
   ['privileged PostgreSQL role', { privileged_role: true }],
   ['public schema CREATE privilege', { public_create: true }],
-  ['authorization marker DDL privileges', { can_alter_marker: true }]
+  ['authorization marker DDL privileges', { can_alter_marker: true }],
+  ['database owner membership', { database_owner_member: true }],
+  ['authorization marker owner membership', { marker_owner_member: true }]
 ])('rejects %s without changing PostgreSQL', async (_, changes) => {
   pool.query.mockReset()
     .mockResolvedValueOnce({ rows: [{ database_name: 'forge_execution_test', authorized: true }] })
