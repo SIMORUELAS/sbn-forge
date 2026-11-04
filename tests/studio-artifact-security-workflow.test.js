@@ -53,3 +53,44 @@ test('propagates evidence failure without issuing certification', async () => {
   })).rejects.toThrow('CERTIFICATION_SUITE_NOT_PASSED');
   expect(assessSecurityCertification).not.toHaveBeenCalled();
 });
+
+test('untrusted or absent execution receipt cannot grant workflow certification', async () => {
+  const crypto = require('node:crypto');
+  const { createEvidenceRecord } = require('../studio/security-evidence-record');
+  const { issueExecutionReceipt } = require('../studio/execution-provenance-receipt');
+  const run = { mode: 'isolated-local', published: false, databaseModified: false, directory: '/tmp/module' };
+  const suitePaths = { jwtCrudIntegration: 'jwt-crud.test.js', postgresqlTenantIsolation: 'tenant-postgresql.test.js' };
+  prepareArtifactIntegrationSuites.mockResolvedValue({
+    suitePaths, artifacts: Object.values(suitePaths).map(path => ({ path }))
+  });
+  const fingerprint = 'a'.repeat(64);
+  const evidence = createEvidenceRecord({
+    fingerprint, executedAt: '2026-11-04T15:00:00.000Z', runner: 'external-runner',
+    tests: {
+      postgresqlTenantIsolation: { suite: 'tenant.test.js', status: 'passed', passed: 1, failed: 0 },
+      jwtCrudIntegration: { suite: 'jwt.test.js', status: 'passed', passed: 1, failed: 0 }
+    }
+  });
+  executeSecurityEvidence.mockResolvedValue(evidence);
+  assessSecurityCertification.mockResolvedValue({ fingerprint, installable: false, status: 'blocked' });
+  const keys = crypto.generateKeyPairSync('ed25519');
+  const receipt = issueExecutionReceipt({
+    evidence, runId: 'run_0123456789abcdef', issuedAt: '2026-11-04T15:01:00.000Z',
+    privateKey: keys.privateKey
+  });
+  const base = { run, definition: {}, repoRoot: '/tmp/repo',
+    databaseUrl: 'postgresql://localhost/forge_test', checks: [] };
+  const absent = await evaluateIsolatedArtifactSecurity(base);
+  expect(absent.provenance.verified).toBe(false);
+  const valid = await evaluateIsolatedArtifactSecurity({
+    ...base, executionReceipt: receipt, trustedRunnerPublicKey: keys.publicKey
+  });
+  expect(valid.provenance.verified).toBe(true);
+  expect(valid).toMatchObject({ installable: false, certificationAuthorized: false, published: false });
+  const forged = await evaluateIsolatedArtifactSecurity({
+    ...base, executionReceipt: receipt,
+    trustedRunnerPublicKey: crypto.generateKeyPairSync('ed25519').publicKey
+  });
+  expect(forged.provenance.verified).toBe(false);
+  expect(forged.certificationAuthorized).toBe(false);
+});
