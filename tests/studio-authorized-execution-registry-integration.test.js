@@ -54,7 +54,7 @@ test('refuses missing approval and wrong database without touching PostgreSQL', 
 });
 
 test('missing external authorization blocks execution and closes connection', async () => {
-  pool.query.mockResolvedValue({ rows: [{ database_name: 'forge_test', authorized: false }] });
+  pool.query.mockReset().mockResolvedValue({ rows: [{ database_name: 'forge_test', authorized: false }] });
   await expect(runAuthorizedExecutionRegistryIntegration({ env, createPool, execute }))
     .rejects.toThrow('TEST_DATABASE_NOT_INDEPENDENTLY_AUTHORIZED');
   expect(pool.end).toHaveBeenCalledTimes(1);
@@ -62,7 +62,7 @@ test('missing external authorization blocks execution and closes connection', as
 });
 
 test('database errors and failing test process fail closed', async () => {
-  pool.query.mockRejectedValueOnce(new Error('offline'));
+  pool.query.mockReset().mockRejectedValueOnce(new Error('offline'));
   await expect(runAuthorizedExecutionRegistryIntegration({ env, createPool, execute }))
     .rejects.toThrow('offline');
   expect(execute).not.toHaveBeenCalled();
