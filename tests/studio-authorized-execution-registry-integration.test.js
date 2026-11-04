@@ -11,7 +11,8 @@ const env = {
 const permitted = {
   database_name: 'forge_test', database_user: 'integration_runner',
   can_create_schema: true, public_usage: true,
-  can_read_marker: true, can_write_marker: false
+  public_create: false, privileged_role: false,
+  can_read_marker: true, can_write_marker: false, can_alter_marker: false
 };
 let pool, createPool, execute;
 beforeEach(() => {
@@ -86,7 +87,10 @@ test('no approval is inferred from existing integration flag', async () => {
 test.each([
   ['writable authorization marker', { ...permitted, can_write_marker: true }],
   ['no schema creation permission', { ...permitted, can_create_schema: false }],
-  ['wrong connected database', { ...permitted, database_name: 'production' }]
+  ['wrong connected database', { ...permitted, database_name: 'production' }],
+  ['privileged login', { ...permitted, privileged_role: true }],
+  ['public schema writable', { ...permitted, public_create: true }],
+  ['authorization marker DDL', { ...permitted, can_alter_marker: true }]
 ])('blocks integration when preflight detects %s', async (_, unsafeRow) => {
   pool.query.mockReset()
     .mockResolvedValueOnce({ rows: [{ database_name: 'forge_test', authorized: true }] })
