@@ -27,8 +27,11 @@ VALUES (current_database(), 'execution-registry-integration', true);
 The dedicated test account needs SELECT on the authorization table and
 CREATE on the test database for the `forge_security` schema, plus privileges
 to create and manipulate the two test tables. Do not grant it privileges on
-operational databases. Do not grant it UPDATE/INSERT/DELETE on the
-authorization table.
+operational databases. The account must not be a superuser, have CREATEDB,
+CREATEROLE, REPLICATION or BYPASSRLS, or be a member of the database or
+marker owning roles. It must not have CREATE on the public schema or any
+INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER privileges on the
+independently administered authorization marker.
 
 ## Running after independent approval
 
@@ -46,9 +49,11 @@ Then execute:
 node studio/authorized-execution-registry-integration.js
 ```
 
-The runner first checks exact database name and the pre-existing authorization
-marker, then launches the three real integration tests. The integration suite
-checks authorization again before any schema DDL.
+The runner first checks exact database name, the pre-existing authorization
+marker, role privileges and ownership separation, then launches the three real
+integration tests. The integration suite repeats the explicit approval and full
+read-only preflight before any schema DDL, including when Jest is invoked
+directly. The marker and environment approval must be provisioned out of band.
 
 The suite inserts only uniquely prefixed temporary runner records and cleans
 them afterward; its `forge_security` schema and tables remain for audit and
