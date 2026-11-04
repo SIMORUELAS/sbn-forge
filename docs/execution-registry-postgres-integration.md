@@ -59,3 +59,27 @@ process may leave test records that require administrative cleanup.
 verified infrastructure and privileges are required. The authorization marker
 must not be writable by the test runner. This flow does not certify artifacts,
 publish packages, enable installation or connect to production.
+
+## Local configuration inventory (no database connection)
+
+Before configuring or approving any integration execution, run:
+
+```text
+node studio/execution-registry-configuration-inventory.js
+```
+
+The output reports only boolean configuration presence and a predefined status
+code. It never prints the PostgreSQL URL, hostname, username, or password. It
+makes **no network connection**, creates no database or authorization marker,
+and never changes database privileges. `CONFIGURATION_MISSING` means one or
+both required test connection settings are absent. Even
+`CONFIGURATION_PRESENT_PREFLIGHT_REQUIRED` does **not** prove that the
+server, database, or permissions are isolated or authorized.
+
+An independent administrator must identify the test server and confirm its
+isolation before any provisioning. Never infer that a local or remote server
+is safe from a database name containing `test`.
+
+Once a dedicated environment has been independently provisioned and configured,
+`node studio/execution-registry-environment-preflight.js` performs read-only
+authorization and privilege checks. It still does not approve execution.
