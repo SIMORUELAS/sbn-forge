@@ -1,5 +1,6 @@
 'use strict';
 const { Pool } = require('pg');
+const { classifyExecutionRegistryPreflight } = require('./execution-registry-preflight-diagnostics');
 const {
   requireDedicatedTestDatabase, assertAuthorizedTestDatabase
 } = require('./execution-registry-test-guard');
@@ -63,9 +64,9 @@ if (require.main === module) {
     .then(result => {
       process.stdout.write(JSON.stringify(result, null, 2) + '\n');
     })
-    .catch(() => {
-      // Driver errors can contain credentials: avoid printing them.
-      process.stderr.write('EXECUTION_REGISTRY_TEST_PREFLIGHT_BLOCKED\n');
+    .catch(error => {
+      // Only predefined diagnostic categories are emitted, never raw driver errors.
+      process.stderr.write(JSON.stringify(classifyExecutionRegistryPreflight(error)) + '\n');
       process.exitCode = 1;
     });
 }
