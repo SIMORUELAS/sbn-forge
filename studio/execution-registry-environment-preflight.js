@@ -25,6 +25,12 @@ async function inspectExecutionRegistryTestEnvironment({
              has_schema_privilege(current_user, 'public', 'CREATE') AS public_create,
              (SELECT rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls
                 FROM pg_roles WHERE rolname = current_user) AS privileged_role,
+             (SELECT pg_has_role(current_user, d.datdba, 'MEMBER')
+                FROM pg_database d WHERE d.datname = current_database()) AS database_owner_member,
+             (SELECT pg_has_role(current_user, c.relowner, 'MEMBER')
+                FROM pg_class c
+                WHERE c.oid = 'public.sbn_forge_execution_registry_test_authorization'::regclass)
+                AS marker_owner_member,
              has_table_privilege(
                current_user,
                'public.sbn_forge_execution_registry_test_authorization',
@@ -50,6 +56,8 @@ async function inspectExecutionRegistryTestEnvironment({
         row.public_usage !== true ||
         row.public_create !== false ||
         row.privileged_role !== false ||
+        row.database_owner_member !== false ||
+        row.marker_owner_member !== false ||
         row.can_read_marker !== true ||
         row.can_write_marker !== false ||
         row.can_alter_marker !== false) {
@@ -62,6 +70,8 @@ async function inspectExecutionRegistryTestEnvironment({
       authorizationVerified: true,
       markerReadOnly: true,
       restrictedRoleVerified: true,
+      databaseOwnershipSeparated: true,
+      authorizationMarkerOwnershipSeparated: true,
       publicSchemaWriteBlocked: true,
       schemaCreationPermitted: true,
       certificationAuthorized: false,
