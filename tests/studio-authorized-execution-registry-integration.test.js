@@ -8,12 +8,17 @@ const env = {
   SBN_FORGE_EXECUTION_REGISTRY_TEST_DATABASE_URL: url,
   SBN_FORGE_EXECUTION_REGISTRY_EXPECTED_TEST_DATABASE: 'forge_test'
 };
+const permitted = {
+  database_name: 'forge_test', database_user: 'integration_runner',
+  can_create_schema: true, public_usage: true,
+  can_read_marker: true, can_write_marker: false
+};
 let pool, createPool, execute;
 beforeEach(() => {
   pool = {
-    query: jest.fn().mockResolvedValue({
-      rows: [{ database_name: 'forge_test', authorized: true }]
-    }),
+    query: jest.fn()
+      .mockResolvedValueOnce({ rows: [{ database_name: 'forge_test', authorized: true }] })
+      .mockResolvedValueOnce({ rows: [permitted] }),
     end: jest.fn().mockResolvedValue()
   };
   createPool = jest.fn().mockReturnValue(pool);
@@ -23,7 +28,8 @@ beforeEach(() => {
 test('runs only after external marker authorization, with safe direct process invocation', async () => {
   expect(await runAuthorizedExecutionRegistryIntegration({ env, createPool, execute }))
     .toEqual({ passed: true, certificationAuthorized: false, installable: false });
-  expect(pool.query).toHaveBeenCalledTimes(1);
+  expect(pool.query).toHaveBeenCalledTimes(2);
+  expect(pool.query.mock.calls.every(([sql]) => /^\\s*SELECT/i.test(sql))).toBe(true);
   expect(pool.end).toHaveBeenCalledTimes(1);
   expect(execute).toHaveBeenCalledTimes(1);
   const [command, args, options] = execute.mock.calls[0];
@@ -60,6 +66,9 @@ test('database errors and failing test process fail closed', async () => {
   await expect(runAuthorizedExecutionRegistryIntegration({ env, createPool, execute }))
     .rejects.toThrow('offline');
   expect(execute).not.toHaveBeenCalled();
+  pool.query.mockReset()
+    .mockResolvedValueOnce({ rows: [{ database_name: 'forge_test', authorized: true }] })
+    .mockResolvedValueOnce({ rows: [permitted] });
   execute.mockReturnValue({ status: 1 });
   await expect(runAuthorizedExecutionRegistryIntegration({ env, createPool, execute }))
     .rejects.toThrow('EXECUTION_REGISTRY_INTEGRATION_FAILED');
@@ -72,4 +81,18 @@ test('no approval is inferred from existing integration flag', async () => {
     createPool, execute
   })).rejects.toThrow('EXPLICIT_EXECUTION_REGISTRY_RUN_APPROVAL_REQUIRED');
   expect(execute).not.toHaveBeenCalled();
+});
+
+test.each([
+  ['writable authorization marker', { ...permitted, can_write_marker: true }],
+  ['no schema creation permission', { ...permitted, can_create_schema: false }],
+  ['wrong connected database', { ...permitted, database_name: 'production' }]
+])('blocks integration when preflight detects %s', async (_, unsafeRow) => {
+  pool.query.mockReset()
+    .mockResolvedValueOnce({ rows: [{ database_name: 'forge_test', authorized: true }] })
+    .mockResolvedValueOnce({ rows: [unsafeRow] });
+  await expect(runAuthorizedExecutionRegistryIntegration({ env, createPool, execute }))
+    .rejects.toThrow('TEST_DATABASE_PRIVILEGE_POLICY_NOT_MET');
+  expect(execute).not.toHaveBeenCalled();
+  expect(pool.end).toHaveBeenCalledTimes(1);
 });
