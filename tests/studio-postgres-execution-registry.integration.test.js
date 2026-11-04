@@ -3,28 +3,16 @@ const crypto = require('node:crypto');
 const { Pool } = require('pg');
 const { SCHEMA_SQL, createPostgresExecutionRegistry } = require('../studio/postgres-execution-registry');
 const { publicKeyFingerprint } = require('../studio/registered-execution-verifier');
+const { requireDedicatedTestDatabase, assertAuthorizedTestDatabase } = require('../studio/execution-registry-test-guard');
 
 const enabled = process.env.SBN_FORGE_RUN_EXECUTION_REGISTRY_PG_INTEGRATION === '1';
 const databaseUrl = process.env.SBN_FORGE_EXECUTION_REGISTRY_TEST_DATABASE_URL;
 const suite = enabled ? describe : describe.skip;
 
-function requireDedicatedTestDatabase(url) {
-  if (!url) throw new Error('DEDICATED_EXECUTION_REGISTRY_TEST_DATABASE_REQUIRED');
-  let parsed;
-  try { parsed = new URL(url); }
-  catch { throw new Error('INVALID_EXECUTION_REGISTRY_TEST_DATABASE_URL'); }
-  if (!['postgres:', 'postgresql:'].includes(parsed.protocol)) {
-    throw new Error('POSTGRESQL_TEST_DATABASE_REQUIRED');
-  }
-  const name = decodeURIComponent(parsed.pathname.replace(/^\//, ''));
-  if (!/(^test_|_test$|_test_)/i.test(name)) {
-    throw new Error('UNSAFE_EXECUTION_REGISTRY_DATABASE_NAME');
-  }
-  return url;
-}
 
 suite('PostgreSQL execution registry integration (dedicated test database only)', () => {
   let pool, registry, runnerId, keys;
+  const expectedDatabase = process.env.SBN_FORGE_EXECUTION_REGISTRY_EXPECTED_TEST_DATABASE;
   const details = {
     fingerprint: 'a'.repeat(64), evidenceDigest: 'b'.repeat(64),
     issuedAt: '2026-11-04T15:01:00.000Z'
@@ -33,10 +21,11 @@ suite('PostgreSQL execution registry integration (dedicated test database only)'
 
   beforeAll(async () => {
     pool = new Pool({
-      connectionString: requireDedicatedTestDatabase(databaseUrl),
+      connectionString: requireDedicatedTestDatabase(databaseUrl, expectedDatabase),
       max: 5, connectionTimeoutMillis: 5000
     });
     try {
+      await assertAuthorizedTestDatabase(pool, expectedDatabase);
       await pool.query(SCHEMA_SQL);
       registry = createPostgresExecutionRegistry(pool);
     } catch (error) {
@@ -81,7 +70,7 @@ suite('PostgreSQL execution registry integration (dedicated test database only)'
   test('claim persists across a fresh pool connection', async () => {
     expect(await registry.claimRunId(runnerId, runId, details)).toBe(true);
     const separatePool = new Pool({
-      connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 5000
+      connectionString: requireDedicatedTestDatabase(databaseUrl, expectedDatabase), max: 1, connectionTimeoutMillis: 5000
     });
     try {
       const separate = createPostgresExecutionRegistry(separatePool);
@@ -111,9 +100,9 @@ suite('PostgreSQL execution registry integration (dedicated test database only)'
 
 describe('dedicated database guard', () => {
   test('refuses production-like and invalid database names', () => {
-    expect(() => requireDedicatedTestDatabase('postgres://localhost/forge')).toThrow('UNSAFE_EXECUTION_REGISTRY_DATABASE_NAME');
-    expect(() => requireDedicatedTestDatabase('postgres://localhost/postgres')).toThrow('UNSAFE_EXECUTION_REGISTRY_DATABASE_NAME');
-    expect(() => requireDedicatedTestDatabase('postgres://localhost/forge_test')).not.toThrow();
-    expect(() => requireDedicatedTestDatabase('postgres://localhost/test_forge')).not.toThrow();
+    expect(() => requireDedicatedTestDatabase('postgres://localhost/forge', 'forge')).toThrow('UNSAFE_EXECUTION_REGISTRY_DATABASE_NAME');
+    expect(() => requireDedicatedTestDatabase('postgres://localhost/postgres', 'postgres')).toThrow('UNSAFE_EXECUTION_REGISTRY_DATABASE_NAME');
+    expect(() => requireDedicatedTestDatabase('postgres://localhost/forge_test', 'forge_test')).not.toThrow();
+    expect(() => requireDedicatedTestDatabase('postgres://localhost/test_forge', 'test_forge')).not.toThrow();
   });
 });
