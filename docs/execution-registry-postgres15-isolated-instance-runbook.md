@@ -103,3 +103,10 @@ The three pending administrative controls are specified in
 service account and NTFS, loopback/SCRAM/least privilege, and backup/recovery.
 This is a documentation-only phase. No provisioning, authorization-marker
 activation or integration-test execution is implied.
+
+## Macro-block 8T — controlled provisioning blueprint
+
+See [`execution-registry-postgres15-8t-controlled-provisioning.md`](./execution-registry-postgres15-8t-controlled-provisioning.md)
+for the ordered, approval-gated installation and verification stages. This
+blueprint is documentation only: **no installer is executable or authorized**,
+and the existing PostgreSQL 5432 cluster remains untouched.
