@@ -75,3 +75,23 @@ must never be treated as installation approval. No database credentials are
 required. The proposed service identity, filesystem ACLs, network restrictions,
 initialization commands and SQL provisioning remain subject to a separate
 operator-approved installation phase.
+
+## Macro-block 8R — Windows security readiness (read-only)
+
+Run after pulling the Studio branch:
+
+```powershell
+& ".\scripts\Test-SbnForgePostgres15SecurityReadiness.ps1"
+```
+
+The script checks the proposed data path against the existing cluster, service
+name collision, port listeners, a minimum free-space threshold, and existing
+reparse-point ancestors. It deliberately leaves **three mandatory human gates**
+blocked: service identity/NTFS, backup/recovery, and local-only network/SCRAM.
+The free-space threshold is a preliminary signal, not capacity planning.
+It does not create anything and does not inspect or expose passwords.
+
+**Execution hold point:** an administrator must separately approve an exact
+service identity, NTFS ACLs, backup plan, SCRAM credential delivery and
+configuration before a future provisioning script may be prepared for
+execution. Neither this diagnostic nor a PASS result constitutes approval.
