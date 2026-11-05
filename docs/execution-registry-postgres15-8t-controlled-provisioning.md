@@ -62,3 +62,22 @@ Any collision, privilege escalation, unexpected network listener, wrong database
 - All state-changing operations are explicitly future/approval-gated; no executable installer is published in this block.
 - The 5432 original cluster and existing 15 databases remain out of scope.
 - Marker activation and the three PostgreSQL integration tests remain separately gated.
+
+## Macro-block 8U — read-only provisioning orchestrator
+
+The first version of `scripts/Invoke-SbnForgePostgres15Provisioning.ps1` supports
+**only** `Plan` and `Preflight`. There is deliberately no `Install` mode.
+
+```powershell
+& ".\scripts\Invoke-SbnForgePostgres15Provisioning.ps1" -Mode Plan
+& ".\scripts\Invoke-SbnForgePostgres15Provisioning.ps1" -Mode Preflight
+```
+
+`Plan` emits the proposed resource manifest and pending approval gates.
+`Preflight` invokes both read-only diagnostics from 8Q and 8R and reports
+blocked controls; it does not approve or install anything. No secret or
+connection string is required. The tool always reports
+`ProvisioningAuthorized=false`, `ProvisioningPerformed=false`, and
+`TestExecutionAuthorized=false`. Any missing or failing diagnostic blocks
+progress. A future state-changing implementation requires a separately
+reviewed design and explicit administrator approval.
