@@ -95,3 +95,11 @@ It does not create anything and does not inspect or expose passwords.
 service identity, NTFS ACLs, backup plan, SCRAM credential delivery and
 configuration before a future provisioning script may be prepared for
 execution. Neither this diagnostic nor a PASS result constitutes approval.
+
+## Macro-block 8S — security and recovery plan
+
+The three pending administrative controls are specified in
+[`execution-registry-postgres15-8s-security-and-recovery.md`](./execution-registry-postgres15-8s-security-and-recovery.md):
+service account and NTFS, loopback/SCRAM/least privilege, and backup/recovery.
+This is a documentation-only phase. No provisioning, authorization-marker
+activation or integration-test execution is implied.
