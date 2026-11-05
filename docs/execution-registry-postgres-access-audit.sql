@@ -11,9 +11,12 @@ SELECT current_database() AS connected_database,
 SELECT d.datname AS database_name,
        pg_get_userbyid(d.datdba) AS owner_name,
        d.datallowconn AS connections_allowed,
-       has_database_privilege('PUBLIC', d.oid, 'CONNECT') AS public_connect,
-       has_database_privilege('PUBLIC', d.oid, 'CREATE') AS public_create,
-       has_database_privilege('PUBLIC', d.oid, 'TEMP') AS public_temp
+       EXISTS (SELECT 1 FROM aclexplode(COALESCE(d.datacl, acldefault('d', d.datdba))) a
+               WHERE a.grantee = 0 AND a.privilege_type = 'CONNECT') AS public_connect,
+       EXISTS (SELECT 1 FROM aclexplode(COALESCE(d.datacl, acldefault('d', d.datdba))) a
+               WHERE a.grantee = 0 AND a.privilege_type = 'CREATE') AS public_create,
+       EXISTS (SELECT 1 FROM aclexplode(COALESCE(d.datacl, acldefault('d', d.datdba))) a
+               WHERE a.grantee = 0 AND a.privilege_type = 'TEMPORARY') AS public_temp
 FROM pg_database d
 WHERE NOT d.datistemplate
 ORDER BY d.datname;
