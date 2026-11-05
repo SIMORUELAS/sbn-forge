@@ -57,3 +57,21 @@ Define backups and recovery before provisioning. Never delete `C:\Program Files\
 ## Security limits
 
 This runbook does not certify artifacts, enable installation, send email, modify operational PostgreSQL grants, or change production configuration. It intentionally contains no auto-executing installation script. The execution phase must be reviewed and explicitly authorized independently.
+
+## Macro-block 8Q — read-only Windows prerequisite check
+
+After pulling the repository, an operator may run this non-mutating diagnostic
+from the Studio repository root in Windows PowerShell:
+
+```powershell
+powershell.exe -NoProfile -File .\scripts\Test-SbnForgePostgres15Prerequisites.ps1
+```
+
+The script checks binaries, the original service, collisions for the new service,
+port and data directory, and reparse-point ancestors. It deliberately reports
+`PREFLIGHT_ONLY_NOT_AUTHORIZED` and blocks service-account/ACL and host/backup
+reviews pending independent verification. It **does not install anything** and
+must never be treated as installation approval. No database credentials are
+required. The proposed service identity, filesystem ACLs, network restrictions,
+initialization commands and SQL provisioning remain subject to a separate
+operator-approved installation phase.
