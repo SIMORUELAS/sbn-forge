@@ -1,3 +1,5 @@
+> **Decision update (macro-block 8P):** The existing localhost:5432 cluster has PUBLIC CONNECT on all 15 databases. Do not provision the execution runner in that cluster. The preferred, documentation-only plan is a separate PostgreSQL 15 cluster on localhost:5433: [isolated-instance runbook](execution-registry-postgres15-isolated-instance-runbook.md). The legacy steps below are retained as historical context and are **not approved for execution**.
+
 # SBN Forge — PostgreSQL 15 test provisioning plan (NOT authorized to execute)
 
 ## Scope and hold point
