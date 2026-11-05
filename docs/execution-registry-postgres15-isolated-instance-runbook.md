@@ -110,3 +110,11 @@ See [`execution-registry-postgres15-8t-controlled-provisioning.md`](./execution-
 for the ordered, approval-gated installation and verification stages. This
 blueprint is documentation only: **no installer is executable or authorized**,
 and the existing PostgreSQL 5432 cluster remains untouched.
+
+## Macro-block 8V — administrative approval dossier
+
+Review [`execution-registry-postgres15-8v-administrative-approval.md`](./execution-registry-postgres15-8v-administrative-approval.md)
+for the single decision register covering the Windows service account/NTFS,
+capacity and recovery, loopback/SCRAM, least privilege, and change approval.
+All decisions remain **PENDING** until independently reviewed and approved.
+The dossier does not authorize installation or PostgreSQL integration tests.
