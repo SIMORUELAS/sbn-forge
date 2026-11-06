@@ -13,8 +13,8 @@ test('real generated Fastify routes reject missing JWT and unauthorized CRUD bef
   expect(result.error).toBeUndefined();
   // Report only bounded, redacted diagnostics from the isolated test process.
   const diagnostics = String(result.stderr || '')
-    .replace(/(?:postgres(?:ql)?:\\/\\/)[^\\s]+/gi, '[REDACTED_DATABASE_URL]')
-    .replace(/(?:password|secret|token)\\s*[:=]\\s*[^\\s]+/gi, '$1=[REDACTED]')
+    .replace(/postgres(?:ql)?:\/\/\S+/gi, '[REDACTED_DATABASE_URL]')
+    .replace(/(password|secret|token)\s*[:=]\s*\S+/gi, '$1=[REDACTED]')
     .slice(0, 1200);
   if (result.status !== 0) { throw new Error('FASTIFY_RUNNER_EXIT_' + result.status + ': ' + diagnostics); }
   expect(result.status).toBe(0);
