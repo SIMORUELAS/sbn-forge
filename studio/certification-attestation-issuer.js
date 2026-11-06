@@ -7,7 +7,7 @@ const { verifyCertificationAttestation } = require('./certification-attestation-
 // separately authorized signer; it must never live in generated artifacts.
 // This function does not establish who approved the checks or grant installation.
 function issueCertificationAttestation({ evidence, expectedFingerprint, privateKey }) {
-  if (!privateKey) throw new Error('CERTIFICATION_SIGNING_KEY_REQUIRED');
+  if (!privateKey) { throw new Error('CERTIFICATION_SIGNING_KEY_REQUIRED'); }
   const record = createEvidenceRecord(evidence);
   if (!evidence || evidence.digest !== record.digest ||
       record.fingerprint !== expectedFingerprint) {
