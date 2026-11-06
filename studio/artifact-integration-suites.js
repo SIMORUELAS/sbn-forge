@@ -11,13 +11,13 @@ async function inspectArtifactIntegrationTargets(run) {
   const targets = {};
   for (const [name, suffix] of Object.entries({ repository: '.repository.js', routes: '.routes.js' })) {
     const matching = run.artifacts.filter(item => typeof item.path === 'string' && item.path.endsWith(suffix));
-    if (matching.length !== 1) throw new Error('GENERATED_ARTIFACT_REQUIRED: ' + suffix);
+    if (matching.length !== 1) { throw new Error('GENERATED_ARTIFACT_REQUIRED: ' + suffix); }
     const relative = matching[0].path;
     const absolute = path.resolve(root, relative);
-    if (!absolute.startsWith(root + path.sep)) throw new Error('INVALID_GENERATED_ARTIFACT_PATH');
+    if (!absolute.startsWith(root + path.sep)) { throw new Error('INVALID_GENERATED_ARTIFACT_PATH'); }
     const stat = await fs.lstat(absolute);
-    if (!stat.isFile() || stat.isSymbolicLink()) throw new Error('INVALID_GENERATED_ARTIFACT');
-    if (!(await fs.realpath(absolute)).startsWith(root + path.sep)) throw new Error('INVALID_GENERATED_ARTIFACT');
+    if (!stat.isFile() || stat.isSymbolicLink()) { throw new Error('INVALID_GENERATED_ARTIFACT'); }
+    if (!(await fs.realpath(absolute)).startsWith(root + path.sep)) { throw new Error('INVALID_GENERATED_ARTIFACT'); }
     targets[name] = relative;
   }
   if (path.dirname(targets.repository) !== path.dirname(targets.routes)) {
@@ -103,7 +103,7 @@ async function prepareArtifactPostgresqlSuite(run, definition) {
     fields.find(field => field.name === 'id').dataType === 'uuid' &&
     fields.find(field => field.name === 'organization_id').dataType === 'uuid' &&
     fields.find(field => field.name === 'name').dataType === 'text';
-  if (!supported) throw new Error('POSTGRESQL_SUITE_MODEL_UNSUPPORTED');
+  if (!supported) { throw new Error('POSTGRESQL_SUITE_MODEL_UNSUPPORTED'); }
   const sourceSchema = definition?.source?.schema;
   const sourceTable = definition?.source?.table;
   if (![sourceSchema, sourceTable].every(value => typeof value === 'string' && /^[a-z_][a-z0-9_]*$/i.test(value))) {
@@ -193,7 +193,7 @@ async function prepareArtifactIntegrationSuites(run, definition) {
       await fs.lstat(path.resolve(root, relative));
       throw new Error('ARTIFACT_SUITE_ALREADY_EXISTS');
     } catch (error) {
-      if (error.code !== 'ENOENT') throw error;
+      if (error.code !== 'ENOENT') { throw error; }
     }
   }
   const created = [];
