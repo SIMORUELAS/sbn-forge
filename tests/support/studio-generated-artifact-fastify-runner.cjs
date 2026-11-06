@@ -63,7 +63,11 @@ async function run() {
       const denied = await app.inject({
         ...operation, headers: { authorization: 'Bearer ' + token }
       });
-      assert.equal(denied.statusCode, 403, operation.method + ' must reject unauthorized CRUD');
+      const safeFailure = denied.statusCode === 400
+        ? ' (validation: ' + String(denied.json()?.message || 'unspecified').slice(0, 250) + ')'
+        : '';
+      assert.equal(denied.statusCode, 403,
+        operation.method + ' must reject unauthorized CRUD' + safeFailure);
       unauthorizedRejected++;
     }
     assert.equal(queryCount, 0, 'unauthorized operations must never access database');
