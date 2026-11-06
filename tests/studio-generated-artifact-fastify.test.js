@@ -11,7 +11,12 @@ test('real generated Fastify routes reject missing JWT and unauthorized CRUD bef
     env: { ...process.env, NODE_ENV: 'test' }
   });
   expect(result.error).toBeUndefined();
-  expect(result.status).toBe(0);
+  // Report only bounded, redacted diagnostics from the isolated test process.
+  const diagnostics = String(result.stderr || '')
+    .replace(/(?:postgres(?:ql)?:\\/\\/)[^\\s]+/gi, '[REDACTED_DATABASE_URL]')
+    .replace(/(?:password|secret|token)\\s*[:=]\\s*[^\\s]+/gi, '$1=[REDACTED]')
+    .slice(0, 1200);
+  expect({ status: result.status, diagnostics }).toEqual({ status: 0, diagnostics: '' });
   expect(JSON.parse(result.stdout.trim())).toEqual({
     operations: 5, missingJwtRejected: 5, unauthorizedRejected: 5, queryCount: 0
   });
