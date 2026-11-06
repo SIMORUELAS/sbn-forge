@@ -4,14 +4,14 @@ const { Pool } = require('pg');
 // Discovery only: no DDL, DML, authorization marker or test execution.
 function parseTarget(env) {
   const raw = env.SBN_FORGE_LINUX_INSPECTION_DATABASE_URL;
-  if (!raw) throw new Error('LINUX_INSPECTION_URL_REQUIRED');
+  if (!raw) { throw new Error('LINUX_INSPECTION_URL_REQUIRED'); }
   let url;
   try { url = new URL(raw); } catch { throw new Error('INVALID_LINUX_INSPECTION_URL'); }
-  if (!['postgres:', 'postgresql:'].includes(url.protocol)) throw new Error('POSTGRESQL_URL_REQUIRED');
+  if (!['postgres:', 'postgresql:'].includes(url.protocol)) { throw new Error('POSTGRESQL_URL_REQUIRED'); }
   const db = decodeURIComponent(url.pathname.replace(/^\//, ''));
   const expected = env.SBN_FORGE_LINUX_INSPECTION_EXPECTED_DATABASE;
-  if (!expected || db !== expected) throw new Error('EXACT_INSPECTION_DATABASE_REQUIRED');
-  if (!url.hostname || !url.port) throw new Error('EXPLICIT_HOST_AND_PORT_REQUIRED');
+  if (!expected || db !== expected) { throw new Error('EXACT_INSPECTION_DATABASE_REQUIRED'); }
+  if (!url.hostname || !url.port) { throw new Error('EXPLICIT_HOST_AND_PORT_REQUIRED'); }
   return { connectionString: raw, expected };
 }
 
