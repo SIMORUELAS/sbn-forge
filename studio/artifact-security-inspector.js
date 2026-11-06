@@ -21,7 +21,7 @@ async function inspectArtifactSecurity({ artifactRoot, artifacts }) {
         !(await fs.realpath(full)).startsWith(root + path.sep)) {
       throw new Error('INVALID_INSPECTION_FILE');
     }
-    if (item.path.endsWith('.js')) files.set(item.path, await fs.readFile(full, 'utf8'));
+    if (item.path.endsWith('.js')) { files.set(item.path, await fs.readFile(full, 'utf8')); }
   }
   const routeFiles = [...files].filter(([name]) => name.endsWith('.routes.js'));
   const repoFiles = [...files].filter(([name]) => name.endsWith('.repository.js'));
