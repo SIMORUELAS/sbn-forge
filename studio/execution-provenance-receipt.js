@@ -14,7 +14,7 @@ function receiptPayload(record, runId, issuedAt) {
 
 function issueExecutionReceipt({ evidence, runId, issuedAt, privateKey }) {
   const record = createEvidenceRecord(evidence);
-  if (record.digest !== evidence?.digest) throw new Error('EXECUTION_EVIDENCE_DIGEST_MISMATCH');
+  if (record.digest !== evidence?.digest) { throw new Error('EXECUTION_EVIDENCE_DIGEST_MISMATCH'); }
   if (typeof runId !== 'string' || !/^[a-zA-Z0-9_-]{16,128}$/.test(runId) ||
       typeof issuedAt !== 'string' || !Number.isFinite(Date.parse(issuedAt))) {
     throw new Error('INVALID_EXECUTION_RECEIPT_METADATA');
