@@ -27,7 +27,7 @@ function assessLinuxIsolation(inventory, context = {}) {
       : unknown.length ? 'ADDITIONAL_EVIDENCE_REQUIRED' : 'PROVISIONING_REVIEW_ONLY',
     blockers, unknown,
     targetDatabase: 'sbn_forge_execution_test',
-    existingDatabasesProtected: true,
+    existingDatabasesProtected: context.existingDatabasesProtected === true,
     databaseProvisioned: false,
     authorizationMarkerEnabled: false,
     integrationTestsAuthorized: false,
