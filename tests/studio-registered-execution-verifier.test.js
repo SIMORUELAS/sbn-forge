@@ -25,7 +25,7 @@ beforeEach(() => {
   const seen = new Set();
   replayStore = { claimRunId: jest.fn().mockImplementation(async (runnerId, runId) => {
     const key = runnerId + ':' + runId;
-    if (seen.has(key)) return false;
+    if (seen.has(key)) { return false; }
     seen.add(key);
     return true;
   }) };
