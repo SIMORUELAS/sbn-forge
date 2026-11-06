@@ -4,7 +4,7 @@
 // marker out of band, on an independently verified disposable database.
 // The marker is a safety interlock, not proof of environment isolation.
 function requireDedicatedTestDatabase(url, expectedDatabase) {
-  if (!url) throw new Error('DEDICATED_EXECUTION_REGISTRY_TEST_DATABASE_REQUIRED');
+  if (!url) { throw new Error('DEDICATED_EXECUTION_REGISTRY_TEST_DATABASE_REQUIRED'); }
   let parsed;
   try { parsed = new URL(url); }
   catch { throw new Error('INVALID_EXECUTION_REGISTRY_TEST_DATABASE_URL'); }
