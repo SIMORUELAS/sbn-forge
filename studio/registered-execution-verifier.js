@@ -40,7 +40,7 @@ async function verifyRegisteredExecution({
   const verification = verifyExecutionReceipt({
     evidence, receipt, trustedRunnerPublicKey: runner.publicKey, expectedFingerprint
   });
-  if (!verification.verified) return fail(verification.reason);
+  if (!verification.verified) { return fail(verification.reason); }
   let claimed;
   try {
     claimed = await replayStore.claimRunId(runnerId, verification.runId, {
@@ -48,7 +48,7 @@ async function verifyRegisteredExecution({
       issuedAt: verification.issuedAt
     });
   } catch { return fail('EXECUTION_REPLAY_STORE_UNAVAILABLE'); }
-  if (claimed !== true) return fail('EXECUTION_RECEIPT_REPLAYED_OR_NOT_RECORDED');
+  if (claimed !== true) { return fail('EXECUTION_RECEIPT_REPLAYED_OR_NOT_RECORDED'); }
   return {
     verified: true, registered: true, runnerId, runId: verification.runId,
     keyFingerprint, fingerprint: verification.fingerprint,
