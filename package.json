@@ -11,8 +11,8 @@
   "scripts": {
     "start": "node bin/sbn-forge.js",
     "generate:example": "node bin/sbn-forge.js generate api ai_business_model_departments --definition ./examples/ai_business_model_departments.json --output ./output --force",
-    "test": "jest --runInBand",
-    "test:coverage": "jest --coverage --runInBand",
+    "test": "jest --runInBand --no-cache",
+    "test:coverage": "jest --coverage --runInBand --no-cache",
     "lint": "eslint ."
   },
   "keywords": [
