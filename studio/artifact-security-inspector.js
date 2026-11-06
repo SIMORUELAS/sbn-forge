@@ -15,7 +15,7 @@ async function inspectArtifactSecurity({ artifactRoot, artifacts }) {
   const files = new Map();
   for (const item of artifacts) {
     const full = path.resolve(root, item.path);
-    if (!full.startsWith(root + path.sep)) throw new Error('INVALID_INSPECTION_PATH');
+    if (!full.startsWith(root + path.sep)) { throw new Error('INVALID_INSPECTION_PATH'); }
     const stat = await fs.lstat(full);
     if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 1024 * 1024 ||
         !(await fs.realpath(full)).startsWith(root + path.sep)) {
