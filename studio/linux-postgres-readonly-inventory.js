@@ -37,7 +37,7 @@ async function inspectLinuxPostgres({ env = process.env, createPool = opts => ne
              has_schema_privilege(current_user, 'public', 'CREATE') AS public_create
     `);
     if (!result || !Array.isArray(result.rows) || result.rows.length !== 1 ||
-        result.rows[0].database_name !== expected) throw new Error('INSPECTION_DATABASE_MISMATCH');
+        result.rows[0].database_name !== expected) { throw new Error('INSPECTION_DATABASE_MISMATCH'); }
     const x = result.rows[0];
     return {
       status: 'READ_ONLY_INVENTORY_COMPLETE',
