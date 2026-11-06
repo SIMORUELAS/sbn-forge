@@ -32,8 +32,8 @@ function verifyCertificationAttestation({ evidence, attestation, trustedPublicKe
   try {
     const key = trustedPublicKey instanceof crypto.KeyObject
       ? trustedPublicKey : crypto.createPublicKey(trustedPublicKey);
-    if (key.type !== 'public') return fail('INVALID_TRUST_KEY_TYPE');
-    if (key.asymmetricKeyType !== 'ed25519') return fail('UNSUPPORTED_TRUST_KEY');
+    if (key.type !== 'public') { return fail('INVALID_TRUST_KEY_TYPE'); }
+    if (key.asymmetricKeyType !== 'ed25519') { return fail('UNSUPPORTED_TRUST_KEY'); }
     const payload = Buffer.from(JSON.stringify({
       version: 1, fingerprint: record.fingerprint, evidenceDigest: record.digest
     }));
