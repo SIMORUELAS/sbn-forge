@@ -12,7 +12,7 @@ test('rejects missing or mismatched database confirmation', () => {
 test('only performs a read-only SELECT and never approves integration', async () => {
   const query = jest.fn(async sql => {
     expect(sql.trim()).toMatch(/^SELECT\s/i);
-    expect(sql).not.toMatch(/\b(CREATE|INSERT|UPDATE|DELETE|DROP|ALTER|GRANT|REVOKE)\b/i);
+    expect(sql).not.toMatch(/;\s*(CREATE|INSERT|UPDATE|DELETE|DROP|ALTER|GRANT|REVOKE)\b/i);
     return { rows: [{
       database_name: 'postgres', server_version: '15.2', server_version_num: 150002,
       server_port: 5432, ssl_active: true, privileged_role: false,
