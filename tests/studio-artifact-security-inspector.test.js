@@ -45,6 +45,6 @@ test('rejects path traversal, duplicate declarations and symlinks', async () => 
     await fs.symlink(target, path.join(root, 'linked.js'), 'file');
     await expect(inspect([{ path: 'linked.js' }])).rejects.toThrow('INVALID_INSPECTION_FILE');
   } catch (error) {
-    if (error.code !== 'EPERM' && error.code !== 'EACCES' && error.code !== 'ENOTSUP') throw error;
+    if (error.code !== 'EPERM' && error.code !== 'EACCES' && error.code !== 'ENOTSUP') { throw error; }
   }
 });
