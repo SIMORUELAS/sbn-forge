@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS forge_security.execution_receipt_claims (
 // The calling service supplies an already configured, least-privilege pg Pool.
 // Administrative provisioning and key rotation are intentionally out of scope.
 function createPostgresExecutionRegistry(pool) {
-  if (!pool || typeof pool.query !== 'function') throw new Error('POSTGRES_POOL_REQUIRED');
+  if (!pool || typeof pool.query !== 'function') { throw new Error('POSTGRES_POOL_REQUIRED'); }
   return {
     async getRunner(runnerId) {
       if (typeof runnerId !== 'string' || !/^[A-Za-z0-9_-]{3,128}$/.test(runnerId)) {
@@ -40,7 +40,7 @@ function createPostgresExecutionRegistry(pool) {
         'SELECT active, public_key_pem, key_fingerprint FROM forge_security.execution_runners WHERE runner_id = $1',
         [runnerId]
       );
-      if (!result || !Array.isArray(result.rows)) throw new Error('INVALID_REGISTRY_RESULT');
+      if (!result || !Array.isArray(result.rows)) { throw new Error('INVALID_REGISTRY_RESULT'); }
       const row = result.rows[0];
       return row ? {
         active: row.active === true,
@@ -69,7 +69,7 @@ function createPostgresExecutionRegistry(pool) {
          RETURNING run_id`,
         [runnerId, runId, details.fingerprint, details.evidenceDigest, details.issuedAt]
       );
-      if (!result || !Array.isArray(result.rows)) throw new Error('INVALID_CLAIM_RESULT');
+      if (!result || !Array.isArray(result.rows)) { throw new Error('INVALID_CLAIM_RESULT'); }
       return result.rows.length === 1;
     }
   };
