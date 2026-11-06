@@ -51,13 +51,13 @@ suite('PostgreSQL execution registry integration (dedicated test database only)'
   });
 
   afterEach(async () => {
-    if (!pool || !runnerId) return;
+    if (!pool || !runnerId) { return; }
     await pool.query('DELETE FROM forge_security.execution_receipt_claims WHERE runner_id = $1', [runnerId]);
     await pool.query('DELETE FROM forge_security.execution_runners WHERE runner_id = $1', [runnerId]);
   });
 
   afterAll(async () => {
-    if (pool) await pool.end();
+    if (pool) { await pool.end(); }
   });
 
   test('two concurrent clients claim the same receipt exactly once', async () => {
