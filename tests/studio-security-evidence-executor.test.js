@@ -184,7 +184,7 @@ test('artifact suite resolution rejects symlinks and nested path escapes', async
         jwtCrudIntegration: 'valid.test.js'
       })).rejects.toThrow('INVALID_ARTIFACT_SUITE');
     } catch (error) {
-      if (!['EPERM', 'EACCES', 'ENOTSUP'].includes(error.code)) throw error;
+      if (!['EPERM', 'EACCES', 'ENOTSUP'].includes(error.code)) { throw error; }
     }
   } finally {
     await fs.rm(root, { recursive: true, force: true });
