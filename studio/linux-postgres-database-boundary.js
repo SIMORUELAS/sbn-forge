@@ -17,10 +17,10 @@ function assessForgeDatabaseBoundary({ inventory, context = {}, proposal = {} } 
   const confirmations = proposal.confirmations && typeof proposal.confirmations === 'object' &&
     !Array.isArray(proposal.confirmations) ? proposal.confirmations : {};
   const blockers = [...base.blockers];
-  if (database !== TARGET) blockers.push('TARGET_DATABASE_NOT_DEDICATED');
-  if (PROTECTED.includes(database)) blockers.push('PROTECTED_DATABASE_TARGET');
-  if (proposal.usesAdministrativeRole !== false) blockers.push('ADMINISTRATIVE_ROLE_NOT_EXCLUDED');
-  if (proposal.crossDatabaseAccessDisabled !== true) blockers.push('CROSS_DATABASE_ACCESS_NOT_EXCLUDED');
+  if (database !== TARGET) { blockers.push('TARGET_DATABASE_NOT_DEDICATED'); }
+  if (PROTECTED.includes(database)) { blockers.push('PROTECTED_DATABASE_TARGET'); }
+  if (proposal.usesAdministrativeRole !== false) { blockers.push('ADMINISTRATIVE_ROLE_NOT_EXCLUDED'); }
+  if (proposal.crossDatabaseAccessDisabled !== true) { blockers.push('CROSS_DATABASE_ACCESS_NOT_EXCLUDED'); }
   const missing = REQUIRED.filter(key => confirmations[key] !== true);
   return {
     status: blockers.length ? 'BOUNDARY_REJECTED' : (missing.length || base.unknown.length)
