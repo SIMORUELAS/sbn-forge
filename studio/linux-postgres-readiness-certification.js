@@ -15,7 +15,7 @@ function certifyForgeIntegrationReadiness({
   try {
     boundary = assessForgeDatabaseBoundary({ inventory, context, proposal });
     procedure = planForgeProvisioning({ inventory, context, proposal });
-  } catch (_error) {
+  } catch {
     return {
       status: 'CERTIFICATION_BLOCKED',
       reasons: ['INVALID_OR_MISSING_ISOLATION_INVENTORY'],
