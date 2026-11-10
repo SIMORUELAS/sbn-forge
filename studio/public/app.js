@@ -23,7 +23,8 @@ function showSection(id) {
   document.getElementById('designer-workspace').hidden = id !== 'diseno';
   document.getElementById('generation-workspace').hidden = id !== 'generacion';
   document.getElementById('history-workspace').hidden = id !== 'historial';
-  document.getElementById('detail-placeholder').hidden = id === 'inspector' || id === 'diseno' || id === 'generacion' || id === 'historial';
+  document.getElementById('modules-workspace').hidden = id !== 'modulos';
+  document.getElementById('detail-placeholder').hidden = id === 'inspector' || id === 'diseno' || id === 'generacion' || id === 'historial' || id === 'modulos';
   document.querySelectorAll('[data-view]').forEach(el => {
     const selected = el.dataset.view === id;
     el.classList.toggle('active', selected);
@@ -32,6 +33,7 @@ function showSection(id) {
   });
   window.location.hash = id === 'inicio' ? '' : id;
   if (id === 'historial' || id === 'generacion') { refreshRuns().catch(() => {}); }
+  if (id === 'modulos') { refreshModules().catch(() => {}); }
 }
 document.querySelectorAll('[data-view]').forEach(el => el.addEventListener('click', () => showSection(el.dataset.view)));
 document.querySelectorAll('[data-go]').forEach(el => el.addEventListener('click', () => showSection(el.dataset.go)));
@@ -519,4 +521,65 @@ document.getElementById('history-go-generation').addEventListener('click', () =>
 
 document.getElementById('generation-code-wrap').addEventListener('change', event => {
   document.getElementById('generation-code-lines').classList.toggle('code-wrapped', event.target.checked);
+});
+
+async function refreshModules() {
+  const message = document.getElementById('modules-message');
+  const rows = document.getElementById('modules-rows');
+  const preview = document.getElementById('modules-preview');
+  preview.hidden = true;
+  message.textContent = 'Consultando definiciones y ejecuciones locales…';
+  try {
+    const [definitionsResponse, runsResponse] = await Promise.all([
+      fetch('/api/studio/definitions'), fetch('/api/studio/runs')
+    ]);
+    if (!definitionsResponse.ok || !runsResponse.ok) {
+      throw new Error('No se pudo consultar el inventario local');
+    }
+    const definitions = await definitionsResponse.json();
+    const runs = await runsResponse.json();
+    if (!Array.isArray(definitions.definitions) || !Array.isArray(runs.runs)) {
+      throw new Error('Inventario local inválido');
+    }
+    rows.replaceChildren();
+    for (const name of definitions.definitions) {
+      const row = document.createElement('tr');
+      const nameCell = document.createElement('td');
+      nameCell.textContent = name;
+      const countCell = document.createElement('td');
+      countCell.textContent = String(runs.runs.filter(run => run.name === name).length);
+      const actionCell = document.createElement('td');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'run-entry';
+      button.textContent = 'Previsualizar';
+      button.addEventListener('click', async () => {
+        preview.hidden = true;
+        try {
+          const response = await fetch('/api/studio/preview/' + encodeURIComponent(name));
+          if (!response.ok) { throw new Error('No se pudo previsualizar el módulo'); }
+          const contract = await response.json();
+          document.getElementById('modules-preview-json').textContent =
+            JSON.stringify(contract, null, 2);
+          preview.hidden = false;
+          message.textContent = 'Contrato local de ' + name + '. No se publicó código.';
+        } catch (error) { message.textContent = error.message; }
+      });
+      actionCell.appendChild(button);
+      row.append(nameCell, countCell, actionCell);
+      rows.appendChild(row);
+    }
+    message.textContent = definitions.definitions.length +
+      ' definiciones locales · ' + runs.runs.length +
+      ' generaciones históricas · publicación deshabilitada.';
+  } catch (error) {
+    rows.replaceChildren();
+    message.textContent = error.message;
+  }
+}
+document.getElementById('modules-refresh').addEventListener('click', () => {
+  refreshModules().catch(() => {});
+});
+document.getElementById('modules-go-designer').addEventListener('click', () => {
+  showSection('diseno');
 });
