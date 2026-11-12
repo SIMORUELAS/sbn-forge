@@ -8,6 +8,7 @@ const { createDefinitionStore, MAX_BYTES } = require('./definition-store');
 const { toForgePreview } = require('./forge-preview');
 const { createGenerationPlan } = require('./generation-plan');
 const { createRunManager } = require('./run-manager');
+const { assessPortalModuleSecurityContract, OPERATIONS } = require('./portal-module-security-contract');
 
 const HOST = '127.0.0.1';
 const PORT = Number(process.env.FORGE_STUDIO_PORT || 4173);
@@ -67,6 +68,25 @@ function createStudioServer(options = {}) {
         const file = new URL(req.url, 'http://localhost').searchParams.get('path');
         json(res, 200, await runs.read(match[1], file));
       } catch (error) { json(res, error.status || 404, { error: 'Archivo no disponible' }); }
+      return;
+    }
+    if (pathname.startsWith('/api/studio/portal-security/')) {
+      if (req.method !== 'GET') { json(res, 405, { error: 'Método no permitido' }); return; }
+      const name = pathname.slice('/api/studio/portal-security/'.length);
+      if (!/^[a-z][a-z0-9_]{2,79}$/.test(name)) {
+        json(res, 400, { error: 'Nombre de módulo inválido' }); return;
+      }
+      try {
+        await definitions.get(name);
+        // Do not accept client-provided approval or evidence claims.
+        json(res, 200, assessPortalModuleSecurityContract({
+          moduleName: name, operations: OPERATIONS
+        }));
+      } catch (error) {
+        json(res, error.code === 'ENOENT' ? 404 : 500, {
+          error: error.code === 'ENOENT' ? 'Definición no encontrada' : 'Diagnóstico no disponible'
+        });
+      }
       return;
     }
     if (pathname.startsWith('/api/studio/generation-plan/')) {
