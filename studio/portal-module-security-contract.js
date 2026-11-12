@@ -17,8 +17,8 @@ function assessPortalModuleSecurityContract({ moduleName, operations, host = {},
     new Set(operations).size === OPERATIONS.length &&
     OPERATIONS.every(operation => operations.includes(operation));
   const invalid = [];
-  if (!validModule) invalid.push('INVALID_MODULE_NAME');
-  if (!validOperations) invalid.push('INVALID_CRUD_OPERATION_SET');
+  if (!validModule) { invalid.push('INVALID_MODULE_NAME'); }
+  if (!validOperations) { invalid.push('INVALID_CRUD_OPERATION_SET'); }
   if (!host || typeof host !== 'object' || Array.isArray(host)) {
     invalid.push('INVALID_HOST_CONTRACT');
   }
