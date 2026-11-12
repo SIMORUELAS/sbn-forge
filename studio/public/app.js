@@ -404,8 +404,33 @@ async function refreshRuns() {
     }
   }
 }
+async function refreshPortalSecurity(run) {
+  const status = document.getElementById('generation-portal-security-status');
+  const checks = document.getElementById('generation-portal-security-checks');
+  checks.replaceChildren();
+  status.textContent = 'Consultando requisitos de seguridad (sin autorizar instalación)…';
+  try {
+    const response = await fetch('/api/studio/portal-security/' + encodeURIComponent(run.name));
+    const report = await response.json();
+    if (!response.ok) { throw new Error(report.error || 'Diagnóstico no disponible'); }
+    if (!activeRun || activeRun.id !== run.id) { return; }
+    status.textContent = 'Resultado: ' + report.status +
+      ' · Instalación: deshabilitada · Publicación: deshabilitada.' +
+      ' Declaraciones no equivalen a certificación de ejecución.';
+    for (const check of report.checks || []) {
+      const item = document.createElement('li');
+      item.textContent = check.id + ' · ' + check.state;
+      checks.appendChild(item);
+    }
+  } catch (error) {
+    if (!activeRun || activeRun.id !== run.id) { return; }
+    status.textContent = 'Diagnóstico no disponible: ' + error.message +
+      '. Instalación y publicación deshabilitadas.';
+  }
+}
 function selectRun(run) {
   activeRun = run;
+  refreshPortalSecurity(run).catch(() => {});
   const select = document.getElementById('generation-file');
   const previous = select.value;
   select.replaceChildren();
