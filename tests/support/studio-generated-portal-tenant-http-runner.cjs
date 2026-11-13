@@ -65,7 +65,7 @@ async function run() {
     const operations = [
       { method: 'GET', url: base },
       { method: 'GET', url: base + '/' + ID },
-      { method: 'POST', url: base, payload: { name: 'created', organization_id: ORG_B } },
+      { method: 'POST', url: base, payload: { id: ID, name: 'created', organization_id: ORG_B } },
       { method: 'PATCH', url: base + '/' + ID, payload: { name: 'updated', organization_id: ORG_B } },
       { method: 'DELETE', url: base + '/' + ID }
     ];
