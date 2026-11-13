@@ -72,12 +72,12 @@ async function run() {
     for (const operation of operations) {
       const before = queries.length;
       const missing = await app.inject(operation);
-      assert.equal(missing.statusCode, 401);
+      assert.equal(missing.statusCode, 401, 'missing JWT ' + operation.method + ' ' + operation.url + ': ' + missing.body.slice(0, 350));
       assert.equal(queries.length, before);
       const foreign = await app.inject({ ...operation, headers: {
         authorization: 'Bearer ' + token, 'x-organization-id': ORG_B
       } });
-      assert.equal(foreign.statusCode, 403);
+      assert.equal(foreign.statusCode, 403, 'foreign ' + operation.method + ' ' + operation.url + ': ' + foreign.body.slice(0, 350));
       assert.equal(queries.length, before);
       const allowed = await app.inject({ ...operation, headers: {
         authorization: 'Bearer ' + token, 'x-organization-id': ORG_A
