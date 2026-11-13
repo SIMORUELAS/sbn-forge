@@ -6,7 +6,7 @@ const fastify = require('fastify');
 const assert = require('node:assert/strict');
 const jwt = require('@fastify/jwt');
 const { generateIsolated } = require('../../studio/isolated-generation');
-const { createPortalCrudSecurityBridge } = require('../studio/portal-crud-security-bridge');
+const { createPortalCrudSecurityBridge } = require('../../studio/portal-crud-security-bridge');
 const meta = { defaultValue: null, identity: false, maxLength: null, precision: null, scale: null };
 const ORG_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const ORG_B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -95,7 +95,7 @@ async function run() {
     await fs.rm(parent, { recursive: true, force: true });
   }
 }
-run().then(() => { process.stdout.write('PORTAL_TENANT_HTTP_OK\\n'); }).catch(error => {
-  process.stderr.write('PORTAL_TENANT_HTTP_FAILED: ' + error.message + '\\n');
+run().then(() => { process.stdout.write('PORTAL_TENANT_HTTP_OK\n'); }).catch(error => {
+  process.stderr.write('PORTAL_TENANT_HTTP_FAILED: ' + error.message + '\n');
   process.exitCode = 1;
 });
