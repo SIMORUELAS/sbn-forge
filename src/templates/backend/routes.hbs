@@ -67,6 +67,22 @@ async function {{names.variablePlural}}Routes(
   }
   {{/unless}}
 
+  // Explicit opt-in for the offline Portal bridge. Never infer this from headers.
+  const portalBridge = options.portalSecurityBridge || null;
+  if (portalBridge) {
+    if (typeof portalBridge.preHandler !== 'function' ||
+        portalBridge.installable !== false ||
+        portalBridge.publicationAuthorized !== false ||
+        options.requireTenantIsolation !== true ||
+        options.requireCrudPermissions !== true ||
+        !tenantColumn) {
+      throw new Error('PORTAL_SECURITY_BRIDGE_INCOMPLETE');
+    }
+    {{#unless security.requireJwt}}
+    throw new Error('PORTAL_JWT_REQUIRED');
+    {{/unless}}
+  }
+
   repository.configure(database, { tenantColumn });
 
 {{#if security.requireJwt}}
@@ -86,10 +102,18 @@ async function {{names.variablePlural}}Routes(
   // Si se activa, el adaptador debe resolver permisos desde una fuente confiable.
   const authorizeOperation = options.authorizeOperation;
   const requireCrudPermissions = options.requireCrudPermissions === true;
-  if (requireCrudPermissions && typeof authorizeOperation !== 'function') {
+  if (requireCrudPermissions && !portalBridge && typeof authorizeOperation !== 'function') {
     throw new Error('Se requiere options.authorizeOperation para activar permisos CRUD.');
   }
-  const permissionGuard = operation => async (request, reply) => {
+  const permissionGuard = operation => {
+    if (portalBridge) {
+      const guard = portalBridge.preHandler(operation);
+      if (typeof guard !== 'function') {
+        throw new Error('PORTAL_SECURITY_GUARD_INCOMPLETE');
+      }
+      return guard;
+    }
+    return async (request, reply) => {
     if (!requireCrudPermissions) return;
     if (!request.user || !request.user.id || !request.user.organization_id) {
       return reply.code(401).send({ code: 'AUTHENTICATION_REQUIRED' });
@@ -103,6 +127,7 @@ async function {{names.variablePlural}}Routes(
     if (permitted !== true) {
       return reply.code(403).send({ code: 'PERMISSION_DENIED' });
     }
+    };
   };
 
   const base =
