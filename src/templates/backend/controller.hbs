@@ -10,10 +10,10 @@ function requestContext(
 ) {
   return {
     userId:
-      request.user?.id,
+      request.portalSecurityContext?.userId ?? request.user?.id,
 
     organizationId:
-      request.user
+      request.portalSecurityContext?.organizationId ?? request.user
         ?.organization_id,
 
     source:
