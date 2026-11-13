@@ -21,3 +21,7 @@ npm run lint
 npm test
 git status --short
 ```
+
+## Schema correction (Portal source verified)
+
+The Portal Zod schemas require UUID `organization_id`, positive integer `user_id` and `option_id`, membership roles `owner/admin/member/viewer`, and membership statuses `active/disabled`. The offline policy and tests now use UUID organization IDs. The `actions` schema is a generic JSON record, so CRUD action names remain a **proposed mapping** requiring Portal confirmation. Delegation statuses include `pending/active/revoked/expired`; delegation is not used to grant access by this policy. Do not infer access from delegation records without a verified trust model.
