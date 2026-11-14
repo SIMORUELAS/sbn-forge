@@ -316,7 +316,8 @@ document.getElementById('inspect-load-tables').addEventListener('click', async (
   selector.appendChild(initial);
   try {
     const params = new URLSearchParams({ schema });
-    if (selectedInspectorProfile) { params.set('profile', selectedInspectorProfile); }
+    if (!activeInspectorProfile()) { throw new Error('Selecciona un perfil PostgreSQL en Inspector.'); }
+    params.set('profile', activeInspectorProfile());
     const response = await fetch('/api/studio/tables?' + params);
     const result = await response.json();
     if (!response.ok) { throw new Error(result.error || 'No fue posible consultar las tablas'); }
