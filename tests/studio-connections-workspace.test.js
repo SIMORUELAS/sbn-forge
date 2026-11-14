@@ -25,6 +25,17 @@ describe('Studio PostgreSQL connections workspace', () => {
     expect(js).toContain("getElementById('inspect-table').addEventListener('input'");
     expect(js).toContain('button.type = \'button\'');
   });
+  test('Inspector transfers selected tables to a read-only Designer metadata review', () => {
+    for (const id of ['inspect-send-designer', 'designer-multi-panel', 'designer-multi-context',
+      'designer-multi-status', 'designer-multi-rows']) {
+      expect(html).toContain('id="' + id + '"');
+    }
+    expect(js).toContain("document.getElementById('inspect-send-designer').addEventListener('click'");
+    expect(js).toContain("showSection('diseno')");
+    expect(js).toContain("fetch('/api/studio/inspect?' + params.toString())");
+    expect(js).toContain("manifest.tables.includes(fk.referencedTable)");
+    expect(js).toContain('no se ha guardado ni generado un módulo');
+  });
   test('Inspector allows scoped multi-table selection without changing PostgreSQL', () => {
     for (const id of ['inspect-select-all', 'inspect-select-visible', 'inspect-clear-selection', 'inspect-multi-count',
       'inspect-multi-list', 'inspect-copy-selection', 'inspect-multi-message']) {
