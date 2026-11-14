@@ -119,7 +119,7 @@ function renderInspectorTableExplorer() {
     button.textContent = name;
     button.setAttribute('aria-pressed', String(document.getElementById('inspect-table').value === name));
     button.addEventListener('click', () => selectInspectorTable(name));
-    const label = document.createElement('label');
+    const label = document.createElement('div');
     label.className = 'table-explorer-choice';
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
