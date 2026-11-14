@@ -136,10 +136,10 @@ function createStudioServer(options = {}) {
       if (req.method === 'POST' && pathname === '/api/studio/multi-definitions') {
         const origin = req.headers.origin;
         const host = req.headers.host;
-        if (origin && (!host || origin !== 'http://' + host || !/^127\\.0\\.0\\.1(?::[0-9]+)?$/.test(host))) {
+        if (origin && (!host || origin !== 'http://' + host || !/^127\.0\.0\.1(?::[0-9]+)?$/.test(host))) {
           json(res, 403, { error: 'Origen no autorizado' }); return;
         }
-        if (!/^application\\/json(?:\\s*;|$)/i.test(req.headers['content-type'] || '')) {
+        if (!/^application\/json(?:\s*;|$)/i.test(req.headers['content-type'] || '')) {
           json(res, 415, { error: 'Se requiere application/json' }); return;
         }
         try {
