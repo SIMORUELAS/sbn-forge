@@ -254,27 +254,34 @@ function createStudioServer(options = {}) {
       return;
     }
     // Explicit opt-in: database access is disabled unless configured locally.
+    async function inspectorConfig(profileName) {
+      if (profileName) {
+        if (!profiles.enabled || !/^[a-z][a-z0-9_-]{2,39}$/.test(profileName)) return null;
+        const p = await profiles.get(profileName);
+        if (!p) return null;
+        return { host: p.host, port: p.port, database: p.database, user: p.user,
+          password: p.password, connectionTimeoutMillis: 3000, query_timeout: 10000,
+          statement_timeout: 10000, options: '-c default_transaction_read_only=on' };
+      }
+      if (process.env.FORGE_STUDIO_DB_INSPECT !== '1') return null;
+      return { host: process.env.FORGE_STUDIO_DB_HOST || '127.0.0.1',
+        port: Number(process.env.FORGE_STUDIO_DB_PORT || 5432),
+        database: process.env.FORGE_STUDIO_DB_NAME, user: process.env.FORGE_STUDIO_DB_USER,
+        password: process.env.FORGE_STUDIO_DB_PASSWORD, connectionTimeoutMillis: 3000,
+        query_timeout: 10000, statement_timeout: 10000,
+        options: '-c default_transaction_read_only=on' };
+    }
     if (pathname === '/api/studio/inspect') {
       if (req.method !== 'GET') { json(res, 405, { error: 'Method not allowed' }); return; }
-      if (process.env.FORGE_STUDIO_DB_INSPECT !== '1') { json(res, 503, { error: 'Inspector no configurado' }); return; }
+
       const url = new URL(req.url, 'http://localhost');
       const schema = url.searchParams.get('schema');
       const table = url.searchParams.get('table');
       if (!schema || !table || !/^[a-zA-Z_][a-zA-Z0-9_$]*$/.test(schema) || !/^[a-zA-Z_][a-zA-Z0-9_$]*$/.test(table)) {
         json(res, 400, { error: 'Schema o tabla inválidos' }); return;
       }
-      const config = {
-        host: process.env.FORGE_STUDIO_DB_HOST || '127.0.0.1',
-        port: Number(process.env.FORGE_STUDIO_DB_PORT || 5432),
-        database: process.env.FORGE_STUDIO_DB_NAME,
-        user: process.env.FORGE_STUDIO_DB_USER,
-        password: process.env.FORGE_STUDIO_DB_PASSWORD,
-        connectionTimeoutMillis: 3000,
-        query_timeout: 10000,
-        statement_timeout: 10000,
-        options: '-c default_transaction_read_only=on'
-      };
-      if (!config.database || !config.user || !config.password) {
+      const config = await inspectorConfig(new URL(req.url, 'http://localhost').searchParams.get('profile'));
+      if (!config || !config.database || !config.user || !config.password) {
         json(res, 503, { error: 'Configuración PostgreSQL incompleta' }); return;
       }
       let datasource;
@@ -291,23 +298,13 @@ function createStudioServer(options = {}) {
     }
     if (pathname === '/api/studio/tables') {
       if (req.method !== 'GET') { json(res, 405, { error: 'Method not allowed' }); return; }
-      if (process.env.FORGE_STUDIO_DB_INSPECT !== '1') { json(res, 503, { error: 'Inspector no configurado' }); return; }
+
       const schema = new URL(req.url, 'http://localhost').searchParams.get('schema');
       if (!schema || !/^[a-zA-Z_][a-zA-Z0-9_$]*$/.test(schema)) {
         json(res, 400, { error: 'Esquema inválido' }); return;
       }
-      const config = {
-        host: process.env.FORGE_STUDIO_DB_HOST || '127.0.0.1',
-        port: Number(process.env.FORGE_STUDIO_DB_PORT || 5432),
-        database: process.env.FORGE_STUDIO_DB_NAME,
-        user: process.env.FORGE_STUDIO_DB_USER,
-        password: process.env.FORGE_STUDIO_DB_PASSWORD,
-        connectionTimeoutMillis: 3000,
-        query_timeout: 10000,
-        statement_timeout: 10000,
-        options: '-c default_transaction_read_only=on'
-      };
-      if (!config.database || !config.user || !config.password) {
+      const config = await inspectorConfig(new URL(req.url, 'http://localhost').searchParams.get('profile'));
+      if (!config || !config.database || !config.user || !config.password) {
         json(res, 503, { error: 'Configuración PostgreSQL incompleta' }); return;
       }
       let datasource;
