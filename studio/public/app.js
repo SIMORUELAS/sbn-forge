@@ -43,11 +43,115 @@ document.getElementById('back-home').addEventListener('click', () => showSection
 window.addEventListener('hashchange', () => showSection(window.location.hash.slice(1)));
 showSection(window.location.hash.slice(1));
 
+let connectionProfiles = [];
+let editingConnection = null;
+let selectedInspectorProfile = '';
+async function loadConnectionProfiles() {
+  const response = await fetch('/api/studio/connection-profiles');
+  const select = document.getElementById('connection-profile-select');
+  select.replaceChildren();
+  const empty = document.createElement('option');
+  empty.value = '';
+  empty.textContent = 'Seleccionar perfil…';
+  select.appendChild(empty);
+  if (response.status === 503) {
+    connectionProfiles = [];
+    document.getElementById('connections-message').textContent =
+      'Perfiles deshabilitados. Configura FORGE_STUDIO_CONNECTION_PROFILES=1 y una clave de cifrado en el servidor.';
+    return;
+  }
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'No se pudieron consultar perfiles');
+  connectionProfiles = data.profiles || [];
+  for (const profile of connectionProfiles) {
+    const option = document.createElement('option');
+    option.value = profile.name;
+    option.textContent = profile.name + ' · ' + profile.database;
+    select.appendChild(option);
+  }
+  if (connectionProfiles.some(p => p.name === selectedInspectorProfile)) select.value = selectedInspectorProfile;
+}
+function clearConnectionForm() {
+  editingConnection = null;
+  document.getElementById('connection-profile-form').reset();
+  document.getElementById('connection-port').value = '5432';
+  document.getElementById('connection-password').value = '';
+}
+document.getElementById('connection-clear').addEventListener('click', clearConnectionForm);
+document.getElementById('connection-edit').addEventListener('click', () => {
+  const name = document.getElementById('connection-profile-select').value;
+  const profile = connectionProfiles.find(p => p.name === name);
+  if (!profile) return;
+  editingConnection = name;
+  for (const [field, value] of Object.entries({
+    name: profile.name, host: profile.host, port: profile.port,
+    database: profile.database, user: profile.user
+  })) document.getElementById('connection-' + field).value = value;
+  document.getElementById('connection-password').value = '';
+  document.getElementById('connections-message').textContent =
+    'Editando ' + name + '. Deja la contraseña vacía para conservar la actual.';
+});
+document.getElementById('connection-profile-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  const message = document.getElementById('connections-message');
+  const form = event.currentTarget;
+  const submit = form.querySelector('[type="submit"]');
+  submit.disabled = true;
+  const value = {};
+  for (const field of ['name','host','port','database','user','password'])
+    value[field] = document.getElementById('connection-' + field).value.trim();
+  value.port = Number(value.port);
+  try {
+    const response = await fetch('/api/studio/connection-profiles' +
+      (editingConnection ? '/' + encodeURIComponent(editingConnection) : ''), {
+      method: editingConnection ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Forge-Local-Action': '1' },
+      body: JSON.stringify(value)
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'No fue posible guardar');
+    clearConnectionForm();
+    await loadConnectionProfiles();
+    document.getElementById('connection-profile-select').value = result.profile.name;
+    message.textContent = 'Perfil guardado localmente: ' + result.profile.name + '.';
+  } catch (error) { message.textContent = error.message; }
+  finally { document.getElementById('connection-password').value = ''; submit.disabled = false; }
+});
+document.getElementById('connection-delete').addEventListener('click', async () => {
+  const name = document.getElementById('connection-profile-select').value;
+  if (!name || !window.confirm('¿Eliminar el perfil ' + name + '?')) return;
+  const message = document.getElementById('connections-message');
+  try {
+    const response = await fetch('/api/studio/connection-profiles/' + encodeURIComponent(name), {
+      method: 'DELETE', headers: { 'X-Forge-Local-Action': '1' }
+    });
+    if (!response.ok) throw new Error('No fue posible eliminar el perfil');
+    if (selectedInspectorProfile === name) selectedInspectorProfile = '';
+    await loadConnectionProfiles();
+    message.textContent = 'Perfil eliminado: ' + name + '.';
+  } catch (error) { message.textContent = error.message; }
+});
+document.getElementById('connection-profile-check').addEventListener('click', async () => {
+  const name = document.getElementById('connection-profile-select').value;
+  const message = document.getElementById('connections-message');
+  if (!name) { message.textContent = 'Selecciona un perfil.'; return; }
+  message.textContent = 'Verificando conexión de solo lectura…';
+  try {
+    const response = await fetch('/api/studio/connection-profiles/' + encodeURIComponent(name), {
+      method: 'POST', headers: { 'X-Forge-Local-Action': '1' }
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Conexión no disponible');
+    selectedInspectorProfile = name;
+    message.textContent = 'Perfil verificado: ' + name + '. Ya puedes abrir Inspector.';
+  } catch (error) { message.textContent = error.message; }
+});
 async function refreshConnections() {
   const message = document.getElementById('connections-message');
   const rows = document.getElementById('connections-rows');
   rows.replaceChildren();
   message.textContent = 'Consultando configuración del servidor local…';
+  await loadConnectionProfiles();
   try {
     const response = await fetch('/api/studio/connections/status');
     const data = await response.json();
@@ -124,6 +228,7 @@ document.getElementById('inspect-form').addEventListener('submit', async event =
   submit.disabled = true;
   try {
     const params = new URLSearchParams({ schema, table });
+    if (selectedInspectorProfile) params.set('profile', selectedInspectorProfile);
     const response = await fetch('/api/studio/inspect?' + params.toString());
     const data = await response.json();
     if (!response.ok) { throw new Error(data.error || 'No fue posible inspeccionar la tabla'); }
@@ -149,7 +254,9 @@ document.getElementById('inspect-load-tables').addEventListener('click', async (
   initial.textContent = 'Seleccionar tabla…';
   selector.appendChild(initial);
   try {
-    const response = await fetch('/api/studio/tables?' + new URLSearchParams({ schema }));
+    const params = new URLSearchParams({ schema });
+    if (selectedInspectorProfile) params.set('profile', selectedInspectorProfile);
+    const response = await fetch('/api/studio/tables?' + params);
     const result = await response.json();
     if (!response.ok) { throw new Error(result.error || 'No fue posible consultar las tablas'); }
     for (const table of result.tables) {
