@@ -19,12 +19,13 @@ function showSection(id) {
   document.getElementById('detail-view').hidden = id === 'inicio';
   document.getElementById('detail-title').textContent = title;
   document.getElementById('detail-description').textContent = description;
+  document.getElementById('connections-workspace').hidden = id !== 'conexiones';
   document.getElementById('inspector-workspace').hidden = id !== 'inspector';
   document.getElementById('designer-workspace').hidden = id !== 'diseno';
   document.getElementById('generation-workspace').hidden = id !== 'generacion';
   document.getElementById('history-workspace').hidden = id !== 'historial';
   document.getElementById('modules-workspace').hidden = id !== 'modulos';
-  document.getElementById('detail-placeholder').hidden = id === 'inspector' || id === 'diseno' || id === 'generacion' || id === 'historial' || id === 'modulos';
+  document.getElementById('detail-placeholder').hidden = id === 'inspector' || id === 'diseno' || id === 'generacion' || id === 'historial' || id === 'modulos' || id === 'conexiones';
   document.querySelectorAll('[data-view]').forEach(el => {
     const selected = el.dataset.view === id;
     el.classList.toggle('active', selected);
@@ -34,12 +35,52 @@ function showSection(id) {
   window.location.hash = id === 'inicio' ? '' : id;
   if (id === 'historial' || id === 'generacion') { refreshRuns().catch(() => {}); }
   if (id === 'modulos') { refreshModules().catch(() => {}); }
+  if (id === 'conexiones') { refreshConnections().catch(() => {}); }
 }
 document.querySelectorAll('[data-view]').forEach(el => el.addEventListener('click', () => showSection(el.dataset.view)));
 document.querySelectorAll('[data-go]').forEach(el => el.addEventListener('click', () => showSection(el.dataset.go)));
 document.getElementById('back-home').addEventListener('click', () => showSection('inicio'));
 window.addEventListener('hashchange', () => showSection(window.location.hash.slice(1)));
 showSection(window.location.hash.slice(1));
+
+async function refreshConnections() {
+  const message = document.getElementById('connections-message');
+  const rows = document.getElementById('connections-rows');
+  rows.replaceChildren();
+  message.textContent = 'Consultando configuración del servidor local…';
+  try {
+    const response = await fetch('/api/studio/connections/status');
+    const data = await response.json();
+    if (!response.ok) { throw new Error(data.error || 'No se pudo consultar la conexión'); }
+    if (!data.configured) {
+      message.textContent = 'No hay una conexión autorizada configurada. Configura FORGE_STUDIO_DB_* en el servidor y reinicia Studio.';
+      return;
+    }
+    const row = document.createElement('tr');
+    for (const value of [data.name, data.host + ':' + data.port, data.database, data.user, 'Solo lectura']) {
+      const cell = document.createElement('td');
+      cell.textContent = String(value);
+      row.appendChild(cell);
+    }
+    rows.appendChild(row);
+    message.textContent = 'Conexión configurada. Usa Probar conexión para verificar disponibilidad.';
+  } catch (error) { message.textContent = error.message; }
+}
+document.getElementById('connections-refresh').addEventListener('click', () => refreshConnections());
+document.getElementById('connections-check').addEventListener('click', async () => {
+  const button = document.getElementById('connections-check');
+  const message = document.getElementById('connections-message');
+  button.disabled = true;
+  message.textContent = 'Verificando conexión en modo de solo lectura…';
+  try {
+    const response = await fetch('/api/studio/connections/check');
+    const data = await response.json();
+    if (!response.ok) { throw new Error(data.error || 'No fue posible conectar'); }
+    message.textContent = 'Conexión verificada: ' + data.database + '. Solo lectura confirmada.';
+  } catch (error) { message.textContent = error.message; }
+  finally { button.disabled = false; }
+});
+document.getElementById('connections-inspector').addEventListener('click', () => showSection('inspector'));
 
 function addTextItem(parent, value) {
   const item = document.createElement('li');
