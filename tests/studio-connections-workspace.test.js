@@ -48,7 +48,7 @@ describe('Studio PostgreSQL connections workspace', () => {
     expect(js).toContain("showSection('diseno')");
     expect(js).toContain("fetch('/api/studio/inspect?' + params.toString())");
     expect(js).toContain("manifest.tables.includes(fk.referencedTable)");
-    expect(js).toContain('no se ha guardado ni generado un módulo');
+    expect(js).toContain('No se ha guardado ni generado un módulo.');
   });
   test('Inspector allows scoped multi-table selection without changing PostgreSQL', () => {
     for (const id of ['inspect-select-all', 'inspect-select-visible', 'inspect-clear-selection', 'inspect-multi-count',
