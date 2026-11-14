@@ -26,13 +26,14 @@ describe('Studio PostgreSQL connections workspace', () => {
     expect(js).toContain('button.type = \'button\'');
   });
   test('Inspector allows scoped multi-table selection without changing PostgreSQL', () => {
-    for (const id of ['inspect-select-visible', 'inspect-clear-selection', 'inspect-multi-count',
+    for (const id of ['inspect-select-all', 'inspect-select-visible', 'inspect-clear-selection', 'inspect-multi-count',
       'inspect-multi-list', 'inspect-copy-selection', 'inspect-multi-message']) {
       expect(html).toContain('id="' + id + '"');
     }
     expect(js).toContain('const inspectorMultiSelection = new Set()');
     expect(js).toContain('function inspectorSelectionManifest()');
     expect(js).toContain('function toggleInspectorMultiTable(name)');
+    expect(js).toContain("document.getElementById('inspect-select-all').addEventListener('click'");
     expect(js).toContain('checkbox.type = \'checkbox\'');
     expect(js).toContain('inspectorMultiSelection.clear()');
     expect(js).toContain('navigator.clipboard.writeText(JSON.stringify(manifest, null, 2))');
