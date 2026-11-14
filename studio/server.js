@@ -184,7 +184,7 @@ function createStudioServer(options = {}) {
             }
             json(res, 200, { connected: true, database: p.database, readOnly: true });
           } catch { json(res, 502, { error: 'No fue posible conectar al perfil' }); }
-          finally { if (datasource) await datasource.close(); }
+          finally { if (datasource) { await datasource.close(); } }
           return;
         }
         if ((req.method === 'POST' && !name) || (req.method === 'PUT' && name)) {
@@ -256,14 +256,14 @@ function createStudioServer(options = {}) {
     // Explicit opt-in: database access is disabled unless configured locally.
     async function inspectorConfig(profileName) {
       if (profileName) {
-        if (!profiles.enabled || !/^[a-z][a-z0-9_-]{2,39}$/.test(profileName)) return null;
+        if (!profiles.enabled || !/^[a-z][a-z0-9_-]{2,39}$/.test(profileName)) { return null; }
         const p = await profiles.get(profileName);
-        if (!p) return null;
+        if (!p) { return null; }
         return { host: p.host, port: p.port, database: p.database, user: p.user,
           password: p.password, connectionTimeoutMillis: 3000, query_timeout: 10000,
           statement_timeout: 10000, options: '-c default_transaction_read_only=on' };
       }
-      if (process.env.FORGE_STUDIO_DB_INSPECT !== '1') return null;
+      if (process.env.FORGE_STUDIO_DB_INSPECT !== '1') { return null; }
       return { host: process.env.FORGE_STUDIO_DB_HOST || '127.0.0.1',
         port: Number(process.env.FORGE_STUDIO_DB_PORT || 5432),
         database: process.env.FORGE_STUDIO_DB_NAME, user: process.env.FORGE_STUDIO_DB_USER,
