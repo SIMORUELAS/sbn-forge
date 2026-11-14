@@ -21,6 +21,21 @@ function json(res, status, value) {
   res.end(JSON.stringify(value));
 }
 
+function profileConnectionFailure(error) {
+  const code = String(error?.code || '');
+  const messages = {
+    ECONNREFUSED: 'PostgreSQL rechazó la conexión. Comprueba que el servicio esté activo y el puerto sea correcto.',
+    ETIMEDOUT: 'Se agotó el tiempo de conexión con PostgreSQL.',
+    ENOTFOUND: 'No se pudo resolver el nombre del servidor PostgreSQL.',
+    EHOSTUNREACH: 'El servidor PostgreSQL no es accesible desde Studio.',
+    '28P01': 'PostgreSQL rechazó la contraseña o la autenticación del usuario.',
+    '28000': 'PostgreSQL rechazó la autorización del usuario.',
+    '3D000': 'La base de datos configurada no existe en PostgreSQL.',
+    '42501': 'El usuario no tiene permisos suficientes para esta consulta.'
+  };
+  return messages[code] || 'No fue posible conectar al perfil. Revisa servidor, base de datos, usuario y permisos; consulta el diagnóstico local.';
+}
+
 function createStudioServer(options = {}) {
   const createDatasource = options.createDatasource || (config => new PostgresDatasource(config));
   const profiles = options.connectionProfiles || createConnectionProfiles();
@@ -183,7 +198,9 @@ function createStudioServer(options = {}) {
               json(res, 502, { error: 'No se verificó la identidad o solo lectura' }); return;
             }
             json(res, 200, { connected: true, database: p.database, readOnly: true });
-          } catch { json(res, 502, { error: 'No fue posible conectar al perfil' }); }
+          } catch (error) {
+            json(res, 502, { error: profileConnectionFailure(error), code: 'PROFILE_CONNECTION_FAILED' });
+          }
           finally { if (datasource) { await datasource.close(); } }
           return;
         }
