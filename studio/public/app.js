@@ -111,6 +111,7 @@ function resetDesignerMultiBlueprint() {
   document.getElementById('designer-multi-json').textContent = '';
   document.getElementById('designer-multi-blueprint').hidden = true;
   document.getElementById('designer-multi-copy').disabled = true;
+  document.getElementById('designer-multi-save').disabled = true;
 }
 document.getElementById('designer-multi-primary').addEventListener('change', () => {
   if (designerMultiBlueprint) { document.getElementById('designer-multi-build').click(); }
@@ -158,6 +159,7 @@ document.getElementById('designer-multi-build').addEventListener('click', () => 
   document.getElementById('designer-multi-json').textContent = JSON.stringify(designerMultiBlueprint, null, 2);
   document.getElementById('designer-multi-blueprint').hidden = false;
   document.getElementById('designer-multi-copy').disabled = false;
+  document.getElementById('designer-multi-save').disabled = false;
   status.textContent = 'Definición preliminar preparada: ' + designerMultiMetadata.length +
     ' tablas y ' + relations.length + ' relaciones detectadas. No se guardó ni generó código.';
 });
@@ -169,6 +171,103 @@ document.getElementById('designer-multi-copy').addEventListener('click', async (
   } catch {
     document.getElementById('designer-multi-status').textContent = 'No se pudo copiar; revisa los permisos del navegador.';
   }
+});
+async function refreshMultiDefinitions() {
+  const response = await fetch('/api/studio/multi-definitions');
+  const data = await response.json();
+  if (!response.ok) { throw new Error(data.error || 'No se pudieron consultar diseños multitabla'); }
+  const select = document.getElementById('designer-multi-saved');
+  const previous = select.value;
+  select.replaceChildren();
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = 'Seleccionar diseño…';
+  select.appendChild(placeholder);
+  for (const name of data.definitions || []) {
+    const option = document.createElement('option');
+    option.value = name;
+    option.textContent = name;
+    select.appendChild(option);
+  }
+  if ((data.definitions || []).includes(previous)) { select.value = previous; }
+}
+document.getElementById('designer-multi-refresh').addEventListener('click', async () => {
+  try { await refreshMultiDefinitions(); }
+  catch (error) { document.getElementById('designer-multi-status').textContent = error.message; }
+});
+document.getElementById('designer-multi-save').addEventListener('click', async () => {
+  const status = document.getElementById('designer-multi-status');
+  const name = document.getElementById('designer-multi-name').value.trim();
+  if (!designerMultiBlueprint || !/^[a-zA-Z_][a-zA-Z0-9_-]{0,79}$/.test(name)) {
+    status.textContent = 'Prepara el diseño y escribe un nombre válido antes de guardar.'; return;
+  }
+  const button = document.getElementById('designer-multi-save');
+  button.disabled = true;
+  try {
+    const response = await fetch('/api/studio/multi-definitions', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...designerMultiBlueprint, name })
+    });
+    const data = await response.json();
+    if (!response.ok) { throw new Error(data.error || 'No se pudo guardar el diseño'); }
+    await refreshMultiDefinitions();
+    document.getElementById('designer-multi-saved').value = name;
+    status.textContent = 'Diseño multitabla guardado localmente: ' + name + '. Sin generación ni publicación.';
+  } catch (error) { status.textContent = error.message; }
+  finally { button.disabled = !designerMultiBlueprint; }
+});
+document.getElementById('designer-multi-open').addEventListener('click', async () => {
+  const name = document.getElementById('designer-multi-saved').value;
+  const status = document.getElementById('designer-multi-status');
+  if (!name) { status.textContent = 'Selecciona un diseño multitabla guardado.'; return; }
+  try {
+    const response = await fetch('/api/studio/multi-definitions/' + encodeURIComponent(name));
+    const definition = await response.json();
+    if (!response.ok) { throw new Error(definition.error || 'No se pudo abrir el diseño'); }
+    ++designerMultiReviewId;
+    designerMultiManifest = { profile: definition.source.profile, schema: definition.source.schema,
+      tables: definition.tables.map(table => table.name) };
+    designerMultiMetadata = [];
+    designerMultiBlueprint = definition;
+    document.getElementById('designer-multi-panel').hidden = false;
+    document.getElementById('designer-multi-context').textContent =
+      'Diseño guardado · ' + definition.source.profile + ' · ' + definition.source.schema +
+      ' · ' + definition.tables.length + ' tablas';
+    document.getElementById('designer-multi-name').value = definition.name;
+    const primary = document.getElementById('designer-multi-primary');
+    primary.replaceChildren();
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Sin tabla principal · trabajar con todas';
+    primary.appendChild(placeholder);
+    for (const table of definition.tables) {
+      const option = document.createElement('option');
+      option.value = table.name;
+      option.textContent = table.name;
+      primary.appendChild(option);
+    }
+    primary.value = definition.primaryTable || '';
+    document.getElementById('designer-multi-build').disabled = true;
+    document.getElementById('designer-multi-rows').replaceChildren();
+    for (const table of definition.tables) {
+      const row = document.createElement('tr');
+      const refs = definition.relations.filter(rel => rel.fromTable === table.name);
+      for (const value of [table.name, String(table.columns.length),
+        table.primaryKey.join(', ') || 'Sin clave primaria',
+        refs.map(rel => rel.fromColumn + ' → ' + rel.toTable).join('; ') || 'Ninguna detectada',
+        'Recuperada']) {
+        const cell = document.createElement('td');
+        cell.textContent = value;
+        row.appendChild(cell);
+      }
+      document.getElementById('designer-multi-rows').appendChild(row);
+    }
+    document.getElementById('designer-multi-json').textContent = JSON.stringify(definition, null, 2);
+    document.getElementById('designer-multi-blueprint').hidden = false;
+    document.getElementById('designer-multi-copy').disabled = false;
+    document.getElementById('designer-multi-save').disabled = false;
+    status.textContent = 'Diseño multitabla recuperado. Para actualizar metadatos, vuelve a inspeccionar las tablas.';
+  } catch (error) { status.textContent = error.message; }
 });
 let designerMultiReviewId = 0;
 document.getElementById('inspect-send-designer').addEventListener('click', async () => {
