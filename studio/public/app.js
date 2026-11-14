@@ -47,8 +47,45 @@ let connectionProfiles = [];
 let editingConnection = null;
 let selectedInspectorProfile = '';
 function activeInspectorProfile() { return document.getElementById('inspect-profile').value; }
+let inspectorTables = [];
+function selectInspectorTable(name) {
+  document.getElementById('inspect-table').value = name;
+  document.getElementById('inspect-table-list').value = inspectorTables.includes(name) ? name : '';
+  document.getElementById('inspect-selected-table').textContent = 'Tabla seleccionada: ' + (name || 'ninguna');
+  for (const button of document.querySelectorAll('#inspect-table-items button')) {
+    button.setAttribute('aria-pressed', String(button.dataset.table === name));
+  }
+}
+function renderInspectorTableExplorer() {
+  const filter = document.getElementById('inspect-table-search').value.trim().toLocaleLowerCase();
+  const visible = inspectorTables.filter(name => name.toLocaleLowerCase().includes(filter));
+  const container = document.getElementById('inspect-table-items');
+  container.replaceChildren();
+  for (const name of visible) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'table-explorer-item';
+    button.dataset.table = name;
+    button.textContent = name;
+    button.setAttribute('aria-pressed', String(document.getElementById('inspect-table').value === name));
+    button.addEventListener('click', () => selectInspectorTable(name));
+    container.appendChild(button);
+  }
+  document.getElementById('inspect-table-count').textContent = visible.length + ' de ' + inspectorTables.length + ' tablas';
+  if (!visible.length) {
+    const empty = document.createElement('p');
+    empty.textContent = inspectorTables.length ? 'Ninguna tabla coincide con la búsqueda.' : 'No hay tablas cargadas.';
+    container.appendChild(empty);
+  }
+}
+document.getElementById('inspect-table-search').addEventListener('input', renderInspectorTableExplorer);
+document.getElementById('inspect-table').addEventListener('input', event => selectInspectorTable(event.target.value));
 function resetInspectorResults() {
   lastInspectedMetadata = null;
+  inspectorTables = [];
+  document.getElementById('inspect-table-search').value = '';
+  renderInspectorTableExplorer();
+  document.getElementById('inspect-selected-table').textContent = 'Tabla seleccionada: ninguna';
   document.getElementById('inspect-results').hidden = true;
   document.getElementById('inspect-table').value = '';
   const list = document.getElementById('inspect-table-list');
@@ -309,6 +346,9 @@ document.getElementById('inspect-load-tables').addEventListener('click', async (
   const button = document.getElementById('inspect-load-tables');
   button.disabled = true;
   message.textContent = 'Consultando tablas disponibles...';
+  inspectorTables = [];
+  renderInspectorTableExplorer();
+  selectInspectorTable('');
   selector.replaceChildren();
   const initial = document.createElement('option');
   initial.value = '';
@@ -321,6 +361,8 @@ document.getElementById('inspect-load-tables').addEventListener('click', async (
     const response = await fetch('/api/studio/tables?' + params);
     const result = await response.json();
     if (!response.ok) { throw new Error(result.error || 'No fue posible consultar las tablas'); }
+    inspectorTables = result.tables;
+    renderInspectorTableExplorer();
     for (const table of result.tables) {
       const option = document.createElement('option');
       option.value = table;
@@ -335,7 +377,7 @@ document.getElementById('inspect-load-tables').addEventListener('click', async (
   }
 });
 document.getElementById('inspect-table-list').addEventListener('change', event => {
-  if (event.target.value) { document.getElementById('inspect-table').value = event.target.value; }
+  if (event.target.value) { selectInspectorTable(event.target.value); }
 });
 
 function createDesignerCheckbox(column, property, checked, disabled) {
