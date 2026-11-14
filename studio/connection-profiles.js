@@ -4,7 +4,7 @@ const path = require('node:path');
 const os = require('node:os');
 const crypto = require('node:crypto');
 
-const NAME = /^[a-z][a-z0-9_-]{2,39}$/;
+const NAME = /^[a-zA-Z][a-zA-Z0-9_-]{2,39}$/;
 const DB = /^[a-zA-Z_][a-zA-Z0-9_]{0,62}$/;
 const HOST = /^[a-zA-Z0-9][a-zA-Z0-9.-]{0,252}$/;
 function createConnectionProfiles({ env = process.env, file = path.join(os.homedir(), '.sbn-forge-studio', 'connections.enc.json') } = {}) {
@@ -14,13 +14,14 @@ function createConnectionProfiles({ env = process.env, file = path.join(os.homed
   const allowedHosts = (env.FORGE_STUDIO_ALLOWED_DB_HOSTS || '127.0.0.1,localhost').split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
   function ready() { if (!enabled || !key) { const e = new Error('CONNECTION_PROFILE_STORAGE_NOT_CONFIGURED'); e.status = 503; throw e; } }
   function validate(value) {
-    if (!value || !NAME.test(value.name || '') || !HOST.test(value.host || '') ||
-        !allowedHosts.includes(value.host.toLowerCase()) ||
-        !Number.isInteger(Number(value.port)) || Number(value.port) < 1 || Number(value.port) > 65535 ||
-        !DB.test(value.database || '') || !DB.test(value.user || '') ||
-        typeof value.password !== 'string' || !value.password || value.password.length > 512) {
-      const e = new Error('INVALID_OR_UNAUTHORIZED_CONNECTION_PROFILE'); e.status = 400; throw e;
-    }
+    function invalid(reason) { const error = new Error(reason); error.status = 400; throw error; }
+    if (!value || !NAME.test(value.name || '')) { invalid('PROFILE_NAME_INVALID'); }
+    if (!HOST.test(value.host || '') ||
+        !allowedHosts.includes(value.host.toLowerCase())) { invalid('PROFILE_HOST_NOT_ALLOWED'); }
+    if (!Number.isInteger(Number(value.port)) || Number(value.port) < 1 || Number(value.port) > 65535) { invalid('PROFILE_PORT_INVALID'); }
+    if (!DB.test(value.database || '')) { invalid('PROFILE_DATABASE_INVALID'); }
+    if (!DB.test(value.user || '')) { invalid('PROFILE_USER_INVALID'); }
+    if (typeof value.password !== 'string' || !value.password || value.password.length > 512) { invalid('PROFILE_PASSWORD_REQUIRED'); }
     return { name: value.name, host: value.host, port: Number(value.port),
       database: value.database, user: value.user, password: value.password };
   }
