@@ -32,7 +32,9 @@ describe('Studio PostgreSQL connections workspace', () => {
     }
     expect(js).toContain("kind: 'studio.multitable.preview'");
     expect(js).toContain("mode: 'READ_ONLY_PREVIEW'");
-    expect(js).toContain('primaryTable: primary');
+    expect(js).toContain('primaryTable: primary || null');
+    expect(js).toContain("document.getElementById('designer-multi-build').click()");
+    expect(html).toContain('Tabla principal (opcional, para la pantalla inicial)');
     expect(js).toContain('relations,');
     expect(js).toContain('generationAuthorized: false');
     expect(js).toContain('installationAuthorized: false');
