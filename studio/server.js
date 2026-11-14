@@ -139,7 +139,7 @@ function createStudioServer(options = {}) {
         if (origin && (!host || origin !== 'http://' + host || !/^127\.0\.0\.1(?::[0-9]+)?$/.test(host))) {
           json(res, 403, { error: 'Origen no autorizado' }); return;
         }
-        if (!/^application\/json(?:\s*;|$)/i.test(req.headers['content-type'] || '')) {
+        if ((req.headers['content-type'] || '').split(';', 1)[0].trim().toLowerCase() !== 'application/json') {
           json(res, 415, { error: 'Se requiere application/json' }); return;
         }
         try {
