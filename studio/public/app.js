@@ -46,6 +46,19 @@ showSection(window.location.hash.slice(1));
 let connectionProfiles = [];
 let editingConnection = null;
 let selectedInspectorProfile = '';
+function activeInspectorProfile() { return document.getElementById('inspect-profile').value; }
+function resetInspectorResults() {
+  lastInspectedMetadata = null;
+  document.getElementById('inspect-results').hidden = true;
+  document.getElementById('inspect-table').value = '';
+  const list = document.getElementById('inspect-table-list');
+  list.replaceChildren();
+  const empty = document.createElement('option');
+  empty.value = '';
+  empty.textContent = 'Seleccionar tabla…';
+  list.appendChild(empty);
+}
+
 const verifiedConnectionProfiles = new Set();
 function renderConnectionRows() {
   const rows = document.getElementById('connections-rows');
