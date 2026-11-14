@@ -5,6 +5,7 @@ const path = require('node:path');
 const { PostgresDatasource } = require('../src/datasources/postgresql');
 const { PostgreSqlInspector } = require('../src/inspectors/postgresql');
 const { createDefinitionStore, MAX_BYTES } = require('./definition-store');
+const { createMultiDefinitionStore } = require('./multi-definition-store');
 const { toForgePreview } = require('./forge-preview');
 const { createGenerationPlan } = require('./generation-plan');
 const { createConnectionProfiles } = require('./connection-profiles');
@@ -40,9 +41,11 @@ function createStudioServer(options = {}) {
   const createDatasource = options.createDatasource || (config => new PostgresDatasource(config));
   const profiles = options.connectionProfiles || createConnectionProfiles();
   const definitions = options.definitionStore || createDefinitionStore(options.definitionsDirectory);
+  const multiDefinitions = options.multiDefinitionStore || createMultiDefinitionStore(options.multiDefinitionsDirectory);
   const runs = options.runManager || createRunManager({ definitionStore: definitions, directory: options.runsDirectory });
   return http.createServer(async (req, res) => {
-    const isDefinitionApi = (req.url || '').split('?')[0].startsWith('/api/studio/definitions');
+    const isDefinitionApi = (req.url || '').split('?')[0].startsWith('/api/studio/definitions') ||
+      (req.url || '').split('?')[0].startsWith('/api/studio/multi-definitions');
     const isGenerationApi = (req.url || '').split('?')[0] === '/api/studio/runs';
     const isProfileApi = (req.url || '').split('?')[0].startsWith('/api/studio/connection-profiles');
     if (req.method !== 'GET' && req.method !== 'HEAD' && !((isDefinitionApi || isGenerationApi || isProfileApi) && req.method === 'POST') && !(isProfileApi && ['PUT', 'DELETE'].includes(req.method))) {
@@ -126,6 +129,44 @@ function createStudioServer(options = {}) {
         json(res, 200, toForgePreview(saved));
       } catch (error) {
         json(res, error.code === 'ENOENT' ? 404 : 400, { error: error.code === 'ENOENT' ? 'Definición no encontrada' : 'No fue posible previsualizar la definición' });
+      }
+      return;
+    }
+    if (pathname === '/api/studio/multi-definitions' || pathname.startsWith('/api/studio/multi-definitions/')) {
+      if (req.method === 'POST' && pathname === '/api/studio/multi-definitions') {
+        const origin = req.headers.origin;
+        const host = req.headers.host;
+        if (origin && (!host || origin !== 'http://' + host || !/^127\\.0\\.0\\.1(?::[0-9]+)?$/.test(host))) {
+          json(res, 403, { error: 'Origen no autorizado' }); return;
+        }
+        if (!/^application\\/json(?:\\s*;|$)/i.test(req.headers['content-type'] || '')) {
+          json(res, 415, { error: 'Se requiere application/json' }); return;
+        }
+        try {
+          let raw = '';
+          for await (const chunk of req) {
+            raw += chunk.toString('utf8');
+            if (Buffer.byteLength(raw) > MAX_BYTES) { json(res, 413, { error: 'Definición demasiado grande' }); return; }
+          }
+          const saved = await multiDefinitions.save(JSON.parse(raw));
+          json(res, 200, { name: saved.name, saved: true, generationAuthorized: false });
+        } catch (error) {
+          json(res, error instanceof SyntaxError || /inválid|duplicad|grande/i.test(error.message) ? 400 : 500,
+            { error: error instanceof SyntaxError ? 'JSON inválido' : error.message });
+        }
+        return;
+      }
+      if (req.method !== 'GET') { json(res, 405, { error: 'Método no permitido' }); return; }
+      try {
+        if (pathname === '/api/studio/multi-definitions') {
+          json(res, 200, { definitions: await multiDefinitions.list() }); return;
+        }
+        const name = decodeURIComponent(pathname.slice('/api/studio/multi-definitions/'.length));
+        json(res, 200, await multiDefinitions.get(name));
+      } catch (error) {
+        json(res, error.code === 'ENOENT' ? 404 : 400, {
+          error: error.code === 'ENOENT' ? 'Definición no encontrada' : 'Nombre o definición inválida'
+        });
       }
       return;
     }
