@@ -15,6 +15,15 @@ describe('Studio PostgreSQL connections workspace', () => {
     expect(js).toContain("showSection('inspector')");
     expect(js).not.toContain('innerHTML');
   });
+  test('saved profiles render in the table without passwords and legacy button targets saved profile', () => {
+    expect(js).toContain('function renderConnectionRows()');
+    expect(js).toContain('for (const profile of connectionProfiles)');
+    expect(js).toContain("'Guardado · sin verificar'");
+    expect(js).toContain("'Conexión verificada · solo lectura'");
+    expect(js).toContain("getElementById('connection-profile-check').click()");
+    expect(html).toContain('<th>Estado</th>');
+    expect(html).not.toContain('Las conexiones se habilitan en el servidor local mediante variables');
+  });
   test('unconfigured status exposes no secrets or database access', async () => {
     const old = Object.fromEntries(['FORGE_STUDIO_DB_INSPECT','FORGE_STUDIO_DB_NAME',
       'FORGE_STUDIO_DB_USER','FORGE_STUDIO_DB_PASSWORD'].map(key => [key, process.env[key]]));
