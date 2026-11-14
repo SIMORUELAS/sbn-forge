@@ -103,6 +103,71 @@ document.getElementById('inspect-copy-selection').addEventListener('click', asyn
     message.textContent = 'No se pudo copiar automáticamente; revisa los permisos del navegador.';
   }
 });
+let designerMultiMetadata = [];
+let designerMultiManifest = null;
+let designerMultiBlueprint = null;
+function resetDesignerMultiBlueprint() {
+  designerMultiBlueprint = null;
+  document.getElementById('designer-multi-json').textContent = '';
+  document.getElementById('designer-multi-blueprint').hidden = true;
+  document.getElementById('designer-multi-copy').disabled = true;
+}
+document.getElementById('designer-multi-primary').addEventListener('change', resetDesignerMultiBlueprint);
+document.getElementById('designer-multi-build').addEventListener('click', () => {
+  const primary = document.getElementById('designer-multi-primary').value;
+  const status = document.getElementById('designer-multi-status');
+  resetDesignerMultiBlueprint();
+  if (!designerMultiManifest || !primary || designerMultiMetadata.length !== designerMultiManifest.tables.length ||
+      !designerMultiMetadata.some(metadata => metadata.table === primary)) {
+    status.textContent = 'Inspecciona correctamente todas las tablas y selecciona una tabla principal.';
+    return;
+  }
+  const tableNames = new Set(designerMultiMetadata.map(metadata => metadata.table));
+  const relations = [];
+  for (const metadata of designerMultiMetadata) {
+    for (const fk of metadata.foreignKeys || []) {
+      if (fk.referencedSchema === designerMultiManifest.schema && tableNames.has(fk.referencedTable)) {
+        relations.push({
+          fromTable: metadata.table, fromColumn: fk.column,
+          toTable: fk.referencedTable, toColumn: fk.referencedColumn
+        });
+      }
+    }
+  }
+  designerMultiBlueprint = {
+    kind: 'studio.multitable.preview',
+    version: 1,
+    mode: 'READ_ONLY_PREVIEW',
+    source: { profile: designerMultiManifest.profile, schema: designerMultiManifest.schema },
+    primaryTable: primary,
+    tables: designerMultiMetadata.map(metadata => ({
+      name: metadata.table,
+      columns: (metadata.columns || []).map(column => ({
+        name: column.name, type: column.nativeType || column.dataType, nullable: !!column.nullable
+      })),
+      primaryKey: [...(metadata.primaryKey?.columns || [])]
+    })),
+    relations,
+    warnings: relations.length ? [] : ['No se detectaron relaciones internas entre las tablas seleccionadas.'],
+    generationAuthorized: false,
+    installationAuthorized: false,
+    publicationAuthorized: false
+  };
+  document.getElementById('designer-multi-json').textContent = JSON.stringify(designerMultiBlueprint, null, 2);
+  document.getElementById('designer-multi-blueprint').hidden = false;
+  document.getElementById('designer-multi-copy').disabled = false;
+  status.textContent = 'Definición preliminar preparada: ' + designerMultiMetadata.length +
+    ' tablas y ' + relations.length + ' relaciones detectadas. No se guardó ni generó código.';
+});
+document.getElementById('designer-multi-copy').addEventListener('click', async () => {
+  if (!designerMultiBlueprint) { return; }
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(designerMultiBlueprint, null, 2));
+    document.getElementById('designer-multi-status').textContent = 'Definición preliminar copiada. No se modificó PostgreSQL.';
+  } catch {
+    document.getElementById('designer-multi-status').textContent = 'No se pudo copiar; revisa los permisos del navegador.';
+  }
+});
 let designerMultiReviewId = 0;
 document.getElementById('inspect-send-designer').addEventListener('click', async () => {
   const manifest = inspectorSelectionManifest();
@@ -114,6 +179,16 @@ document.getElementById('inspect-send-designer').addEventListener('click', async
     return;
   }
   const reviewId = ++designerMultiReviewId;
+  designerMultiManifest = { profile: manifest.profile, schema: manifest.schema, tables: [...manifest.tables] };
+  designerMultiMetadata = [];
+  resetDesignerMultiBlueprint();
+  const primarySelect = document.getElementById('designer-multi-primary');
+  primarySelect.replaceChildren();
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = 'Seleccionar tabla principal…';
+  primarySelect.appendChild(placeholder);
+  document.getElementById('designer-multi-build').disabled = true;
   panel.hidden = false;
   rows.replaceChildren();
   document.getElementById('designer-multi-context').textContent =
@@ -133,6 +208,10 @@ document.getElementById('inspect-send-designer').addEventListener('click', async
         throw new Error('Los metadatos no coinciden con la selección');
       }
       inspected.push(metadata);
+      const option = document.createElement('option');
+      option.value = table;
+      option.textContent = table;
+      primarySelect.appendChild(option);
       const row = document.createElement('tr');
       const references = (metadata.foreignKeys || []).filter(fk =>
         fk.referencedSchema === manifest.schema && manifest.tables.includes(fk.referencedTable));
@@ -157,7 +236,11 @@ document.getElementById('inspect-send-designer').addEventListener('click', async
     status.textContent = 'Inspeccionadas: ' + inspected.length + ' de ' + manifest.tables.length +
       (failed ? ' · No disponibles: ' + failed : '');
   }
-  status.textContent += '. Vista previa finalizada; no se ha guardado ni generado un módulo.';
+  designerMultiMetadata = inspected;
+  document.getElementById('designer-multi-build').disabled = failed !== 0 || inspected.length !== manifest.tables.length;
+  status.textContent += '. ' + (failed ? 'Corrige las inspecciones fallidas antes de preparar la definición.' :
+    'Selecciona una tabla principal para preparar la definición multitabla.') +
+    ' No se ha guardado ni generado un módulo.';
 });
 function selectInspectorTable(name) {
   document.getElementById('inspect-table').value = name;
