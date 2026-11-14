@@ -202,18 +202,8 @@ async function refreshConnections() {
     : 'No hay perfiles guardados. Completa el formulario para crear uno.';
 }
 document.getElementById('connections-refresh').addEventListener('click', () => refreshConnections());
-document.getElementById('connections-check').addEventListener('click', async () => {
-  const button = document.getElementById('connections-check');
-  const message = document.getElementById('connections-message');
-  button.disabled = true;
-  message.textContent = 'Verificando conexión en modo de solo lectura…';
-  try {
-    const response = await fetch('/api/studio/connections/check');
-    const data = await response.json();
-    if (!response.ok) { throw new Error(data.error || 'No fue posible conectar'); }
-    message.textContent = 'Conexión verificada: ' + data.database + '. Solo lectura confirmada.';
-  } catch (error) { message.textContent = error.message; }
-  finally { button.disabled = false; }
+document.getElementById('connections-check').addEventListener('click', () => {
+  document.getElementById('connection-profile-check').click();
 });
 document.getElementById('connections-inspector').addEventListener('click', () => showSection('inspector'));
 
