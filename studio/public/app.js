@@ -48,6 +48,56 @@ let editingConnection = null;
 let selectedInspectorProfile = '';
 function activeInspectorProfile() { return document.getElementById('inspect-profile').value; }
 let inspectorTables = [];
+const inspectorMultiSelection = new Set();
+function inspectorSelectionManifest() {
+  return {
+    profile: activeInspectorProfile(),
+    schema: document.getElementById('inspect-schema').value.trim(),
+    tables: inspectorTables.filter(name => inspectorMultiSelection.has(name))
+  };
+}
+function renderInspectorMultiSelection() {
+  const manifest = inspectorSelectionManifest();
+  document.getElementById('inspect-multi-count').textContent = manifest.tables.length + ' tablas seleccionadas';
+  const list = document.getElementById('inspect-multi-list');
+  list.replaceChildren();
+  for (const name of manifest.tables) {
+    const item = document.createElement('li');
+    item.textContent = name;
+    list.appendChild(item);
+  }
+  document.getElementById('inspect-copy-selection').disabled = manifest.tables.length === 0;
+}
+function toggleInspectorMultiTable(name) {
+  if (inspectorMultiSelection.has(name)) { inspectorMultiSelection.delete(name); }
+  else { inspectorMultiSelection.add(name); }
+  renderInspectorMultiSelection();
+  renderInspectorTableExplorer();
+}
+document.getElementById('inspect-select-visible').addEventListener('click', () => {
+  const filter = document.getElementById('inspect-table-search').value.trim().toLocaleLowerCase();
+  for (const name of inspectorTables) {
+    if (name.toLocaleLowerCase().includes(filter)) { inspectorMultiSelection.add(name); }
+  }
+  renderInspectorMultiSelection();
+  renderInspectorTableExplorer();
+});
+document.getElementById('inspect-clear-selection').addEventListener('click', () => {
+  inspectorMultiSelection.clear();
+  renderInspectorMultiSelection();
+  renderInspectorTableExplorer();
+});
+document.getElementById('inspect-copy-selection').addEventListener('click', async () => {
+  const manifest = inspectorSelectionManifest();
+  if (!manifest.profile || !manifest.schema || !manifest.tables.length) { return; }
+  const message = document.getElementById('inspect-multi-message');
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(manifest, null, 2));
+    message.textContent = 'Selección copiada. No se modificaron tablas ni se generó un módulo.';
+  } catch {
+    message.textContent = 'No se pudo copiar automáticamente; revisa los permisos del navegador.';
+  }
+});
 function selectInspectorTable(name) {
   document.getElementById('inspect-table').value = name;
   document.getElementById('inspect-table-list').value = inspectorTables.includes(name) ? name : '';
@@ -69,7 +119,16 @@ function renderInspectorTableExplorer() {
     button.textContent = name;
     button.setAttribute('aria-pressed', String(document.getElementById('inspect-table').value === name));
     button.addEventListener('click', () => selectInspectorTable(name));
-    container.appendChild(button);
+    const label = document.createElement('label');
+    label.className = 'table-explorer-choice';
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = inspectorMultiSelection.has(name);
+    checkbox.setAttribute('aria-label', 'Usar tabla ' + name);
+    checkbox.addEventListener('change', () => toggleInspectorMultiTable(name));
+    label.appendChild(checkbox);
+    label.appendChild(button);
+    container.appendChild(label);
   }
   document.getElementById('inspect-table-count').textContent = visible.length + ' de ' + inspectorTables.length + ' tablas';
   if (!visible.length) {
@@ -83,6 +142,8 @@ document.getElementById('inspect-table').addEventListener('input', event => sele
 function resetInspectorResults() {
   lastInspectedMetadata = null;
   inspectorTables = [];
+  inspectorMultiSelection.clear();
+  renderInspectorMultiSelection();
   document.getElementById('inspect-table-search').value = '';
   renderInspectorTableExplorer();
   document.getElementById('inspect-selected-table').textContent = 'Tabla seleccionada: ninguna';
@@ -347,6 +408,8 @@ document.getElementById('inspect-load-tables').addEventListener('click', async (
   button.disabled = true;
   message.textContent = 'Consultando tablas disponibles...';
   inspectorTables = [];
+  inspectorMultiSelection.clear();
+  renderInspectorMultiSelection();
   renderInspectorTableExplorer();
   selectInspectorTable('');
   selector.replaceChildren();
@@ -362,6 +425,7 @@ document.getElementById('inspect-load-tables').addEventListener('click', async (
     const result = await response.json();
     if (!response.ok) { throw new Error(result.error || 'No fue posible consultar las tablas'); }
     inspectorTables = result.tables;
+    renderInspectorMultiSelection();
     renderInspectorTableExplorer();
     for (const table of result.tables) {
       const option = document.createElement('option');
