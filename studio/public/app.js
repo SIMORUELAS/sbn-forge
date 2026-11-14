@@ -112,14 +112,16 @@ function resetDesignerMultiBlueprint() {
   document.getElementById('designer-multi-blueprint').hidden = true;
   document.getElementById('designer-multi-copy').disabled = true;
 }
-document.getElementById('designer-multi-primary').addEventListener('change', resetDesignerMultiBlueprint);
+document.getElementById('designer-multi-primary').addEventListener('change', () => {
+  if (designerMultiBlueprint) { document.getElementById('designer-multi-build').click(); }
+});
 document.getElementById('designer-multi-build').addEventListener('click', () => {
   const primary = document.getElementById('designer-multi-primary').value;
   const status = document.getElementById('designer-multi-status');
   resetDesignerMultiBlueprint();
-  if (!designerMultiManifest || !primary || designerMultiMetadata.length !== designerMultiManifest.tables.length ||
-      !designerMultiMetadata.some(metadata => metadata.table === primary)) {
-    status.textContent = 'Inspecciona correctamente todas las tablas y selecciona una tabla principal.';
+  if (!designerMultiManifest || designerMultiMetadata.length !== designerMultiManifest.tables.length ||
+      (primary && !designerMultiMetadata.some(metadata => metadata.table === primary))) {
+    status.textContent = 'Inspecciona correctamente todas las tablas para preparar la definición multitabla.';
     return;
   }
   const tableNames = new Set(designerMultiMetadata.map(metadata => metadata.table));
@@ -139,7 +141,7 @@ document.getElementById('designer-multi-build').addEventListener('click', () => 
     version: 1,
     mode: 'READ_ONLY_PREVIEW',
     source: { profile: designerMultiManifest.profile, schema: designerMultiManifest.schema },
-    primaryTable: primary,
+    primaryTable: primary || null,
     tables: designerMultiMetadata.map(metadata => ({
       name: metadata.table,
       columns: (metadata.columns || []).map(column => ({
@@ -186,7 +188,7 @@ document.getElementById('inspect-send-designer').addEventListener('click', async
   primarySelect.replaceChildren();
   const placeholder = document.createElement('option');
   placeholder.value = '';
-  placeholder.textContent = 'Seleccionar tabla principal…';
+  placeholder.textContent = 'Sin tabla principal · trabajar con todas';
   primarySelect.appendChild(placeholder);
   document.getElementById('designer-multi-build').disabled = true;
   panel.hidden = false;
@@ -238,9 +240,11 @@ document.getElementById('inspect-send-designer').addEventListener('click', async
   }
   designerMultiMetadata = inspected;
   document.getElementById('designer-multi-build').disabled = failed !== 0 || inspected.length !== manifest.tables.length;
-  status.textContent += '. ' + (failed ? 'Corrige las inspecciones fallidas antes de preparar la definición.' :
-    'Selecciona una tabla principal para preparar la definición multitabla.') +
-    ' No se ha guardado ni generado un módulo.';
+  if (!failed && inspected.length === manifest.tables.length) {
+    document.getElementById('designer-multi-build').click();
+  } else {
+    status.textContent += '. Corrige las inspecciones fallidas antes de preparar la definición. No se ha guardado ni generado un módulo.';
+  }
 });
 function selectInspectorTable(name) {
   document.getElementById('inspect-table').value = name;
