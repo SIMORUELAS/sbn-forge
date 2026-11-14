@@ -39,9 +39,15 @@ describe('encrypted PostgreSQL connection profiles', () => {
   });
   test('rejects unallowlisted host and duplicate name', async () => {
     await expect(store.upsert({ ...profile, host: 'remote.example.com' }))
-      .rejects.toThrow('INVALID_OR_UNAUTHORIZED_CONNECTION_PROFILE');
+      .rejects.toThrow('PROFILE_HOST_NOT_ALLOWED');
     await store.upsert(profile);
     await expect(store.upsert(profile)).rejects.toThrow('PROFILE_ALREADY_EXISTS');
+  });
+  test('accepts uppercase profile names and reports missing password clearly', async () => {
+    await store.upsert({ ...profile, name: 'PG_PRUEBAS' });
+    expect((await store.list())[0].name).toBe('PG_PRUEBAS');
+    await expect(store.upsert({ ...profile, name: 'OTRO_PERFIL', password: '' }))
+      .rejects.toThrow('PROFILE_PASSWORD_REQUIRED');
   });
   test('does not permit storage without opt-in and encryption key', async () => {
     const disabled = createConnectionProfiles({ file: path.join(dir, 'disabled.json'), env: {} });
