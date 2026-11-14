@@ -25,6 +25,20 @@ describe('Studio PostgreSQL connections workspace', () => {
     expect(js).toContain("getElementById('inspect-table').addEventListener('input'");
     expect(js).toContain('button.type = \'button\'');
   });
+  test('Designer prepares a scoped multitable blueprint without persistence or generation', () => {
+    for (const id of ['designer-multi-primary', 'designer-multi-build',
+      'designer-multi-copy', 'designer-multi-blueprint', 'designer-multi-json']) {
+      expect(html).toContain('id="' + id + '"');
+    }
+    expect(js).toContain("kind: 'studio.multitable.preview'");
+    expect(js).toContain("mode: 'READ_ONLY_PREVIEW'");
+    expect(js).toContain('primaryTable: primary');
+    expect(js).toContain('relations,');
+    expect(js).toContain('generationAuthorized: false');
+    expect(js).toContain('installationAuthorized: false');
+    expect(js).toContain('publicationAuthorized: false');
+    expect(js).toContain('failed !== 0 || inspected.length !== manifest.tables.length');
+  });
   test('Inspector transfers selected tables to a read-only Designer metadata review', () => {
     for (const id of ['inspect-send-designer', 'designer-multi-panel', 'designer-multi-context',
       'designer-multi-status', 'designer-multi-rows']) {
