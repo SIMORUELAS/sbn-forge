@@ -158,7 +158,7 @@ function createStudioServer(options = {}) {
       if (req.method !== 'GET') {
         const host = req.headers.host;
         const origin = req.headers.origin;
-        if (!host || !/^127\\.0\\.0\\.1:[0-9]+$/.test(host) || (origin && origin !== 'http://' + host) ||
+        if (!host || !/^127\.0\.0\.1:[0-9]+$/.test(host) || (origin && origin !== 'http://' + host) ||
             req.headers['x-forge-local-action'] !== '1') {
           json(res, 403, { error: 'Acción local no autorizada' }); return;
         }
@@ -188,7 +188,7 @@ function createStudioServer(options = {}) {
           return;
         }
         if ((req.method === 'POST' && !name) || (req.method === 'PUT' && name)) {
-          if (!/^application\\/json(?:\\s*;|$)/i.test(req.headers['content-type'] || '')) {
+          if (!/^application\/json(?:\s*;|$)/i.test(req.headers['content-type'] || '')) {
             json(res, 415, { error: 'Se requiere application/json' }); return;
           }
           let raw = '';
