@@ -148,6 +148,51 @@ function createStudioServer(options = {}) {
       }
       return;
     }
+    if (pathname === '/api/studio/connections/status') {
+      if (req.method !== 'GET') { json(res, 405, { error: 'Método no permitido' }); return; }
+      const configured = process.env.FORGE_STUDIO_DB_INSPECT === '1' &&
+        Boolean(process.env.FORGE_STUDIO_DB_NAME && process.env.FORGE_STUDIO_DB_USER && process.env.FORGE_STUDIO_DB_PASSWORD);
+      json(res, 200, {
+        configured, mode: 'READ_ONLY_SERVER_CONFIGURATION',
+        name: 'PostgreSQL autorizado',
+        host: configured ? (process.env.FORGE_STUDIO_DB_HOST || '127.0.0.1') : null,
+        port: configured ? Number(process.env.FORGE_STUDIO_DB_PORT || 5432) : null,
+        database: configured ? process.env.FORGE_STUDIO_DB_NAME : null,
+        user: configured ? process.env.FORGE_STUDIO_DB_USER : null,
+        passwordExposed: false, writesAuthorized: false
+      });
+      return;
+    }
+    if (pathname === '/api/studio/connections/check') {
+      if (req.method !== 'GET') { json(res, 405, { error: 'Método no permitido' }); return; }
+      if (process.env.FORGE_STUDIO_DB_INSPECT !== '1' ||
+          !process.env.FORGE_STUDIO_DB_NAME || !process.env.FORGE_STUDIO_DB_USER || !process.env.FORGE_STUDIO_DB_PASSWORD) {
+        json(res, 503, { error: 'Conexión de solo lectura no configurada' }); return;
+      }
+      let datasource;
+      try {
+        datasource = createDatasource({
+          host: process.env.FORGE_STUDIO_DB_HOST || '127.0.0.1',
+          port: Number(process.env.FORGE_STUDIO_DB_PORT || 5432),
+          database: process.env.FORGE_STUDIO_DB_NAME,
+          user: process.env.FORGE_STUDIO_DB_USER,
+          password: process.env.FORGE_STUDIO_DB_PASSWORD,
+          connectionTimeoutMillis: 3000, query_timeout: 10000, statement_timeout: 10000,
+          options: '-c default_transaction_read_only=on'
+        });
+        const result = await datasource.query("SELECT current_database() AS database_name, current_setting('transaction_read_only') AS read_only");
+        const row = result.rows?.[0];
+        if (!row || row.database_name !== process.env.FORGE_STUDIO_DB_NAME || row.read_only !== 'on') {
+          json(res, 502, { error: 'Identidad o modo de solo lectura no verificado' }); return;
+        }
+        json(res, 200, { connected: true, database: row.database_name, readOnly: true });
+      } catch {
+        json(res, 502, { error: 'No fue posible verificar la conexión PostgreSQL' });
+      } finally {
+        if (datasource) { await datasource.close(); }
+      }
+      return;
+    }
     // Explicit opt-in: database access is disabled unless configured locally.
     if (pathname === '/api/studio/inspect') {
       if (req.method !== 'GET') { json(res, 405, { error: 'Method not allowed' }); return; }
