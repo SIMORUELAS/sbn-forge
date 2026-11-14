@@ -103,7 +103,31 @@ async function loadConnectionProfiles() {
     select.appendChild(option);
   }
   if (connectionProfiles.some(p => p.name === selectedInspectorProfile)) { select.value = selectedInspectorProfile; }
+  const inspectorSelect = document.getElementById('inspect-profile');
+  const prior = inspectorSelect.value;
+  inspectorSelect.replaceChildren();
+  const prompt = document.createElement('option');
+  prompt.value = '';
+  prompt.textContent = 'Seleccionar perfil…';
+  inspectorSelect.appendChild(prompt);
+  for (const profile of connectionProfiles) {
+    const option = document.createElement('option');
+    option.value = profile.name;
+    option.textContent = profile.name + ' · ' + profile.database + ' · ' + profile.user;
+    inspectorSelect.appendChild(option);
+  }
+  const next = connectionProfiles.some(p => p.name === prior) ? prior :
+    (connectionProfiles.some(p => p.name === selectedInspectorProfile) ? selectedInspectorProfile : '');
+  inspectorSelect.value = next;
+  if (next !== prior) { resetInspectorResults(); }
 }
+document.getElementById('inspect-profile').addEventListener('change', event => {
+  selectedInspectorProfile = event.currentTarget.value;
+  resetInspectorResults();
+  document.getElementById('inspect-message').textContent = selectedInspectorProfile
+    ? 'Perfil activo: ' + selectedInspectorProfile + '. Pulsa Cargar tablas.'
+    : 'Selecciona un perfil PostgreSQL guardado.';
+});
 function clearConnectionForm() {
   editingConnection = null;
   document.getElementById('connection-profile-form').reset();
@@ -188,6 +212,8 @@ document.getElementById('connection-profile-check').addEventListener('click', as
     const data = await response.json();
     if (!response.ok) { throw new Error(data.error || 'Conexión no disponible'); }
     selectedInspectorProfile = name;
+    document.getElementById('inspect-profile').value = name;
+    resetInspectorResults();
     verifiedConnectionProfiles.add(name);
     renderConnectionRows();
     message.textContent = 'Perfil verificado: ' + name + '. Ya puedes abrir Inspector.';
@@ -249,7 +275,8 @@ document.getElementById('inspect-form').addEventListener('submit', async event =
   submit.disabled = true;
   try {
     const params = new URLSearchParams({ schema, table });
-    if (selectedInspectorProfile) { params.set('profile', selectedInspectorProfile); }
+    if (!activeInspectorProfile()) { throw new Error('Selecciona un perfil PostgreSQL en Inspector.'); }
+    params.set('profile', activeInspectorProfile());
     const response = await fetch('/api/studio/inspect?' + params.toString());
     const data = await response.json();
     if (!response.ok) { throw new Error(data.error || 'No fue posible inspeccionar la tabla'); }
