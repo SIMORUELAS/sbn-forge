@@ -7,6 +7,7 @@ const { PostgreSqlInspector } = require('../src/inspectors/postgresql');
 const { createDefinitionStore, MAX_BYTES } = require('./definition-store');
 const { toForgePreview } = require('./forge-preview');
 const { createGenerationPlan } = require('./generation-plan');
+const { createConnectionProfiles } = require('./connection-profiles');
 const { createRunManager } = require('./run-manager');
 const { assessPortalModuleSecurityContract, OPERATIONS } = require('./portal-module-security-contract');
 
@@ -22,12 +23,14 @@ function json(res, status, value) {
 
 function createStudioServer(options = {}) {
   const createDatasource = options.createDatasource || (config => new PostgresDatasource(config));
+  const profiles = options.connectionProfiles || createConnectionProfiles();
   const definitions = options.definitionStore || createDefinitionStore(options.definitionsDirectory);
   const runs = options.runManager || createRunManager({ definitionStore: definitions, directory: options.runsDirectory });
   return http.createServer(async (req, res) => {
     const isDefinitionApi = (req.url || '').split('?')[0].startsWith('/api/studio/definitions');
     const isGenerationApi = (req.url || '').split('?')[0] === '/api/studio/runs';
-    if (req.method !== 'GET' && req.method !== 'HEAD' && !((isDefinitionApi || isGenerationApi) && req.method === 'POST')) {
+    const isProfileApi = (req.url || '').split('?')[0].startsWith('/api/studio/connection-profiles');
+    if (req.method !== 'GET' && req.method !== 'HEAD' && !((isDefinitionApi || isGenerationApi || isProfileApi) && req.method === 'POST') && !(isProfileApi && ['PUT', 'DELETE'].includes(req.method))) {
       res.writeHead(405, { Allow: 'GET, HEAD' });
       res.end();
       return;
@@ -145,6 +148,63 @@ function createStudioServer(options = {}) {
         json(res, 200, await definitions.get(name));
       } catch (error) {
         json(res, error.code === 'ENOENT' ? 404 : /inválid/i.test(error.message) ? 400 : 500, { error: error.code === 'ENOENT' ? 'Definición no encontrada' : 'No fue posible leer la definición' });
+      }
+      return;
+    }
+    if (pathname === '/api/studio/connection-profiles' || pathname.startsWith('/api/studio/connection-profiles/')) {
+      if (!profiles.enabled) { json(res, 503, { error: 'Administrador de conexiones no habilitado' }); return; }
+      const name = pathname === '/api/studio/connection-profiles' ? null : pathname.slice('/api/studio/connection-profiles/'.length);
+      if (name && !/^[a-z][a-z0-9_-]{2,39}$/.test(name)) { json(res, 400, { error: 'Nombre de perfil inválido' }); return; }
+      if (req.method !== 'GET') {
+        const host = req.headers.host;
+        const origin = req.headers.origin;
+        if (!host || !/^127\\.0\\.0\\.1:[0-9]+$/.test(host) || (origin && origin !== 'http://' + host) ||
+            req.headers['x-forge-local-action'] !== '1') {
+          json(res, 403, { error: 'Acción local no autorizada' }); return;
+        }
+      }
+      try {
+        if (req.method === 'GET' && !name) { json(res, 200, { profiles: await profiles.list() }); return; }
+        if (req.method === 'DELETE' && name) { await profiles.remove(name); json(res, 200, { deleted: true }); return; }
+        if (req.method === 'POST' && name && name.endsWith('/check')) {
+          json(res, 404, { error: 'Ruta no encontrada' }); return;
+        }
+        if (req.method === 'POST' && name) {
+          const p = await profiles.get(name);
+          if (!p) { json(res, 404, { error: 'Perfil no encontrado' }); return; }
+          let datasource;
+          try {
+            datasource = createDatasource({ host: p.host, port: p.port, database: p.database,
+              user: p.user, password: p.password, connectionTimeoutMillis: 3000,
+              query_timeout: 10000, statement_timeout: 10000,
+              options: '-c default_transaction_read_only=on' });
+            const result = await datasource.query("SELECT current_database() AS database_name, current_setting('transaction_read_only') AS read_only");
+            if (result.rows?.[0]?.database_name !== p.database || result.rows?.[0]?.read_only !== 'on') {
+              json(res, 502, { error: 'No se verificó la identidad o solo lectura' }); return;
+            }
+            json(res, 200, { connected: true, database: p.database, readOnly: true });
+          } catch { json(res, 502, { error: 'No fue posible conectar al perfil' }); }
+          finally { if (datasource) await datasource.close(); }
+          return;
+        }
+        if ((req.method === 'POST' && !name) || (req.method === 'PUT' && name)) {
+          if (!/^application\\/json(?:\\s*;|$)/i.test(req.headers['content-type'] || '')) {
+            json(res, 415, { error: 'Se requiere application/json' }); return;
+          }
+          let raw = '';
+          for await (const chunk of req) {
+            raw += chunk.toString('utf8');
+            if (Buffer.byteLength(raw) > 4096) { json(res, 413, { error: 'Solicitud demasiado grande' }); return; }
+          }
+          const saved = await profiles.upsert(JSON.parse(raw), name);
+          json(res, req.method === 'POST' ? 201 : 200, { profile: saved });
+          return;
+        }
+        json(res, 405, { error: 'Método no permitido' });
+      } catch (error) {
+        json(res, error.status || 400, { error: ['PROFILE_NOT_FOUND','PROFILE_ALREADY_EXISTS',
+          'INVALID_OR_UNAUTHORIZED_CONNECTION_PROFILE','CONNECTION_PROFILE_STORAGE_NOT_CONFIGURED'].includes(error.message)
+          ? error.message : 'No fue posible administrar el perfil' });
       }
       return;
     }
