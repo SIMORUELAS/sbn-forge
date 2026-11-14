@@ -46,6 +46,23 @@ showSection(window.location.hash.slice(1));
 let connectionProfiles = [];
 let editingConnection = null;
 let selectedInspectorProfile = '';
+const verifiedConnectionProfiles = new Set();
+function renderConnectionRows() {
+  const rows = document.getElementById('connections-rows');
+  rows.replaceChildren();
+  for (const profile of connectionProfiles) {
+    const row = document.createElement('tr');
+    for (const value of [profile.name, profile.host + ':' + profile.port,
+      profile.database, profile.user,
+      verifiedConnectionProfiles.has(profile.name) ? 'Conexión verificada · solo lectura' : 'Guardado · sin verificar']) {
+      const cell = document.createElement('td');
+      cell.textContent = String(value);
+      row.appendChild(cell);
+    }
+    rows.appendChild(row);
+  }
+}
+
 const profileErrors = {
   PROFILE_NAME_INVALID: 'Nombre inválido: utiliza de 3 a 40 caracteres, letras, números, guiones o guion bajo.',
   PROFILE_HOST_NOT_ALLOWED: 'Servidor no autorizado. Revisa la lista FORGE_STUDIO_ALLOWED_DB_HOSTS.',
@@ -66,6 +83,8 @@ async function loadConnectionProfiles() {
   select.appendChild(empty);
   if (response.status === 503) {
     connectionProfiles = [];
+    verifiedConnectionProfiles.clear();
+    renderConnectionRows();
     document.getElementById('connections-message').textContent =
       'Perfiles deshabilitados. Configura FORGE_STUDIO_CONNECTION_PROFILES=1 y una clave de cifrado en el servidor.';
     return;
@@ -73,6 +92,10 @@ async function loadConnectionProfiles() {
   const data = await response.json();
   if (!response.ok) { throw new Error(data.error || 'No se pudieron consultar perfiles'); }
   connectionProfiles = data.profiles || [];
+  for (const name of verifiedConnectionProfiles) {
+    if (!connectionProfiles.some(p => p.name === name)) { verifiedConnectionProfiles.delete(name); }
+  }
+  renderConnectionRows();
   for (const profile of connectionProfiles) {
     const option = document.createElement('option');
     option.value = profile.name;
@@ -129,6 +152,8 @@ document.getElementById('connection-profile-form').addEventListener('submit', as
     });
     const result = await response.json();
     if (!response.ok) { throw new Error(profileErrorMessage(result.error)); }
+    verifiedConnectionProfiles.delete(result.profile.name);
+    if (editingConnection) { verifiedConnectionProfiles.delete(editingConnection); }
     clearConnectionForm();
     await loadConnectionProfiles();
     document.getElementById('connection-profile-select').value = result.profile.name;
@@ -146,6 +171,7 @@ document.getElementById('connection-delete').addEventListener('click', async () 
     });
     if (!response.ok) { throw new Error('No fue posible eliminar el perfil'); }
     if (selectedInspectorProfile === name) { selectedInspectorProfile = ''; }
+    verifiedConnectionProfiles.delete(name);
     await loadConnectionProfiles();
     message.textContent = 'Perfil eliminado: ' + name + '.';
   } catch (error) { message.textContent = error.message; }
@@ -162,34 +188,18 @@ document.getElementById('connection-profile-check').addEventListener('click', as
     const data = await response.json();
     if (!response.ok) { throw new Error(data.error || 'Conexión no disponible'); }
     selectedInspectorProfile = name;
+    verifiedConnectionProfiles.add(name);
+    renderConnectionRows();
     message.textContent = 'Perfil verificado: ' + name + '. Ya puedes abrir Inspector.';
   } catch (error) { message.textContent = error.message; }
 });
 async function refreshConnections() {
   const message = document.getElementById('connections-message');
-  const rows = document.getElementById('connections-rows');
-  rows.replaceChildren();
-  message.textContent = 'Consultando configuración del servidor local…';
+  message.textContent = 'Consultando perfiles guardados…';
   await loadConnectionProfiles();
-  try {
-    const response = await fetch('/api/studio/connections/status');
-    const data = await response.json();
-    if (!response.ok) { throw new Error(data.error || 'No se pudo consultar la conexión'); }
-    if (!data.configured) {
-      message.textContent = connectionProfiles.length
-        ? 'Perfiles guardados: ' + connectionProfiles.length + '. Selecciona uno y pulsa Probar perfil.'
-        : 'No hay perfiles guardados. Completa el formulario para crear uno.';
-      return;
-    }
-    const row = document.createElement('tr');
-    for (const value of [data.name, data.host + ':' + data.port, data.database, data.user, 'Solo lectura']) {
-      const cell = document.createElement('td');
-      cell.textContent = String(value);
-      row.appendChild(cell);
-    }
-    rows.appendChild(row);
-    message.textContent = 'Conexión configurada. Usa Probar conexión para verificar disponibilidad.';
-  } catch (error) { message.textContent = error.message; }
+  message.textContent = connectionProfiles.length
+    ? 'Perfiles guardados: ' + connectionProfiles.length + '. Selecciona uno y pulsa Probar perfil.'
+    : 'No hay perfiles guardados. Completa el formulario para crear uno.';
 }
 document.getElementById('connections-refresh').addEventListener('click', () => refreshConnections());
 document.getElementById('connections-check').addEventListener('click', async () => {
