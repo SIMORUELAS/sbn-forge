@@ -154,7 +154,7 @@ function createStudioServer(options = {}) {
     if (pathname === '/api/studio/connection-profiles' || pathname.startsWith('/api/studio/connection-profiles/')) {
       if (!profiles.enabled) { json(res, 503, { error: 'Administrador de conexiones no habilitado' }); return; }
       const name = pathname === '/api/studio/connection-profiles' ? null : pathname.slice('/api/studio/connection-profiles/'.length);
-      if (name && !/^[a-z][a-z0-9_-]{2,39}$/.test(name)) { json(res, 400, { error: 'Nombre de perfil inválido' }); return; }
+      if (name && !/^[a-zA-Z][a-zA-Z0-9_-]{2,39}$/.test(name)) { json(res, 400, { error: 'Nombre de perfil inválido' }); return; }
       if (req.method !== 'GET') {
         const host = req.headers.host;
         const origin = req.headers.origin;
@@ -203,7 +203,9 @@ function createStudioServer(options = {}) {
         json(res, 405, { error: 'Método no permitido' });
       } catch (error) {
         json(res, error.status || 400, { error: ['PROFILE_NOT_FOUND','PROFILE_ALREADY_EXISTS',
-          'INVALID_OR_UNAUTHORIZED_CONNECTION_PROFILE','CONNECTION_PROFILE_STORAGE_NOT_CONFIGURED'].includes(error.message)
+          'INVALID_OR_UNAUTHORIZED_CONNECTION_PROFILE','CONNECTION_PROFILE_STORAGE_NOT_CONFIGURED',
+          'PROFILE_NAME_INVALID','PROFILE_HOST_NOT_ALLOWED','PROFILE_PORT_INVALID',
+          'PROFILE_DATABASE_INVALID','PROFILE_USER_INVALID','PROFILE_PASSWORD_REQUIRED'].includes(error.message)
           ? error.message : 'No fue posible administrar el perfil' });
       }
       return;
@@ -256,7 +258,7 @@ function createStudioServer(options = {}) {
     // Explicit opt-in: database access is disabled unless configured locally.
     async function inspectorConfig(profileName) {
       if (profileName) {
-        if (!profiles.enabled || !/^[a-z][a-z0-9_-]{2,39}$/.test(profileName)) { return null; }
+        if (!profiles.enabled || !/^[a-zA-Z][a-zA-Z0-9_-]{2,39}$/.test(profileName)) { return null; }
         const p = await profiles.get(profileName);
         if (!p) { return null; }
         return { host: p.host, port: p.port, database: p.database, user: p.user,
