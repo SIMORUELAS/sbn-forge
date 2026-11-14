@@ -74,6 +74,11 @@ function toggleInspectorMultiTable(name) {
   renderInspectorMultiSelection();
   renderInspectorTableExplorer();
 }
+document.getElementById('inspect-select-all').addEventListener('click', () => {
+  for (const name of inspectorTables) { inspectorMultiSelection.add(name); }
+  renderInspectorMultiSelection();
+  renderInspectorTableExplorer();
+});
 document.getElementById('inspect-select-visible').addEventListener('click', () => {
   const filter = document.getElementById('inspect-table-search').value.trim().toLocaleLowerCase();
   for (const name of inspectorTables) {
