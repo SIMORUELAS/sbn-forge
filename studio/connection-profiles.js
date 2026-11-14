@@ -32,9 +32,9 @@ function createConnectionProfiles({ env = process.env, file = path.join(os.homed
     ready();
     let raw;
     try { raw = JSON.parse(await fs.readFile(file, 'utf8')); }
-    catch (e) { if (e.code === 'ENOENT') return []; throw new Error('CONNECTION_PROFILE_STORE_UNAVAILABLE'); }
+    catch (e) { if (e.code === 'ENOENT') { return []; } throw new Error('CONNECTION_PROFILE_STORE_UNAVAILABLE'); }
     try {
-      if (raw.version !== 1 || !Array.isArray(raw.profiles)) throw new Error();
+      if (raw.version !== 1 || !Array.isArray(raw.profiles)) { throw new Error(); }
       return raw.profiles.map(item => {
         const decipher = crypto.createDecipheriv('aes-256-gcm', key,
           Buffer.from(item.iv, 'base64'));
