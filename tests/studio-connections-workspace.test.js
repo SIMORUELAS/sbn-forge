@@ -15,6 +15,16 @@ describe('Studio PostgreSQL connections workspace', () => {
     expect(js).toContain("showSection('inspector')");
     expect(js).not.toContain('innerHTML');
   });
+  test('Inspector exposes all discovered tables with filtering and manual selection', () => {
+    expect(html).toContain('id="inspect-table-search"');
+    expect(html).toContain('id="inspect-table-items"');
+    expect(html).toContain('id="inspect-selected-table"');
+    expect(js).toContain('function renderInspectorTableExplorer()');
+    expect(js).toContain('inspectorTables = result.tables;');
+    expect(js).toContain('function selectInspectorTable(name)');
+    expect(js).toContain("getElementById('inspect-table').addEventListener('input'");
+    expect(js).toContain('button.type = \'button\'');
+  });
   test('saved profiles render in the table without passwords and legacy button targets saved profile', () => {
     expect(js).toContain('function renderConnectionRows()');
     expect(js).toContain('for (const profile of connectionProfiles)');
