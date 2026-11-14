@@ -46,6 +46,16 @@ showSection(window.location.hash.slice(1));
 let connectionProfiles = [];
 let editingConnection = null;
 let selectedInspectorProfile = '';
+const profileErrors = {
+  PROFILE_NAME_INVALID: 'Nombre inválido: utiliza de 3 a 40 caracteres, letras, números, guiones o guion bajo.',
+  PROFILE_HOST_NOT_ALLOWED: 'Servidor no autorizado. Revisa la lista FORGE_STUDIO_ALLOWED_DB_HOSTS.',
+  PROFILE_PORT_INVALID: 'El puerto debe estar entre 1 y 65535.',
+  PROFILE_DATABASE_INVALID: 'Nombre de base de datos inválido.',
+  PROFILE_USER_INVALID: 'Nombre de usuario inválido.',
+  PROFILE_PASSWORD_REQUIRED: 'Introduce una contraseña para crear el perfil.',
+  PROFILE_ALREADY_EXISTS: 'Ya existe un perfil con ese nombre.'
+};
+function profileErrorMessage(code) { return profileErrors[code] || code || 'No fue posible guardar el perfil'; }
 async function loadConnectionProfiles() {
   const response = await fetch('/api/studio/connection-profiles');
   const select = document.getElementById('connection-profile-select');
@@ -102,6 +112,14 @@ document.getElementById('connection-profile-form').addEventListener('submit', as
     value[field] = document.getElementById('connection-' + field).value.trim();
   }
   value.port = Number(value.port);
+  if (!editingConnection && !value.password) {
+    message.textContent = 'Introduce una contraseña para crear el perfil.';
+    submit.disabled = false;
+    return;
+  }
+  if (value.user.toLowerCase() === 'postgres') {
+    message.textContent = 'Aviso: el usuario postgres suele ser administrador. Utiliza un usuario dedicado de solo lectura.';
+  }
   try {
     const response = await fetch('/api/studio/connection-profiles' +
       (editingConnection ? '/' + encodeURIComponent(editingConnection) : ''), {
@@ -110,7 +128,7 @@ document.getElementById('connection-profile-form').addEventListener('submit', as
       body: JSON.stringify(value)
     });
     const result = await response.json();
-    if (!response.ok) { throw new Error(result.error || 'No fue posible guardar'); }
+    if (!response.ok) { throw new Error(profileErrorMessage(result.error)); }
     clearConnectionForm();
     await loadConnectionProfiles();
     document.getElementById('connection-profile-select').value = result.profile.name;
@@ -158,7 +176,9 @@ async function refreshConnections() {
     const data = await response.json();
     if (!response.ok) { throw new Error(data.error || 'No se pudo consultar la conexión'); }
     if (!data.configured) {
-      message.textContent = 'No hay una conexión autorizada configurada. Configura FORGE_STUDIO_DB_* en el servidor y reinicia Studio.';
+      message.textContent = connectionProfiles.length
+        ? 'Perfiles guardados: ' + connectionProfiles.length + '. Selecciona uno y pulsa Probar perfil.'
+        : 'No hay perfiles guardados. Completa el formulario para crear uno.';
       return;
     }
     const row = document.createElement('tr');
