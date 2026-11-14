@@ -103,6 +103,62 @@ document.getElementById('inspect-copy-selection').addEventListener('click', asyn
     message.textContent = 'No se pudo copiar automáticamente; revisa los permisos del navegador.';
   }
 });
+let designerMultiReviewId = 0;
+document.getElementById('inspect-send-designer').addEventListener('click', async () => {
+  const manifest = inspectorSelectionManifest();
+  const status = document.getElementById('designer-multi-status');
+  const panel = document.getElementById('designer-multi-panel');
+  const rows = document.getElementById('designer-multi-rows');
+  if (!manifest.profile || !manifest.schema || !manifest.tables.length) {
+    document.getElementById('inspect-multi-message').textContent = 'Selecciona al menos una tabla, un esquema y un perfil antes de continuar.';
+    return;
+  }
+  const reviewId = ++designerMultiReviewId;
+  panel.hidden = false;
+  rows.replaceChildren();
+  document.getElementById('designer-multi-context').textContent =
+    'Perfil: ' + manifest.profile + ' · Esquema: ' + manifest.schema + ' · ' + manifest.tables.length + ' tablas';
+  status.textContent = 'Consultando metadatos en modo de solo lectura…';
+  showSection('diseno');
+  const inspected = [];
+  let failed = 0;
+  for (const table of manifest.tables) {
+    if (reviewId !== designerMultiReviewId) { return; }
+    try {
+      const params = new URLSearchParams({ profile: manifest.profile, schema: manifest.schema, table });
+      const response = await fetch('/api/studio/inspect?' + params.toString());
+      const metadata = await response.json();
+      if (!response.ok) { throw new Error(metadata.error || 'Inspección no disponible'); }
+      if (metadata.table !== table || metadata.schema !== manifest.schema) {
+        throw new Error('Los metadatos no coinciden con la selección');
+      }
+      inspected.push(metadata);
+      const row = document.createElement('tr');
+      const references = (metadata.foreignKeys || []).filter(fk =>
+        fk.referencedSchema === manifest.schema && manifest.tables.includes(fk.referencedTable));
+      for (const value of [table, String((metadata.columns || []).length),
+        (metadata.primaryKey?.columns || []).join(', ') || 'Sin clave primaria',
+        references.map(fk => fk.column + ' → ' + fk.referencedTable).join('; ') || 'Ninguna detectada', 'Inspeccionada']) {
+        const cell = document.createElement('td');
+        cell.textContent = value;
+        row.appendChild(cell);
+      }
+      rows.appendChild(row);
+    } catch {
+      failed++;
+      const row = document.createElement('tr');
+      for (const value of [table, '—', '—', '—', 'No se pudo inspeccionar']) {
+        const cell = document.createElement('td');
+        cell.textContent = value;
+        row.appendChild(cell);
+      }
+      rows.appendChild(row);
+    }
+    status.textContent = 'Inspeccionadas: ' + inspected.length + ' de ' + manifest.tables.length +
+      (failed ? ' · No disponibles: ' + failed : '');
+  }
+  status.textContent += '. Vista previa finalizada; no se ha guardado ni generado un módulo.';
+});
 function selectInspectorTable(name) {
   document.getElementById('inspect-table').value = name;
   document.getElementById('inspect-table-list').value = inspectorTables.includes(name) ? name : '';
