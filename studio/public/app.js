@@ -232,6 +232,21 @@ document.getElementById('designer-multi-save').addEventListener('click', async (
   } catch (error) { status.textContent = error.message; }
   finally { button.disabled = !designerMultiBlueprint; }
 });
+document.getElementById('designer-multi-plan').addEventListener('click', async () => {
+  const status = document.getElementById('designer-multi-status');
+  const output = document.getElementById('designer-multi-plan-json');
+  const name = document.getElementById('designer-multi-saved').value;
+  output.textContent = '';
+  if (!name) { status.textContent = 'Guarda y selecciona un diseño multitabla antes de consultar su plan.'; return; }
+  try {
+    const response = await fetch('/api/studio/multi-generation-plan/' + encodeURIComponent(name));
+    const data = await response.json();
+    if (!response.ok) { throw new Error(data.error || 'No fue posible consultar el plan'); }
+    output.textContent = JSON.stringify(data, null, 2);
+    status.textContent = 'Plan consultado para ' + name + ': ' + data.totals.resources +
+      ' recursos y ' + data.totals.proposed + ' artefactos propuestos. Sin ejecución.';
+  } catch (error) { status.textContent = error.message; }
+});
 document.getElementById('designer-multi-open').addEventListener('click', async () => {
   const name = document.getElementById('designer-multi-saved').value;
   const status = document.getElementById('designer-multi-status');
