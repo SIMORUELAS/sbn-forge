@@ -8,6 +8,7 @@ const { createDefinitionStore, MAX_BYTES } = require('./definition-store');
 const { createMultiDefinitionStore } = require('./multi-definition-store');
 const { toForgePreview } = require('./forge-preview');
 const { createGenerationPlan } = require('./generation-plan');
+const { createMultiGenerationPlan } = require('./multi-generation-plan');
 const { createConnectionProfiles } = require('./connection-profiles');
 const { createRunManager } = require('./run-manager');
 const { assessPortalModuleSecurityContract, OPERATIONS } = require('./portal-module-security-contract');
@@ -106,6 +107,19 @@ function createStudioServer(options = {}) {
       } catch (error) {
         json(res, error.code === 'ENOENT' ? 404 : 500, {
           error: error.code === 'ENOENT' ? 'Definición no encontrada' : 'Diagnóstico no disponible'
+        });
+      }
+      return;
+    }
+    if (pathname.startsWith('/api/studio/multi-generation-plan/')) {
+      if (req.method !== 'GET') { json(res, 405, { error: 'Método no permitido' }); return; }
+      try {
+        const name = decodeURIComponent(pathname.slice('/api/studio/multi-generation-plan/'.length));
+        const saved = await multiDefinitions.get(name);
+        json(res, 200, createMultiGenerationPlan(saved));
+      } catch (error) {
+        json(res, error.code === 'ENOENT' ? 404 : 400, {
+          error: error.code === 'ENOENT' ? 'Diseño multitabla no encontrado' : 'No fue posible preparar el plan multitabla'
         });
       }
       return;
