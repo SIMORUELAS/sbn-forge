@@ -1,11 +1,13 @@
 'use strict';
 const { validateMultiDefinition } = require('./multi-definition-store');
 const { createGenerationPlan } = require('./generation-plan');
+const { createMultiResourceContracts } = require('./multi-resource-contracts');
 const AUDIT = /^(created_at|created_by|updated_at|updated_by|deleted_at|deleted_by)$/;
 function createMultiGenerationPlan(input) {
   const definition = validateMultiDefinition(input);
-  const blockers = [];
-  const warnings = [];
+  const contractPreview = createMultiResourceContracts(definition);
+  const blockers = [...contractPreview.blockers];
+  const warnings = [...contractPreview.warnings];
   const resources = [];
   const artifacts = [];
   const relations = definition.relations.map(relation => ({ ...relation, status: 'validated' }));
@@ -51,7 +53,7 @@ function createMultiGenerationPlan(input) {
   }
   // Existing single-table generation contracts require richer source metadata.
   // Do not represent projected artifacts as executable or ready for generation.
-  blockers.push('Falta mapear metadatos PostgreSQL completos y contratos de generación multitabla.');
+  blockers.push('Los contratos normalizados aún no están conectados al generador ejecutable Forge.');
   return {
     kind: 'studio.multitable.generation-plan', version: 1, name: definition.name,
     source: definition.source, primaryTable: definition.primaryTable,
@@ -59,7 +61,7 @@ function createMultiGenerationPlan(input) {
     generationAuthorized: false, installationAuthorized: false, publicationAuthorized: false,
     engine: { singleTable: typeof createGenerationPlan === 'function' ? 'existing' : 'unavailable',
       multiTable: 'not-connected' },
-    resources, relations, blockers, warnings, artifacts,
+    resources, relations, resourceContracts: contractPreview.contracts, blockers, warnings, artifacts,
     totals: { tables: definition.tables.length, resources: enabled.length,
       proposed: artifacts.length, written: 0, published: 0 },
     notice: 'Plan de diseño solamente. No genera archivos, no ejecuta SQL y no instala ni publica módulos.'
