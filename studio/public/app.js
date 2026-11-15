@@ -112,6 +112,7 @@ function resetDesignerMultiBlueprint() {
   document.getElementById('designer-multi-blueprint').hidden = true;
   document.getElementById('designer-multi-copy').disabled = true;
   document.getElementById('designer-multi-save').disabled = true;
+  document.getElementById('designer-multi-editor').hidden = true;
 }
 document.getElementById('designer-multi-primary').addEventListener('change', () => {
   if (designerMultiBlueprint) { document.getElementById('designer-multi-build').click(); }
@@ -119,6 +120,7 @@ document.getElementById('designer-multi-primary').addEventListener('change', () 
 document.getElementById('designer-multi-build').addEventListener('click', () => {
   const primary = document.getElementById('designer-multi-primary').value;
   const status = document.getElementById('designer-multi-status');
+  const previousBlueprint = designerMultiBlueprint;
   resetDesignerMultiBlueprint();
   if (!designerMultiManifest || designerMultiMetadata.length !== designerMultiManifest.tables.length ||
       (primary && !designerMultiMetadata.some(metadata => metadata.table === primary))) {
@@ -157,6 +159,16 @@ document.getElementById('designer-multi-build').addEventListener('click', () => 
     publicationAuthorized: false
   };
   document.getElementById('designer-multi-json').textContent = JSON.stringify(designerMultiBlueprint, null, 2);
+  if (previousBlueprint) {
+    for (const table of designerMultiBlueprint.tables) {
+      const previous = previousBlueprint.tables.find(item => item.name === table.name);
+      if (previous) {
+        table.settings = previous.settings;
+        table.fieldSettings = previous.fieldSettings;
+      }
+    }
+  }
+  renderMultiEditor();
   document.getElementById('designer-multi-blueprint').hidden = false;
   document.getElementById('designer-multi-copy').disabled = false;
   document.getElementById('designer-multi-save').disabled = false;
@@ -262,6 +274,7 @@ document.getElementById('designer-multi-open').addEventListener('click', async (
       }
       document.getElementById('designer-multi-rows').appendChild(row);
     }
+    renderMultiEditor();
     document.getElementById('designer-multi-json').textContent = JSON.stringify(definition, null, 2);
     document.getElementById('designer-multi-blueprint').hidden = false;
     document.getElementById('designer-multi-copy').disabled = false;
@@ -269,6 +282,88 @@ document.getElementById('designer-multi-open').addEventListener('click', async (
     status.textContent = 'Diseño multitabla recuperado. Para actualizar metadatos, vuelve a inspeccionar las tablas.';
   } catch (error) { status.textContent = error.message; }
 });
+const multiAuditField = /^(created_at|created_by|updated_at|updated_by|deleted_at|deleted_by)$/;
+function syncMultiBlueprintJson() {
+  if (!designerMultiBlueprint) { return; }
+  document.getElementById('designer-multi-json').textContent = JSON.stringify(designerMultiBlueprint, null, 2);
+}
+function renderMultiEditor(selectedName) {
+  const editor = document.getElementById('designer-multi-editor');
+  editor.hidden = !designerMultiBlueprint;
+  if (!designerMultiBlueprint) { return; }
+  const select = document.getElementById('designer-multi-edit-table');
+  const name = selectedName || select.value || designerMultiBlueprint.tables[0].name;
+  select.replaceChildren();
+  for (const table of designerMultiBlueprint.tables) {
+    const option = document.createElement('option');
+    option.value = table.name;
+    option.textContent = table.name;
+    select.appendChild(option);
+  }
+  select.value = designerMultiBlueprint.tables.some(table => table.name === name) ? name : designerMultiBlueprint.tables[0].name;
+  const table = designerMultiBlueprint.tables.find(item => item.name === select.value);
+  table.settings ||= { label: table.name, resourceEnabled: true, formEnabled: true, permissions: ['read'] };
+  table.fieldSettings ||= {};
+  document.getElementById('designer-multi-label').value = table.settings.label;
+  document.getElementById('designer-multi-resource').checked = table.settings.resourceEnabled;
+  document.getElementById('designer-multi-form').checked = table.settings.formEnabled;
+  for (const permission of ['read', 'create', 'update', 'delete']) {
+    document.getElementById('designer-multi-perm-' + permission).checked = table.settings.permissions.includes(permission);
+  }
+  const rows = document.getElementById('designer-multi-fields');
+  rows.replaceChildren();
+  for (const column of table.columns) {
+    const protectedField = table.primaryKey.includes(column.name) || multiAuditField.test(column.name);
+    table.fieldSettings[column.name] ||= {
+      visible: true, editable: !protectedField, required: !protectedField && !column.nullable
+    };
+    const config = table.fieldSettings[column.name];
+    const row = document.createElement('tr');
+    for (const value of [column.name, column.type]) {
+      const cell = document.createElement('td');
+      cell.textContent = value;
+      row.appendChild(cell);
+    }
+    for (const property of ['visible', 'editable', 'required']) {
+      const cell = document.createElement('td');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = config[property];
+      checkbox.disabled = protectedField && property !== 'visible';
+      checkbox.setAttribute('aria-label', property + ' ' + column.name);
+      checkbox.addEventListener('change', () => {
+        config[property] = checkbox.checked;
+        if (!config.visible || !config.editable) { config.required = false; }
+        if (config.required) { config.visible = true; config.editable = true; }
+        renderMultiEditor(table.name);
+        syncMultiBlueprintJson();
+      });
+      cell.appendChild(checkbox);
+      row.appendChild(cell);
+    }
+    rows.appendChild(row);
+  }
+  syncMultiBlueprintJson();
+}
+document.getElementById('designer-multi-edit-table').addEventListener('change', event => renderMultiEditor(event.target.value));
+for (const [id, property] of [['designer-multi-label', 'label'],
+  ['designer-multi-resource', 'resourceEnabled'], ['designer-multi-form', 'formEnabled']]) {
+  document.getElementById(id).addEventListener('change', event => {
+    const table = designerMultiBlueprint?.tables.find(item => item.name === document.getElementById('designer-multi-edit-table').value);
+    if (!table) { return; }
+    table.settings[property] = property === 'label' ? event.target.value.trim() : event.target.checked;
+    syncMultiBlueprintJson();
+  });
+}
+for (const permission of ['read', 'create', 'update', 'delete']) {
+  document.getElementById('designer-multi-perm-' + permission).addEventListener('change', () => {
+    const table = designerMultiBlueprint?.tables.find(item => item.name === document.getElementById('designer-multi-edit-table').value);
+    if (!table) { return; }
+    table.settings.permissions = ['read', 'create', 'update', 'delete'].filter(item =>
+      document.getElementById('designer-multi-perm-' + item).checked);
+    syncMultiBlueprintJson();
+  });
+}
 let designerMultiReviewId = 0;
 document.getElementById('inspect-send-designer').addEventListener('click', async () => {
   const manifest = inspectorSelectionManifest();
