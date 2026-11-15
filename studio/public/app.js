@@ -115,7 +115,11 @@ function resetDesignerMultiBlueprint() {
   document.getElementById('designer-multi-editor').hidden = true;
 }
 document.getElementById('designer-multi-primary').addEventListener('change', () => {
-  if (designerMultiBlueprint) { document.getElementById('designer-multi-build').click(); }
+  if (!designerMultiBlueprint) { return; }
+  if (!designerMultiMetadata.length) {
+    designerMultiBlueprint.primaryTable = document.getElementById('designer-multi-primary').value || null;
+    syncMultiBlueprintJson();
+  } else { document.getElementById('designer-multi-build').click(); }
 });
 document.getElementById('designer-multi-build').addEventListener('click', () => {
   const primary = document.getElementById('designer-multi-primary').value;
