@@ -6,6 +6,7 @@ const crypto = require('node:crypto');
 const IDENT = /^[a-zA-Z_][a-zA-Z0-9_$]*$/;
 const NAME = /^[a-zA-Z_][a-zA-Z0-9_-]{0,79}$/;
 const MAX_BYTES = 256 * 1024;
+const AUDIT = /^(created_at|created_by|updated_at|updated_by|deleted_at|deleted_by)$/;
 function validateMultiDefinition(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value) ||
       value.kind !== 'studio.multitable.preview' || value.version !== 1 ||
@@ -34,7 +35,33 @@ function validateMultiDefinition(value) {
     if (!table.primaryKey.every(key => IDENT.test(key) && columns.has(key))) {
       throw new Error('Clave primaria inválida');
     }
-    return { name: table.name, columns: cleanedColumns, primaryKey: [...table.primaryKey] };
+    const settings = table.settings || {};
+    if (typeof settings !== 'object' || Array.isArray(settings) ||
+        (settings.label !== undefined && (typeof settings.label !== 'string' || settings.label.length > 120)) ||
+        (settings.resourceEnabled !== undefined && typeof settings.resourceEnabled !== 'boolean') ||
+        (settings.formEnabled !== undefined && typeof settings.formEnabled !== 'boolean') ||
+        (settings.permissions !== undefined && (!Array.isArray(settings.permissions) ||
+          settings.permissions.some(permission => !['read', 'create', 'update', 'delete'].includes(permission)) ||
+          new Set(settings.permissions).size !== settings.permissions.length))) {
+      throw new Error('Configuración de recurso inválida');
+    }
+    const fieldSettings = table.fieldSettings || {};
+    if (!fieldSettings || typeof fieldSettings !== 'object' || Array.isArray(fieldSettings) ||
+        Object.keys(fieldSettings).some(key => !columns.has(key))) { throw new Error('Configuración de campos inválida'); }
+    const cleanedFieldSettings = {};
+    for (const [field, config] of Object.entries(fieldSettings)) {
+      if (!config || typeof config !== 'object' || Array.isArray(config) ||
+          ['visible', 'editable', 'required'].some(key => typeof config[key] !== 'boolean') ||
+          (config.required && (!config.visible || !config.editable)) ||
+          ((table.primaryKey.includes(field) || AUDIT.test(field)) && (config.editable || config.required))) {
+        throw new Error('Configuración de campo inválida o protegida');
+      }
+      cleanedFieldSettings[field] = { visible: config.visible, editable: config.editable, required: config.required };
+    }
+    return { name: table.name, columns: cleanedColumns, primaryKey: [...table.primaryKey],
+      settings: { label: settings.label || table.name, resourceEnabled: settings.resourceEnabled !== false,
+        formEnabled: settings.formEnabled !== false, permissions: settings.permissions || ['read'] },
+      fieldSettings: cleanedFieldSettings };
   });
   if (value.primaryTable !== null && value.primaryTable !== undefined &&
       !seen.has(value.primaryTable)) { throw new Error('Tabla principal inválida'); }
