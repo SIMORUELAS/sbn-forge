@@ -34,6 +34,22 @@ describe('Studio multitable persistence boundaries', () => {
     expect(await store.list()).toEqual(['product_hub_module']);
     expect(await store.get('product_hub_module')).toEqual(saved);
   });
+  test('persists editable resource settings and protects system fields', async () => {
+    const definition = example();
+    definition.tables[0].settings = { label: 'Productos', resourceEnabled: true,
+      formEnabled: true, permissions: ['read', 'create'] };
+    definition.tables[0].fieldSettings = {
+      id: { visible: true, editable: false, required: false }
+    };
+    const store = createMultiDefinitionStore(dir);
+    await store.save(definition);
+    const saved = await store.get(definition.name);
+    expect(saved.tables[0].settings.label).toBe('Productos');
+    expect(saved.tables[0].settings.permissions).toEqual(['read', 'create']);
+    expect(saved.tables[0].fieldSettings.id.editable).toBe(false);
+    definition.tables[0].fieldSettings.id.editable = true;
+    expect(() => validateMultiDefinition(definition)).toThrow(/protegida/);
+  });
   test('rejects traversal, missing columns, foreign relations and invalid primary table', () => {
     expect(() => validateMultiDefinition({ ...example(), name: '../escape' })).toThrow();
     expect(() => validateMultiDefinition({ ...example(), primaryTable: 'unknown' })).toThrow();
