@@ -27,6 +27,12 @@ function createMultiResourceContracts(input) {
         blockers.push(table.name + '.' + column.name + ': tipo PostgreSQL no soportado: ' + column.type);
       }
       return { name: column.name, sourceType: column.type, type: mappedType,
+        defaultValue: Object.prototype.hasOwnProperty.call(column, 'defaultValue') ? column.defaultValue : null,
+        maxLength: column.maxLength ?? null, precision: column.precision ?? null,
+        scale: column.scale ?? null, identity: column.identity === true,
+        identityGeneration: column.identityGeneration ?? null,
+        metadataComplete: ['defaultValue', 'maxLength', 'precision', 'scale', 'identity', 'identityGeneration']
+          .every(key => Object.prototype.hasOwnProperty.call(column, key)),
         nullable: column.nullable, visible: settings.visible, editable: settings.editable,
         required: settings.required, protected: protectedField };
     });
@@ -46,14 +52,19 @@ function createMultiResourceContracts(input) {
       form: { enabled: table.settings.formEnabled },
       permissions: [...table.settings.permissions], primaryKey: [...table.primaryKey],
       keyStrategy: table.primaryKey.length > 1 ? 'composite' : table.primaryKey.length === 1 ? 'single' : 'missing',
-      fields, relations, executable: false };
+      fields, relations,
+      foreignKeyGroups: definition.foreignKeyGroups.filter(group => group.fromTable === table.name),
+      executable: false };
   });
   const enabled = contracts.filter(contract => contract.enabled);
   if (!enabled.length) { blockers.push('No hay recursos habilitados'); }
-  if (definition.relations.length > 0) {
-    warnings.push('Las relaciones son pares de columnas; no se dispone de agrupación por restricción para claves foráneas compuestas.');
+  if (contracts.some(contract => contract.fields.some(field => !field.metadataComplete))) {
+    blockers.push('Metadatos incompletos para generar: faltan propiedades originales de columnas.');
   }
-  blockers.push('Metadatos incompletos para generar: defaults, identidad, precisión, restricciones y claves foráneas compuestas.');
+  if (definition.relations.length && !definition.foreignKeyGroups.length) {
+    blockers.push('Metadatos incompletos para generar: faltan restricciones de claves foráneas agrupadas.');
+  }
+  blockers.push('Faltan restricciones completas, validación de compatibilidad y autorización explícita del motor multitabla.');
   return { kind: 'studio.multitable.resource-contracts', version: 1,
     name: definition.name, source: definition.source, mode: 'contract-preview',
     readyForGeneration: false, executable: false,
