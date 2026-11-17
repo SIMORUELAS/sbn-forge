@@ -5,6 +5,7 @@ const { createMultiResourceContracts } = require('./multi-resource-contracts');
 const { assessMultiCompatibility } = require('./multi-compatibility-assessment');
 const { createMultiForgeAdapter } = require('./multi-forge-adapter');
 const { createMultiArtifactInventory } = require('./multi-artifact-inventory');
+const { createMultiCompositionPlan } = require('./multi-composition-plan');
 const AUDIT = /^(created_at|created_by|updated_at|updated_by|deleted_at|deleted_by)$/;
 function createMultiGenerationPlan(input) {
   const definition = validateMultiDefinition(input);
@@ -12,8 +13,9 @@ function createMultiGenerationPlan(input) {
   const compatibility = assessMultiCompatibility(definition);
   const adapter = createMultiForgeAdapter(definition);
   const inventory = createMultiArtifactInventory(definition);
-  const blockers = [...new Set([...contractPreview.blockers, ...compatibility.blockers, ...adapter.blockers, ...inventory.blockers])];
-  const warnings = [...new Set([...contractPreview.warnings, ...compatibility.warnings, ...inventory.warnings])];
+  const composition = createMultiCompositionPlan(definition);
+  const blockers = [...new Set([...contractPreview.blockers, ...compatibility.blockers, ...adapter.blockers, ...inventory.blockers, ...composition.blockers])];
+  const warnings = [...new Set([...contractPreview.warnings, ...compatibility.warnings, ...inventory.warnings, ...composition.warnings])];
   const resources = [];
   const artifacts = [];
   const relations = definition.relations.map(relation => ({ ...relation, status: 'validated' }));
@@ -67,7 +69,7 @@ function createMultiGenerationPlan(input) {
     generationAuthorized: false, installationAuthorized: false, publicationAuthorized: false,
     engine: { singleTable: typeof createGenerationPlan === 'function' ? 'existing' : 'unavailable',
       multiTable: 'not-connected' },
-    resources, relations, resourceContracts: contractPreview.contracts, compatibility, adapter, inventory, blockers, warnings, artifacts,
+    resources, relations, resourceContracts: contractPreview.contracts, compatibility, adapter, inventory, composition, blockers, warnings, artifacts,
     totals: { tables: definition.tables.length, resources: enabled.length,
       proposed: artifacts.length, written: 0, published: 0 },
     notice: 'Plan de diseño solamente. No genera archivos, no ejecuta SQL y no instala ni publica módulos.'
