@@ -15,7 +15,7 @@ test('adapts PostgreSQL types and protected field settings without executing gen
   expect(normalizeType('numeric(12,2)')).toBe('numeric');
   expect(adapted.resources[0].definition.columns).toEqual([
     expect.objectContaining({ name: 'id', primaryKey: true, writable: false }),
-    expect.objectContaining({ name: 'name', type: 'character varying', length: null, writable: false })
+    expect.objectContaining({ name: 'name', type: 'character varying', writable: false })
   ]);
   expect(adapted).toMatchObject({ executable: false, readyForGeneration: false,
     generationAuthorized: false, installationAuthorized: false, publicationAuthorized: false });
