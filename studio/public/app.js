@@ -133,15 +133,24 @@ document.getElementById('designer-multi-build').addEventListener('click', () => 
   }
   const tableNames = new Set(designerMultiMetadata.map(metadata => metadata.table));
   const relations = [];
+  const foreignKeyGroups = [];
   for (const metadata of designerMultiMetadata) {
+    const groups = new Map();
     for (const fk of metadata.foreignKeys || []) {
       if (fk.referencedSchema === designerMultiManifest.schema && tableNames.has(fk.referencedTable)) {
         relations.push({
           fromTable: metadata.table, fromColumn: fk.column,
           toTable: fk.referencedTable, toColumn: fk.referencedColumn
         });
+        const groupKey = fk.name + ':' + fk.referencedTable;
+        if (!groups.has(groupKey)) {
+          groups.set(groupKey, { name: fk.name, fromTable: metadata.table,
+            toTable: fk.referencedTable, columns: [] });
+        }
+        groups.get(groupKey).columns.push({ fromColumn: fk.column, toColumn: fk.referencedColumn });
       }
     }
+    foreignKeyGroups.push(...groups.values());
   }
   designerMultiBlueprint = {
     kind: 'studio.multitable.preview',
@@ -152,11 +161,15 @@ document.getElementById('designer-multi-build').addEventListener('click', () => 
     tables: designerMultiMetadata.map(metadata => ({
       name: metadata.table,
       columns: (metadata.columns || []).map(column => ({
-        name: column.name, type: column.nativeType || column.dataType, nullable: !!column.nullable
+        name: column.name, type: column.nativeType || column.dataType, nullable: !!column.nullable,
+        defaultValue: column.defaultValue ?? null,
+        maxLength: column.maxLength ?? null, precision: column.precision ?? null,
+        scale: column.scale ?? null, identity: column.identity === true,
+        identityGeneration: column.identityGeneration ?? null
       })),
       primaryKey: [...(metadata.primaryKey?.columns || [])]
     })),
-    relations,
+    relations, foreignKeyGroups,
     warnings: relations.length ? [] : ['No se detectaron relaciones internas entre las tablas seleccionadas.'],
     generationAuthorized: false,
     installationAuthorized: false,
