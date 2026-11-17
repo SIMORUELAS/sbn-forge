@@ -97,6 +97,9 @@ function validateMultiDefinition(value) {
     return { fromTable: relation.fromTable, fromColumn: relation.fromColumn,
       toTable: relation.toTable, toColumn: relation.toColumn };
   });
+  if (value.foreignKeyGroups !== undefined && !Array.isArray(value.foreignKeyGroups)) {
+    throw new Error('Restricciones de claves foráneas inválidas');
+  }
   const foreignKeyGroups = (value.foreignKeyGroups || []).map(group => {
     if (!group || !IDENT.test(group.name || '') ||
         !seen.has(group.fromTable) || !seen.has(group.toTable) ||
