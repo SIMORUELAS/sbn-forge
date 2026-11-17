@@ -3,6 +3,7 @@ const { validateMultiDefinition } = require('./multi-definition-store');
 const { assessMultiCompatibility } = require('./multi-compatibility-assessment');
 const { validateDefinition: validateForge, VALID_TYPES } = require('../src/core/definition-validator');
 
+const AUDIT = /^(created_at|created_by|updated_at|updated_by|deleted_at|deleted_by)$/;
 const NORMALIZE_TYPES = new Map([
   ['int2', 'smallint'], ['int4', 'integer'], ['int8', 'bigint'],
   ['bool', 'boolean'], ['character varying', 'character varying'],
@@ -24,7 +25,9 @@ function createMultiForgeAdapter(input) {
       const type = normalizeType(column.type);
       const primaryKey = table.primaryKey.includes(column.name);
       const field = { name: column.name, type, nullable: column.nullable, primaryKey,
-        generated: column.identity === true, writable: !primaryKey };
+        generated: column.identity === true,
+        writable: !primaryKey && !AUDIT.test(column.name) &&
+          table.fieldSettings[column.name]?.editable !== false };
       if (column.defaultValue !== undefined && column.defaultValue !== null) {
         field.hasDefault = true;
         field.default = column.defaultValue;
