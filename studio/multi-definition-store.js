@@ -30,7 +30,32 @@ function validateMultiDefinition(value) {
           typeof column.type !== 'string' || !column.type.trim() || column.type.length > 120 ||
           typeof column.nullable !== 'boolean') { throw new Error('Columna inválida o duplicada'); }
       columns.add(column.name);
-      return { name: column.name, type: column.type, nullable: column.nullable };
+      const optional = {};
+      if (Object.prototype.hasOwnProperty.call(column, 'defaultValue')) {
+        if (column.defaultValue !== null && (typeof column.defaultValue !== 'string' || column.defaultValue.length > 4096)) {
+          throw new Error('Valor predeterminado inválido');
+        }
+        optional.defaultValue = column.defaultValue;
+      }
+      for (const key of ['maxLength', 'precision', 'scale']) {
+        if (Object.prototype.hasOwnProperty.call(column, key)) {
+          if (column[key] !== null && (!Number.isSafeInteger(column[key]) || column[key] < 0)) {
+            throw new Error('Metadatos numéricos inválidos');
+          }
+          optional[key] = column[key];
+        }
+      }
+      if (Object.prototype.hasOwnProperty.call(column, 'identity')) {
+        if (typeof column.identity !== 'boolean') { throw new Error('Identidad inválida'); }
+        optional.identity = column.identity;
+      }
+      if (Object.prototype.hasOwnProperty.call(column, 'identityGeneration')) {
+        if (column.identityGeneration !== null && !['ALWAYS', 'BY DEFAULT'].includes(column.identityGeneration)) {
+          throw new Error('Generación de identidad inválida');
+        }
+        optional.identityGeneration = column.identityGeneration;
+      }
+      return { name: column.name, type: column.type, nullable: column.nullable, ...optional };
     });
     if (!table.primaryKey.every(key => IDENT.test(key) && columns.has(key))) {
       throw new Error('Clave primaria inválida');
@@ -72,9 +97,33 @@ function validateMultiDefinition(value) {
     return { fromTable: relation.fromTable, fromColumn: relation.fromColumn,
       toTable: relation.toTable, toColumn: relation.toColumn };
   });
+  const foreignKeyGroups = (value.foreignKeyGroups || []).map(group => {
+    if (!group || !IDENT.test(group.name || '') ||
+        !seen.has(group.fromTable) || !seen.has(group.toTable) ||
+        !Array.isArray(group.columns) || !group.columns.length || group.columns.length > 32 ||
+        group.columns.some(pair => !pair ||
+          !byName.get(group.fromTable).has(pair.fromColumn) ||
+          !byName.get(group.toTable).has(pair.toColumn) ||
+          !relations.some(rel => rel.fromTable === group.fromTable &&
+            rel.toTable === group.toTable && rel.fromColumn === pair.fromColumn &&
+            rel.toColumn === pair.toColumn))) {
+      throw new Error('Restricción de clave foránea inválida');
+    }
+    if (new Set(group.columns.map(pair => pair.fromColumn)).size !== group.columns.length ||
+        new Set(group.columns.map(pair => pair.toColumn)).size !== group.columns.length) {
+      throw new Error('Columnas de restricción duplicadas');
+    }
+    return { name: group.name, fromTable: group.fromTable, toTable: group.toTable,
+      columns: group.columns.map(pair => ({ fromColumn: pair.fromColumn, toColumn: pair.toColumn })) };
+  });
+  if (!Array.isArray(value.foreignKeyGroups || []) ||
+      foreignKeyGroups.length > 2000 ||
+      new Set(foreignKeyGroups.map(group => group.fromTable + ':' + group.name)).size !== foreignKeyGroups.length) {
+    throw new Error('Restricciones duplicadas o inválidas');
+  }
   const result = { kind: 'studio.multitable.preview', version: 1, name: value.name,
     mode: 'READ_ONLY_PREVIEW', source: { profile: value.source.profile, schema: value.source.schema },
-    primaryTable: value.primaryTable || null, tables, relations,
+    primaryTable: value.primaryTable || null, tables, relations, foreignKeyGroups,
     generationAuthorized: false, installationAuthorized: false, publicationAuthorized: false };
   if (Buffer.byteLength(JSON.stringify(result)) > MAX_BYTES) { throw new Error('Definición demasiado grande'); }
   return result;
