@@ -28,7 +28,13 @@ test('creates a deterministic plan covering all selected tables, composite keys 
   expect(plan.resources[0].fields[0]).toMatchObject({ protected: true, editable: false });
   expect(plan.relations).toHaveLength(1);
   expect(plan.warnings.join(' ')).toContain('clave primaria compuesta');
-  expect(plan.blockers.join(' ')).toContain('contratos de generación multitabla');
+  expect(plan.blockers.join(' ')).toContain('Metadatos incompletos');
+  expect(plan.blockers.join(' ')).toContain('no están conectados al generador ejecutable Forge');
+  expect(plan.resourceContracts).toHaveLength(2);
+  expect(plan.resourceContracts.every(contract => contract.executable === false)).toBe(true);
+  expect(plan.generationAuthorized).toBe(false);
+  expect(plan.installationAuthorized).toBe(false);
+  expect(plan.publicationAuthorized).toBe(false);
   expect(createMultiGenerationPlan(sample())).toEqual(plan);
 });
 test('does not propose artifacts for disabled resources', () => {
