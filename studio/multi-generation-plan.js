@@ -6,6 +6,7 @@ const { assessMultiCompatibility } = require('./multi-compatibility-assessment')
 const { createMultiForgeAdapter } = require('./multi-forge-adapter');
 const { createMultiArtifactInventory } = require('./multi-artifact-inventory');
 const { createMultiCompositionPlan } = require('./multi-composition-plan');
+const { createMultiPreparationContract } = require('./multi-preparation-contract');
 const AUDIT = /^(created_at|created_by|updated_at|updated_by|deleted_at|deleted_by)$/;
 function createMultiGenerationPlan(input) {
   const definition = validateMultiDefinition(input);
@@ -62,7 +63,7 @@ function createMultiGenerationPlan(input) {
   // Existing single-table generation contracts require richer source metadata.
   // Do not represent projected artifacts as executable or ready for generation.
   blockers.push('Los contratos normalizados aún no están conectados al generador ejecutable Forge.');
-  return {
+  const plan = {
     kind: 'studio.multitable.generation-plan', version: 1, name: definition.name,
     source: definition.source, primaryTable: definition.primaryTable,
     mode: 'plan-only', executable: false, readyForGeneration: false,
@@ -74,5 +75,7 @@ function createMultiGenerationPlan(input) {
       proposed: artifacts.length, written: 0, published: 0 },
     notice: 'Plan de diseño solamente. No genera archivos, no ejecuta SQL y no instala ni publica módulos.'
   };
+  plan.preparation = createMultiPreparationContract(plan);
+  return plan;
 }
 module.exports = { createMultiGenerationPlan };
