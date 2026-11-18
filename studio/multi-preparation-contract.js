@@ -91,7 +91,7 @@ function createMultiPreparationContract(plan) {
     }
   }
   const evidence = { source: plan.source, name: plan.name, primaryTable: plan.primaryTable,
-    resources, orderedTables: [...ordered],
+    resources, diagnostics, orderedTables: [...ordered],
     artifacts: plan.composition.artifacts.map(item => ({ table: item.table,
       kind: item.kind, path: item.path, sequence: item.sequence })) };
   const fingerprint = crypto.createHash('sha256').update(JSON.stringify(evidence)).digest('hex');
