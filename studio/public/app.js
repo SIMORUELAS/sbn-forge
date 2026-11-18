@@ -245,16 +245,66 @@ document.getElementById('designer-multi-save').addEventListener('click', async (
   } catch (error) { status.textContent = error.message; }
   finally { button.disabled = !designerMultiBlueprint; }
 });
+function renderMultiPreparationDiagnostics(plan) {
+  const panel = document.getElementById('designer-multi-diagnostics');
+  const preparation = plan && plan.preparation;
+  if (!preparation || preparation.kind !== 'studio.multitable.preparation-contract' ||
+      preparation.executable !== false || preparation.generationAuthorized !== false ||
+      preparation.installationAuthorized !== false || preparation.publicationAuthorized !== false) {
+    panel.hidden = true;
+    throw new Error('Contrato de preparación no disponible o no seguro');
+  }
+  const summary = document.getElementById('designer-multi-diagnostics-summary');
+  summary.replaceChildren();
+  const metrics = [
+    ['Recursos', preparation.totals.resources],
+    ['Ordenados', preparation.totals.ordered],
+    ['Artefactos', preparation.totals.artifacts],
+    ['Bloqueos', preparation.blockers.length],
+    ['Advertencias', preparation.warnings.length]
+  ];
+  for (const [label, value] of metrics) {
+    const item = document.createElement('div');
+    const heading = document.createElement('strong');
+    heading.textContent = String(value);
+    const caption = document.createElement('span');
+    caption.textContent = label;
+    item.append(heading, caption);
+    summary.appendChild(item);
+  }
+  const renderList = (id, values, empty) => {
+    const list = document.getElementById(id);
+    list.replaceChildren();
+    for (const value of values.length ? values : [empty]) {
+      const item = document.createElement('li');
+      item.textContent = value;
+      list.appendChild(item);
+    }
+  };
+  renderList('designer-multi-diagnostics-order',
+    preparation.orderedTables.map((table, index) => (index + 1) + '. ' + table),
+    'No hay recursos ordenados');
+  renderList('designer-multi-diagnostics-blockers', preparation.blockers, 'Sin bloqueos registrados');
+  renderList('designer-multi-diagnostics-warnings', preparation.warnings, 'Sin advertencias registradas');
+  document.getElementById('designer-multi-diagnostics-status').textContent =
+    preparation.structurallyComplete ? 'Evaluación estructural completa · generación deshabilitada' :
+      'Preparación con pendientes · generación deshabilitada';
+  document.getElementById('designer-multi-diagnostics-fingerprint').textContent =
+    'Huella SHA-256 del plan: ' + preparation.fingerprint;
+  panel.hidden = false;
+}
 document.getElementById('designer-multi-plan').addEventListener('click', async () => {
   const status = document.getElementById('designer-multi-status');
   const output = document.getElementById('designer-multi-plan-json');
   const name = document.getElementById('designer-multi-saved').value;
   output.textContent = '';
+  document.getElementById('designer-multi-diagnostics').hidden = true;
   if (!name) { status.textContent = 'Guarda y selecciona un diseño multitabla antes de consultar su plan.'; return; }
   try {
     const response = await fetch('/api/studio/multi-generation-plan/' + encodeURIComponent(name));
     const data = await response.json();
     if (!response.ok) { throw new Error(data.error || 'No fue posible consultar el plan'); }
+    renderMultiPreparationDiagnostics(data);
     output.textContent = JSON.stringify(data, null, 2);
     status.textContent = 'Plan consultado para ' + name + ': ' + data.totals.resources +
       ' recursos y ' + data.totals.proposed + ' artefactos propuestos. Sin ejecución.';
