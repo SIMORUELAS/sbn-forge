@@ -272,6 +272,44 @@ function renderMultiPreparationDiagnostics(plan) {
     item.append(heading, caption);
     summary.appendChild(item);
   }
+  const resources = document.getElementById('designer-multi-diagnostics-resources');
+  resources.replaceChildren();
+  for (const resource of preparation.diagnostics || []) {
+    const detail = document.createElement('details');
+    const heading = document.createElement('summary');
+    heading.textContent = resource.table + ' · ' +
+      (resource.status === 'disabled' ? 'Deshabilitado' :
+        resource.status === 'blocked' ? 'Con bloqueos' : 'En revisión');
+    detail.appendChild(heading);
+    const info = document.createElement('p');
+    info.textContent = 'Clave: ' + (resource.primaryKey.join(', ') || 'Sin clave') +
+      ' · Permisos: ' + resource.permissions.join(', ') +
+      ' · Lote: ' + (resource.batch ?? 'Sin ordenar') +
+      ' · Dependencias: ' + (resource.dependsOn.join(', ') || 'Ninguna') +
+      ' · Artefactos: ' + resource.artifacts.length;
+    detail.appendChild(info);
+    const addList = (title, values, fallback) => {
+      const heading = document.createElement('h5');
+      heading.textContent = title;
+      const list = document.createElement('ul');
+      for (const value of values.length ? values : [fallback]) {
+        const item = document.createElement('li');
+        item.textContent = value;
+        list.appendChild(item);
+      }
+      detail.append(heading, list);
+    };
+    addList('Campos', resource.fields.map(field => field.name + ' (' + field.sourceType +
+      ') · ' + (field.issues.length ? field.issues.join('; ') : 'Sin incidencias de campo')),
+    'Sin campos');
+    addList('Relaciones', resource.relations.map(relation => relation.name + ' → ' +
+      relation.targetTable + (relation.composite ? ' · clave compuesta' : '') +
+      (relation.targetEnabled ? '' : ' · destino deshabilitado')), 'Sin relaciones');
+    addList('Bloqueos', resource.issues, 'Sin bloqueos específicos');
+    addList('Advertencias', resource.warnings, 'Sin advertencias específicas');
+    detail.className = 'multi-resource-diagnostic';
+    resources.appendChild(detail);
+  }
   const renderList = (id, values, empty) => {
     const list = document.getElementById(id);
     list.replaceChildren();
