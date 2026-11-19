@@ -307,6 +307,10 @@ function renderMultiPreparationDiagnostics(plan) {
       (relation.targetEnabled ? '' : ' · destino deshabilitado')), 'Sin relaciones');
     addList('Bloqueos', resource.issues, 'Sin bloqueos específicos');
     addList('Advertencias', resource.warnings, 'Sin advertencias específicas');
+    const guidance = (preparation.recommendations?.resources || []).find(item => item.table === resource.table);
+    addList('Recomendaciones', (guidance?.findings || []).map(item =>
+      item.severity.toUpperCase() + ' · ' + item.message + ' → ' + item.recommendation),
+    'Sin recomendaciones específicas');
     detail.className = 'multi-resource-diagnostic';
     resources.appendChild(detail);
   }
@@ -319,6 +323,10 @@ function renderMultiPreparationDiagnostics(plan) {
       list.appendChild(item);
     }
   };
+  renderList('designer-multi-diagnostics-recommendations',
+    (preparation.recommendations?.global || []).map(item =>
+      item.severity.toUpperCase() + ' · ' + item.message + ' → ' + item.recommendation),
+    'Sin recomendaciones generales');
   renderList('designer-multi-diagnostics-order',
     preparation.orderedTables.map((table, index) => (index + 1) + '. ' + table),
     'No hay recursos ordenados');
