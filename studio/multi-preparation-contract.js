@@ -1,5 +1,6 @@
 'use strict';
 const crypto = require('node:crypto');
+const { createMultiRecommendations } = require('./multi-recommendations');
 
 function createMultiPreparationContract(plan) {
   if (!plan || plan.kind !== 'studio.multitable.generation-plan' ||
@@ -90,8 +91,11 @@ function createMultiPreparationContract(plan) {
       blockers.push(resource.table + ': compatibilidad no confirmada');
     }
   }
+  const recommendations = createMultiRecommendations({
+    blockers: [...new Set(blockers)], warnings, diagnostics
+  });
   const evidence = { source: plan.source, name: plan.name, primaryTable: plan.primaryTable,
-    resources, diagnostics, orderedTables: [...ordered],
+    resources, diagnostics, recommendations, orderedTables: [...ordered],
     artifacts: plan.composition.artifacts.map(item => ({ table: item.table,
       kind: item.kind, path: item.path, sequence: item.sequence })) };
   const fingerprint = crypto.createHash('sha256').update(JSON.stringify(evidence)).digest('hex');
@@ -99,7 +103,7 @@ function createMultiPreparationContract(plan) {
     mode: 'review-only', name: plan.name, source: { ...plan.source },
     fingerprintAlgorithm: 'sha256', fingerprint, resources,
     orderedTables: [...ordered], batches: plan.composition.batches.map(batch => [...batch]),
-    diagnostics,
+    diagnostics, recommendations,
     artifacts: evidence.artifacts, blockers: [...new Set(blockers)],
     warnings, structurallyComplete: blockers.length === 0,
     readyForGeneration: false, executable: false, generationAuthorized: false,
