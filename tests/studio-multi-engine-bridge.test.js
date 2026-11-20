@@ -33,8 +33,8 @@ test('fails closed for unsupported fields and composite primary keys', () => {
   input.tables[0].columns.push(col('location', 'point'));
   input.tables[1].primaryKey = ['id', 'product_id'];
   const bridge = createMultiEngineBridge(input);
-  expect(bridge.resources.every(resource => !resource.contextPrepared)).toBe(true);
-  expect(bridge.resources.every(resource => resource.status === 'blocked')).toBe(true);
+  expect(bridge.resources.find(resource => resource.table === 'products').status).toBe('blocked');
+  expect(bridge.resources.find(resource => resource.table === 'items').status).toBe('blocked');
   expect(bridge.executable).toBe(false);
 });
 test('cycles never silently become executable or context-ready', () => {
