@@ -9,7 +9,9 @@ test('generated multitable CRUD executes authorized tenant-scoped SQL and relati
     env: { ...process.env, NODE_ENV: 'test' }
   });
   expect(result.error).toBeUndefined();
-  if (result.status !== 0) throw new Error(String(result.stderr).slice(0, 1200));
+  if (result.status !== 0) {
+    throw new Error(String(result.stderr).slice(0, 1200));
+  }
   expect(JSON.parse(result.stdout.trim())).toEqual({
     authorized: 10, filtered: 1, deniedQueries: 0, queries: 11
   });
