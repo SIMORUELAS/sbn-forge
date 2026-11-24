@@ -94,7 +94,13 @@ function createMultiPreparationContract(plan) {
   const recommendations = createMultiRecommendations({
     blockers: [...new Set(blockers)], warnings, diagnostics
   });
-  const evidence = { source: plan.source, name: plan.name, primaryTable: plan.primaryTable,
+  const referentialPolicy = {
+    mode: 'review-only', status: 'blocked',
+    blockers: [...new Set(['Certificación referencial PostgreSQL pendiente',
+      ...(plan.referentialPolicy?.blockers || [])])],
+    installationAuthorized: false, publicationAuthorized: false
+  };
+  const evidence = { referentialPolicy, source: plan.source, name: plan.name, primaryTable: plan.primaryTable,
     resources, diagnostics, recommendations, orderedTables: [...ordered],
     artifacts: plan.composition.artifacts.map(item => ({ table: item.table,
       kind: item.kind, path: item.path, sequence: item.sequence })) };
@@ -103,7 +109,7 @@ function createMultiPreparationContract(plan) {
     mode: 'review-only', name: plan.name, source: { ...plan.source },
     fingerprintAlgorithm: 'sha256', fingerprint, resources,
     orderedTables: [...ordered], batches: plan.composition.batches.map(batch => [...batch]),
-    diagnostics, recommendations,
+    diagnostics, recommendations, referentialPolicy,
     artifacts: evidence.artifacts, blockers: [...new Set(blockers)],
     warnings, structurallyComplete: blockers.length === 0,
     readyForGeneration: false, executable: false, generationAuthorized: false,
