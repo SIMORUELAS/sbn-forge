@@ -720,7 +720,12 @@ function normalizeTemplateContext(
   };
   const listFilters = Array.isArray(context.listFilters)
     ? context.listFilters
-    : context.columns.filter(column => Boolean(column.foreignKey));
+    : context.columns.filter(column => Boolean(column.foreignKey)).map(column => ({
+        ...column,
+        filterSchemaType: column.jsonSchema.type,
+        filterSchemaFormat: column.jsonSchema.format,
+        filterSchemaMaxLength: column.jsonSchema.maxLength
+      }));
 
   return {
     ...context,
