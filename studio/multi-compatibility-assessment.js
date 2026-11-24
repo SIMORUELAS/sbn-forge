@@ -9,6 +9,7 @@ function assessMultiCompatibility(input) {
   const warnings = [...preview.warnings];
   const resources = [];
   const grouped = new Set();
+  const tenantRelations = [];
   for (const group of definition.foreignKeyGroups) {
     for (const pair of group.columns) {
       const key = [group.fromTable, pair.fromColumn, group.toTable, pair.toColumn].join(':');
@@ -17,6 +18,21 @@ function assessMultiCompatibility(input) {
     }
     const source = definition.tables.find(table => table.name === group.fromTable);
     const target = definition.tables.find(table => table.name === group.toTable);
+    const sourceTenant = source.columns.find(column => column.name === 'organization_id');
+    const targetTenant = target.columns.find(column => column.name === 'organization_id');
+    if (sourceTenant || targetTenant) {
+      const paired = group.columns.some(pair =>
+        pair.fromColumn === 'organization_id' && pair.toColumn === 'organization_id');
+      const status = !sourceTenant || !targetTenant ? 'scope-unverified' :
+        !paired ? 'tenant-key-missing' :
+          sourceTenant.nullable || targetTenant.nullable ? 'nullable-tenant-key' :
+            'tenant-pair-present';
+      tenantRelations.push({ name: group.name, fromTable: group.fromTable,
+        toTable: group.toTable, status, certified: false });
+      if (status !== 'tenant-pair-present') {
+        warnings.push(group.name + ': integridad multiempresa no certificada (' + status + ').');
+      }
+    }
     const targetKeys = target.primaryKey;
     if (group.columns.length !== targetKeys.length ||
         !group.columns.every(pair => targetKeys.includes(pair.toColumn))) {
@@ -56,7 +72,7 @@ function assessMultiCompatibility(input) {
       executable: false });
   }
   return { kind: 'studio.multitable.compatibility-assessment', version: 1,
-    mode: 'read-only', resources, blockers: [...new Set(blockers)],
+    mode: 'read-only', resources, tenantRelations, tenantIntegrityCertified: false, blockers: [...new Set(blockers)],
     warnings: [...new Set(warnings)], compatible: blockers.length === 0 &&
       resources.filter(item => item.enabled).every(item => item.forgeValidatorCompatible),
     readyForGeneration: false, executable: false, generationAuthorized: false,
