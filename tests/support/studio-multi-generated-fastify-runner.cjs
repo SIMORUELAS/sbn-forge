@@ -43,7 +43,13 @@ async function run() {
     app = fastify({ logger: false });
     await app.register(jwt, { secret: 'forge-multitable-test-only-secret' });
     let queries = 0;
-    const database = { async query() { queries++; return { rows: [], rowCount: 0 }; } };
+    let allow = false;
+    const statements = [];
+    const database = { async query(sql, values) {
+      queries++;
+      statements.push({ sql: sql.replace(/\s+/g, ' ').trim(), values });
+      return { rows: [{ id, organization_id: id }], rowCount: 1 };
+    } };
     const routes = [];
     for (const table of generated.orderedTables) {
       const routeArtifact = generated.artifacts.find(item =>
@@ -56,7 +62,7 @@ async function run() {
       const plugin = require(filename);
       cached.push(filename);
       await app.register(plugin, { database, tenantColumn: 'organization_id',
-        requireTenantIsolation: true, requireCrudPermissions: true, authorizeOperation: async () => false });
+        requireTenantIsolation: true, requireCrudPermissions: true, authorizeOperation: async () => allow });
       routes.push(...operations(base, table).map(operation => ({ ...operation, table })));
     }
     await app.ready();
@@ -73,6 +79,41 @@ async function run() {
       unauthorizedRejected++;
     }
     assert.equal(queries, 0, 'denied requests must never access the database');
+    const deniedQueries = queries;
+    if (process.argv.includes('--authorized')) {
+      allow = true;
+      let authorized = 0;
+      for (const operation of routes) {
+        const before = statements.length;
+        const response = await app.inject({ ...operation,
+          headers: { authorization: 'Bearer ' + token } });
+        const expected = operation.method === 'POST' ? 201 : operation.method === 'DELETE' ? 204 : 200;
+        assert.equal(response.statusCode, expected, operation.table + ' ' + operation.operation + ': ' + response.body);
+        assert.equal(statements.length, before + 1);
+        const { sql, values } = statements[before];
+        assert.ok(sql.includes('product_hub.' + operation.table));
+        assert.ok(!sql.includes(id), 'values must be parameterized');
+        if (operation.method === 'POST') {
+          const columns = sql.match(/\(([^)]+)\) VALUES/)?.[1].split(',').map(x => x.trim());
+          assert.ok(columns);
+          assert.equal(values[columns.indexOf('organization_id')], id);
+        } else {
+          const parameter = sql.match(/organization_id = \$(\d+)/);
+          assert.ok(parameter, 'missing tenant predicate');
+          assert.equal(values[Number(parameter[1]) - 1], id);
+        }
+        authorized++;
+      }
+      const items = routes.find(x => x.table === 'items' && x.operation === 'list');
+      const product = '22222222-2222-4222-8222-222222222222';
+      const response = await app.inject({ method: 'GET', url: items.url + '?product_id=' + product,
+        headers: { authorization: 'Bearer ' + token } });
+      assert.equal(response.statusCode, 200);
+      const last = statements.at(-1);
+      assert.match(last.sql, /organization_id = \$1 AND product_id = \$2/);
+      assert.deepEqual(last.values, [id, product, 25, 0]);
+      return { authorized, filtered: 1, deniedQueries, queries };
+    }
     return { resources: 2, generatedFiles: 14, operations: routes.length,
       missingJwtRejected, unauthorizedRejected, queries };
   } finally {
