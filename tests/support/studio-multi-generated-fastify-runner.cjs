@@ -14,9 +14,9 @@ const definition = {
   kind: 'studio.multitable.preview', version: 1, name: 'catalog', mode: 'READ_ONLY_PREVIEW',
   source: { profile: 'pg_test', schema: 'product_hub' }, primaryTable: 'products',
   tables: [
-    { name: 'products', columns: [col('id'), col('name', 'text')], primaryKey: ['id'],
+    { name: 'products', columns: [col('id'), col('organization_id'), col('name', 'text')], primaryKey: ['id'],
       settings: { resourceEnabled: true, formEnabled: false, permissions: ['read'] } },
-    { name: 'items', columns: [col('id'), col('product_id')], primaryKey: ['id'],
+    { name: 'items', columns: [col('id'), col('organization_id'), col('product_id')], primaryKey: ['id'],
       settings: { resourceEnabled: true, formEnabled: false, permissions: ['read'] } }
   ],
   relations: [{ fromTable: 'items', fromColumn: 'product_id', toTable: 'products', toColumn: 'id' }],
@@ -24,13 +24,13 @@ const definition = {
     columns: [{ fromColumn: 'product_id', toColumn: 'id' }] }]
 };
 const id = '11111111-1111-4111-8111-111111111111';
-const operations = base => [
+const operations = (base, table) => [
   { method: 'GET', url: base, operation: 'list' },
   { method: 'GET', url: base + '/' + id, operation: 'getById' },
   { method: 'POST', url: base, operation: 'create',
-    payload: { id, name: 'test', product_id: id } },
+    payload: { id, organization_id: id, ...(table === 'products' ? { name: 'test' } : { product_id: id }) } },
   { method: 'PATCH', url: base + '/' + id, operation: 'update',
-    payload: { name: 'updated', product_id: id } },
+    payload: table === 'products' ? { name: 'updated' } : { product_id: id } },
   { method: 'DELETE', url: base + '/' + id, operation: 'remove' }
 ];
 async function run() {
@@ -56,11 +56,11 @@ async function run() {
       const plugin = require(filename);
       cached.push(filename);
       await app.register(plugin, { database, tenantColumn: 'organization_id',
-        requireCrudPermissions: true, authorizeOperation: async () => false });
-      routes.push(...operations(base).map(operation => ({ ...operation, table })));
+        requireTenantIsolation: true, requireCrudPermissions: true, authorizeOperation: async () => false });
+      routes.push(...operations(base, table).map(operation => ({ ...operation, table })));
     }
     await app.ready();
-    const token = app.jwt.sign({ sub: 'test-user', organization_id: 'org-test' });
+    const token = app.jwt.sign({ id: 'test-user', organization_id: id });
     let missingJwtRejected = 0;
     let unauthorizedRejected = 0;
     for (const operation of routes) {
