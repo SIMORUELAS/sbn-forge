@@ -1,5 +1,6 @@
 'use strict';
 const { assessMultiCompatibility } = require('../studio/multi-compatibility-assessment');
+const { createMultiGenerationPlan } = require('../studio/multi-generation-plan');
 const col = name => ({ name, type: 'uuid', nullable: false, defaultValue: null,
   maxLength: null, precision: null, scale: null, identity: false, identityGeneration: null });
 function fixture(paired) {
@@ -27,3 +28,11 @@ test.each([[false, 'tenant-key-missing'], [true, 'tenant-pair-present']])(
     expect(result.tenantIntegrityCertified).toBe(false);
     expect(result.installationAuthorized).toBe(false);
   });
+
+test.each([false, true])('referential deployment remains blocked paired=%s', paired => {
+  const plan = createMultiGenerationPlan(fixture(paired));
+  expect(plan.referentialPolicy.status).toBe('blocked');
+  expect(plan.referentialPolicy.installationAuthorized).toBe(false);
+  expect(plan.preparation.referentialPolicy).toEqual(plan.referentialPolicy);
+  expect(plan.preparation.publicationAuthorized).toBe(false);
+});
