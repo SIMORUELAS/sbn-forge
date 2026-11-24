@@ -13,6 +13,14 @@ function createMultiGenerationPlan(input) {
   const definition = validateMultiDefinition(input);
   const contractPreview = createMultiResourceContracts(definition);
   const compatibility = assessMultiCompatibility(definition);
+  const referentialPolicy = {
+    mode: 'review-only',
+    status: 'blocked',
+    blockers: ['Certificación referencial PostgreSQL pendiente',
+      ...compatibility.tenantRelations.map(relation => relation.name + ': ' + relation.status)],
+    installationAuthorized: false,
+    publicationAuthorized: false
+  };
   const adapter = createMultiForgeAdapter(definition);
   const inventory = createMultiArtifactInventory(definition);
   const composition = createMultiCompositionPlan(definition);
@@ -72,7 +80,7 @@ function createMultiGenerationPlan(input) {
     generationAuthorized: false, installationAuthorized: false, publicationAuthorized: false,
     engine: { singleTable: typeof createGenerationPlan === 'function' ? 'existing' : 'unavailable',
       multiTable: 'not-connected' },
-    resources, relations, resourceContracts: contractPreview.contracts, compatibility, adapter, inventory, composition, bridge, blockers, warnings, artifacts,
+    resources, relations, resourceContracts: contractPreview.contracts, compatibility, referentialPolicy, adapter, inventory, composition, bridge, blockers, warnings, artifacts,
     totals: { tables: definition.tables.length, resources: enabled.length,
       proposed: artifacts.length, written: 0, published: 0 },
     notice: 'Plan de diseño solamente. No genera archivos, no ejecuta SQL y no instala ni publica módulos.'
