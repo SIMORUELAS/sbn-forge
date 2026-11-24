@@ -45,9 +45,11 @@ async function run() {
     let queries = 0;
     let allow = false;
     const statements = [];
+    let simulateMissing = false;
     const database = { async query(sql, values) {
       queries++;
       statements.push({ sql: sql.replace(/\s+/g, ' ').trim(), values });
+      if (simulateMissing) { return { rows: [], rowCount: 0 }; }
       return { rows: [{ id, organization_id: id }], rowCount: 1 };
     } };
     const routes = [];
@@ -80,6 +82,28 @@ async function run() {
     }
     assert.equal(queries, 0, 'denied requests must never access the database');
     const deniedQueries = queries;
+    if (process.argv.includes('--tenant-boundary')) {
+      allow = true;
+      simulateMissing = true;
+      const other = '22222222-2222-4222-8222-222222222222';
+      const otherToken = app.jwt.sign({ id: 'other-user', organization_id: other });
+      let rejected = 0;
+      for (const operation of routes.filter(x => ['getById', 'update', 'remove'].includes(x.operation))) {
+        const before = statements.length;
+        const response = await app.inject({ ...operation,
+          headers: { authorization: 'Bearer ' + otherToken } });
+        assert.equal(response.statusCode, 404, operation.table + ' ' + operation.operation);
+        assert.equal(statements.length - before, operation.operation === 'update' ? 2 : 1);
+        for (const { sql, values } of statements.slice(before)) {
+          const parameter = sql.match(/organization_id = \$(\d+)/);
+          assert.ok(parameter);
+          assert.equal(values[Number(parameter[1]) - 1], other);
+          assert.ok(values.includes(id));
+        }
+        rejected++;
+      }
+      return { rejected, deniedQueries, queries };
+    }
     if (process.argv.includes('--authorized')) {
       allow = true;
       let authorized = 0;
