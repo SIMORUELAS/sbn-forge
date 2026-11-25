@@ -40,6 +40,25 @@ function validateDefinition(definition) {
       assert(typeof column.foreignKey.column === 'string' && column.foreignKey.column, `${column.name}.foreignKey.column es obligatorio.`);
     }
   }
+  if (definition.compositeRelations !== undefined) {
+    assert(Array.isArray(definition.compositeRelations), 'compositeRelations debe ser arreglo.');
+    const identifiers = /^[a-z][a-z0-9_]*$/;
+    const groups = new Set();
+    for (const group of definition.compositeRelations) {
+      assert(group && ['name', 'targetSchema', 'targetTable'].every(key =>
+        typeof group[key] === 'string' && identifiers.test(group[key])), 'identificador de relación compuesta inválido.');
+      assert(!groups.has(group.name), 'relación compuesta duplicada.');
+      groups.add(group.name);
+      assert(Array.isArray(group.columns) && group.columns.length >= 2 && group.columns.length <= 32,
+        'relación compuesta requiere entre 2 y 32 columnas.');
+      assert(group.columns.every(pair => pair && names.has(pair.fromColumn) &&
+        typeof pair.toColumn === 'string' && identifiers.test(pair.toColumn)), 'columnas de relación compuesta inválidas.');
+      assert(new Set(group.columns.map(pair => pair.fromColumn)).size === group.columns.length &&
+        new Set(group.columns.map(pair => pair.toColumn)).size === group.columns.length,
+      'columnas de relación compuesta duplicadas.');
+    }
+    assert(definition.compositeRelations.length === 0, 'relaciones compuestas aún no admitidas para generación ejecutable.');
+  }
   assert(definition.columns.some(c => c.primaryKey), 'se requiere al menos una llave primaria.');
   return true;
 }
