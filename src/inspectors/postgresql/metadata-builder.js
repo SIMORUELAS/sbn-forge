@@ -7,7 +7,8 @@ class MetadataBuilder {
     columns = [],
     primaryKey = [],
     foreignKeys = [],
-    indexes = []
+    indexes = [],
+    uniqueConstraints
   }) {
     return {
       source: {
@@ -66,6 +67,8 @@ class MetadataBuilder {
         definition: index.index_definition
       })),
 
+      ...(uniqueConstraints === undefined ? {} : { uniqueConstraints: uniqueConstraints.map(item =>
+        ({ name: item.name, columns: [...item.columns] })) }),
       constraints: []
     };
   }
