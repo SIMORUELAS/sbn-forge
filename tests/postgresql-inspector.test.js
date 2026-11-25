@@ -56,7 +56,10 @@ describe('PostgreSqlInspector', () => {
         }
       ]),
 
-      readIndexes: jest.fn().mockResolvedValue([])
+      readIndexes: jest.fn().mockResolvedValue([]),
+      readUniqueConstraints: jest.fn().mockResolvedValue([
+        { name: 'uq_department_model', columns: ['business_model_id', 'id'] }
+      ])
     };
 
     const datasource = {
@@ -83,6 +86,10 @@ describe('PostgreSqlInspector', () => {
     expect(metadata.columns[0].identity).toBe(true);
 
     expect(metadata.primaryKey.columns).toEqual(['id']);
+    expect(reader.readUniqueConstraints).toHaveBeenCalledWith('simo_ai', 'ai_business_model_departments');
+    expect(metadata.uniqueConstraints).toEqual([
+      { name: 'uq_department_model', columns: ['business_model_id', 'id'] }
+    ]);
 
     expect(metadata.foreignKeys[0]).toEqual({
       name: 'fk_business_model',
