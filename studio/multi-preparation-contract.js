@@ -111,6 +111,7 @@ function createMultiPreparationContract(plan) {
     fingerprintAlgorithm: 'sha256', fingerprint, resources,
     orderedTables: [...ordered], batches: plan.composition.batches.map(batch => [...batch]),
     diagnostics, recommendations, referentialPolicy,
+    referentialEvidence: evidence.referentialEvidence,
     artifacts: evidence.artifacts, blockers: [...new Set(blockers)],
     warnings, structurallyComplete: blockers.length === 0,
     readyForGeneration: false, executable: false, generationAuthorized: false,
