@@ -21,3 +21,18 @@ describe('PostgresReader composite foreign keys', () => {
     expect(sql).toMatch(/ORDER BY con\.conname, key_columns\.position/);
   });
 });
+
+test('reads ordered unique constraints using parameterized catalog query', async () => {
+  const datasource = { query: jest.fn().mockResolvedValue({ rows: [
+    { constraint_name: 'uq_org_id', columns: ['organization_id', 'id'] }
+  ] }) };
+  const reader = new PostgresReader(datasource);
+  await expect(reader.readUniqueConstraints('product_hub', 'products')).resolves.toEqual([
+    { name: 'uq_org_id', columns: ['organization_id', 'id'] }
+  ]);
+  const [sql, params] = datasource.query.mock.calls[0];
+  expect(params).toEqual(['product_hub', 'products']);
+  expect(sql).toContain("con.contype = 'u'");
+  expect(sql).toContain('ORDER BY keys.position');
+  expect(sql).toContain('WITH ORDINALITY');
+});
