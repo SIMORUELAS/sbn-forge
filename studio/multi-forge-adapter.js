@@ -47,6 +47,12 @@ function createMultiForgeAdapter(input) {
       issues.push('Clave primaria compuesta: contrato de rutas pendiente');
     }
     const outgoing = definition.foreignKeyGroups.filter(group => group.fromTable === table.name);
+    const compositeRelations = outgoing.filter(group => group.columns.length > 1).map(group => ({
+      name: group.name, targetSchema: definition.source.schema, targetTable: group.toTable,
+      columns: group.columns.map(pair => ({ ...pair })),
+      evidence: assessment.referentialEvidence.find(item => item.fromTable === table.name && item.name === group.name),
+      executable: false
+    }));
     if (outgoing.some(group => group.columns.length > 1)) {
       issues.push('Clave foránea compuesta: adaptador de operaciones pendiente');
     }
@@ -56,7 +62,7 @@ function createMultiForgeAdapter(input) {
       blockers.push(...issues.map(issue => table.name + ': ' + issue));
     }
     resources.push({ table: table.name, enabled: table.settings.resourceEnabled,
-      definition: definitionPreview, foreignKeyGroups: outgoing,
+      definition: definitionPreview, foreignKeyGroups: outgoing, compositeRelations,
       compatible: issues.length === 0, blockers: issues, executable: false });
   }
   return { kind: 'studio.multitable.forge-adapter-preview', version: 1,
