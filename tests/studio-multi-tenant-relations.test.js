@@ -85,3 +85,41 @@ test('bridge and preparation retain composite evidence without enabling executio
   const changed = fixture(true);
   expect(createMultiGenerationPlan(changed).preparation.fingerprint).not.toBe(plan.preparation.fingerprint);
 });
+
+describe('core composite relation generation guard', () => {
+  const { validateDefinition } = require('../src/core/definition-validator');
+  const { createGeneratorContext } = require('../src/core/generator-context');
+  const definition = () => ({
+    schema: 'product_hub', table: 'items',
+    columns: [{ name: 'id', type: 'uuid', primaryKey: true },
+      { name: 'organization_id', type: 'uuid' }, { name: 'product_id', type: 'uuid' }],
+    compositeRelations: [{ name: 'fk_items_products', targetSchema: 'product_hub',
+      targetTable: 'products', columns: [{ fromColumn: 'organization_id', toColumn: 'organization_id' },
+        { fromColumn: 'product_id', toColumn: 'id' }] }]
+  });
+  test('rejects even structurally valid composite contracts before creating executable context', () => {
+    expect(() => createGeneratorContext(definition())).toThrow('relaciones compuestas aún no admitidas');
+  });
+  test('rejects unknown source columns', () => {
+    const input = definition();
+    input.compositeRelations[0].columns[0].fromColumn = 'missing';
+    expect(() => validateDefinition(input)).toThrow('columnas de relación compuesta inválidas');
+  });
+  test('rejects repeated target columns', () => {
+    const input = definition();
+    input.compositeRelations[0].columns[0].toColumn = 'id';
+    expect(() => validateDefinition(input)).toThrow('columnas de relación compuesta duplicadas');
+  });
+  test('rejects duplicate relation names', () => {
+    const input = definition();
+    input.compositeRelations.push(input.compositeRelations[0]);
+    expect(() => validateDefinition(input)).toThrow('relación compuesta duplicada');
+  });
+  test('preserves compatibility for definitions without composite relations', () => {
+    const input = definition();
+    input.compositeRelations = [];
+    expect(validateDefinition(input)).toBe(true);
+    delete input.compositeRelations;
+    expect(validateDefinition(input)).toBe(true);
+  });
+});
