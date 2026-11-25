@@ -137,6 +137,26 @@ class PostgresReader {
     return result.rows;
   }
 
+  async readUniqueConstraints(schemaName, tableName) {
+    const sql = `
+      SELECT con.conname AS constraint_name,
+        array_agg(att.attname::text ORDER BY keys.position) AS columns
+      FROM pg_constraint con
+      JOIN pg_class tbl ON tbl.oid = con.conrelid
+      JOIN pg_namespace ns ON ns.oid = tbl.relnamespace
+      CROSS JOIN LATERAL unnest(con.conkey)
+        WITH ORDINALITY AS keys(attribute_number, position)
+      JOIN pg_attribute att ON att.attrelid = con.conrelid
+        AND att.attnum = keys.attribute_number
+      WHERE con.contype = 'u'
+        AND ns.nspname = $1 AND tbl.relname = $2
+      GROUP BY con.oid, con.conname
+      ORDER BY con.conname;
+    `;
+    const result = await this.datasource.query(sql, [schemaName, tableName]);
+    return result.rows.map(row => ({ name: row.constraint_name, columns: row.columns }));
+  }
+
   async readIndexes(schemaName, tableName) {
     const sql = `
       SELECT
