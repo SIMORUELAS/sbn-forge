@@ -10,6 +10,7 @@ function assessMultiCompatibility(input) {
   const resources = [];
   const grouped = new Set();
   const tenantRelations = [];
+  const referentialEvidence = [];
   for (const group of definition.foreignKeyGroups) {
     for (const pair of group.columns) {
       const key = [group.fromTable, pair.fromColumn, group.toTable, pair.toColumn].join(':');
@@ -34,8 +35,21 @@ function assessMultiCompatibility(input) {
       }
     }
     const targetKeys = target.primaryKey;
-    if (group.columns.length !== targetKeys.length ||
-        !group.columns.every(pair => targetKeys.includes(pair.toColumn))) {
+    const matches = keys => keys.length === group.columns.length &&
+      new Set(keys).size === keys.length &&
+      group.columns.every(pair => keys.includes(pair.toColumn));
+    const unique = (target.uniqueConstraints || []).find(item => matches(item.columns));
+    const targetKey = matches(targetKeys) ? 'primary-key' : unique ? 'declared-unique' : 'unverified';
+    const typesMatch = group.columns.every(pair =>
+      source.columns.find(column => column.name === pair.fromColumn).type.trim().toLowerCase() ===
+      target.columns.find(column => column.name === pair.toColumn).type.trim().toLowerCase());
+    referentialEvidence.push({ name: group.name, fromTable: group.fromTable,
+      toTable: group.toTable, targetKey, uniqueConstraint: unique?.name || null,
+      typesMatch, certified: false });
+    if (!typesMatch) {
+      warnings.push(group.name + ': tipos de relación distintos; requiere revisión.');
+    }
+    if (targetKey === 'unverified') {
       warnings.push(group.name + ': destino no coincide con la clave primaria; requiere evidencia UNIQUE.');
     }
     if (!source.settings.resourceEnabled || !target.settings.resourceEnabled) {
@@ -72,7 +86,7 @@ function assessMultiCompatibility(input) {
       executable: false });
   }
   return { kind: 'studio.multitable.compatibility-assessment', version: 1,
-    mode: 'read-only', resources, tenantRelations, tenantIntegrityCertified: false, blockers: [...new Set(blockers)],
+    mode: 'read-only', resources, tenantRelations, referentialEvidence, tenantIntegrityCertified: false, blockers: [...new Set(blockers)],
     warnings: [...new Set(warnings)], compatible: blockers.length === 0 &&
       resources.filter(item => item.enabled).every(item => item.forgeValidatorCompatible),
     readyForGeneration: false, executable: false, generationAuthorized: false,
