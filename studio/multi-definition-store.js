@@ -83,7 +83,19 @@ function validateMultiDefinition(value) {
       }
       cleanedFieldSettings[field] = { visible: config.visible, editable: config.editable, required: config.required };
     }
+    const uniqueConstraints = table.uniqueConstraints;
+    if (uniqueConstraints !== undefined && (!Array.isArray(uniqueConstraints) ||
+        uniqueConstraints.length > 500 || uniqueConstraints.some(item =>
+          !item || !IDENT.test(item.name || '') || !Array.isArray(item.columns) ||
+          !item.columns.length || item.columns.length > 32 ||
+          new Set(item.columns).size !== item.columns.length ||
+          !item.columns.every(key => columns.has(key))) ||
+        new Set(uniqueConstraints.map(item => item.name)).size !== uniqueConstraints.length)) {
+      throw new Error('Restricciones UNIQUE inválidas');
+    }
     return { name: table.name, columns: cleanedColumns, primaryKey: [...table.primaryKey],
+      ...(uniqueConstraints === undefined ? {} : { uniqueConstraints: uniqueConstraints.map(item =>
+        ({ name: item.name, columns: [...item.columns] })) }),
       settings: { label: settings.label || table.name, resourceEnabled: settings.resourceEnabled !== false,
         formEnabled: settings.formEnabled !== false, permissions: settings.permissions || ['read'] },
       fieldSettings: cleanedFieldSettings };
