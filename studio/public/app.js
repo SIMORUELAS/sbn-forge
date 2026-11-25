@@ -167,7 +167,9 @@ document.getElementById('designer-multi-build').addEventListener('click', () => 
         scale: column.scale ?? null, identity: column.identity === true,
         identityGeneration: column.identityGeneration ?? null
       })),
-      primaryKey: [...(metadata.primaryKey?.columns || [])]
+      primaryKey: [...(metadata.primaryKey?.columns || [])],
+      ...(Array.isArray(metadata.uniqueConstraints) ? { uniqueConstraints: metadata.uniqueConstraints.map(item =>
+        ({ name: item.name, columns: [...item.columns] })) } : {})
     })),
     relations, foreignKeyGroups,
     warnings: relations.length ? [] : ['No se detectaron relaciones internas entre las tablas seleccionadas.'],
