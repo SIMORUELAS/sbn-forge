@@ -60,12 +60,15 @@ class PostgreSqlInspector extends InspectorContract {
       columns,
       primaryKey,
       foreignKeys,
-      indexes
+      indexes,
+      uniqueConstraints
     ] = await Promise.all([
       this.reader.readColumns(schemaName, tableName),
       this.reader.readPrimaryKey(schemaName, tableName),
       this.reader.readForeignKeys(schemaName, tableName),
-      this.reader.readIndexes(schemaName, tableName)
+      this.reader.readIndexes(schemaName, tableName),
+      typeof this.reader.readUniqueConstraints === 'function' ?
+        this.reader.readUniqueConstraints(schemaName, tableName) : undefined
     ]);
 
     return this.metadataBuilder.build({
@@ -74,7 +77,8 @@ class PostgreSqlInspector extends InspectorContract {
       columns,
       primaryKey,
       foreignKeys,
-      indexes
+      indexes,
+      uniqueConstraints
     });
   }
 
