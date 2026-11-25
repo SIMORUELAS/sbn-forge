@@ -58,3 +58,18 @@ test('rejects unique constraints with duplicate columns', () => {
   input.tables[0].uniqueConstraints = [{ name: 'uq_invalid', columns: ['id', 'id'] }];
   expect(() => assessMultiCompatibility(input)).toThrow('Restricciones UNIQUE inválidas');
 });
+
+test('adapter preserves composite relation as one non-executable contract', () => {
+  const input = fixture(true);
+  input.tables[0].uniqueConstraints = [{ name: 'uq_products_org_id', columns: ['organization_id', 'id'] }];
+  const plan = createMultiGenerationPlan(input);
+  const resource = plan.adapter.resources.find(item => item.table === 'items');
+  expect(resource.compositeRelations).toEqual([expect.objectContaining({
+    name: 'fk_items_products', targetSchema: 'product_hub', targetTable: 'products',
+    columns: input.foreignKeyGroups[0].columns,
+    evidence: expect.objectContaining({ targetKey: 'declared-unique', certified: false }),
+    executable: false
+  })]);
+  expect(resource.compatible).toBe(false);
+  expect(plan.preparation.installationAuthorized).toBe(false);
+});
