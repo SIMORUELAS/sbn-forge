@@ -36,3 +36,25 @@ test.each([false, true])('referential deployment remains blocked paired=%s', pai
   expect(plan.preparation.referentialPolicy).toEqual(plan.referentialPolicy);
   expect(plan.preparation.publicationAuthorized).toBe(false);
 });
+
+test('declared composite uniqueness is preserved but not certified', () => {
+  const input = fixture(true);
+  input.tables[0].uniqueConstraints = [{ name: 'uq_products_org_id', columns: ['organization_id', 'id'] }];
+  const result = assessMultiCompatibility(input);
+  expect(result.referentialEvidence[0]).toMatchObject({
+    targetKey: 'declared-unique', uniqueConstraint: 'uq_products_org_id', typesMatch: true, certified: false
+  });
+  expect(result.installationAuthorized).toBe(false);
+});
+test('missing uniqueness and different column types remain unverified', () => {
+  const input = fixture(true);
+  input.tables[1].columns[2].type = 'text';
+  expect(assessMultiCompatibility(input).referentialEvidence[0]).toMatchObject({
+    targetKey: 'unverified', typesMatch: false, certified: false
+  });
+});
+test('rejects unique constraints with duplicate columns', () => {
+  const input = fixture(true);
+  input.tables[0].uniqueConstraints = [{ name: 'uq_invalid', columns: ['id', 'id'] }];
+  expect(() => assessMultiCompatibility(input)).toThrow('Restricciones UNIQUE inválidas');
+});
