@@ -73,3 +73,15 @@ test('adapter preserves composite relation as one non-executable contract', () =
   expect(resource.compatible).toBe(false);
   expect(plan.preparation.installationAuthorized).toBe(false);
 });
+
+test('bridge and preparation retain composite evidence without enabling execution', () => {
+  const input = fixture(true);
+  input.tables[0].uniqueConstraints = [{ name: 'uq_products_org_id', columns: ['organization_id', 'id'] }];
+  const plan = createMultiGenerationPlan(input);
+  const resource = plan.bridge.resources.find(item => item.table === 'items');
+  expect(resource.compositeRelations).toEqual(plan.adapter.resources.find(item => item.table === 'items').compositeRelations);
+  expect(resource.contextPrepared).toBe(false);
+  expect(plan.preparation.referentialEvidence).toEqual(plan.compatibility.referentialEvidence);
+  const changed = fixture(true);
+  expect(createMultiGenerationPlan(changed).preparation.fingerprint).not.toBe(plan.preparation.fingerprint);
+});
