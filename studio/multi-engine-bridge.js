@@ -35,6 +35,7 @@ function createMultiEngineBridge(input) {
       } catch (error) { reasons.push('Contexto Forge: ' + error.message); }
     }
     return { table, status: reasons.length ? 'blocked' : 'context-ready',
+      compositeRelations: resource.compositeRelations,
       contextPrepared: context !== null,
       definitionHash: context?.source.definitionHash || null,
       foreignKeys: context?.foreignKeys.length || 0,
@@ -48,6 +49,7 @@ function createMultiEngineBridge(input) {
   for (const resource of adapter.resources) {
     if (resource.enabled && !blocked.has(resource.table)) {
       resources.push({ table: resource.table, status: 'blocked', contextPrepared: false,
+        compositeRelations: resource.compositeRelations,
         definitionHash: null, foreignKeys: 0, primaryKeys: 0,
         blockers: ['No existe orden de composición seguro'], pendingIntegrations: [],
         executable: false, written: 0 });
