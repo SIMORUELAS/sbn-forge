@@ -33,8 +33,16 @@ test('recommendations are deterministic and non-executable', () => {
 test('advice is included in preparation evidence and displayed safely', () => {
   const js = fs.readFileSync(path.join(__dirname, '../studio/public/app.js'), 'utf8');
   const html = fs.readFileSync(path.join(__dirname, '../studio/public/index.html'), 'utf8');
-  const contract = fs.readFileSync(path.join(__dirname, '../studio/multi-preparation-contract.js'), 'utf8');
-  expect(contract).toContain('resources, diagnostics, recommendations, orderedTables:');
+  const plan = createMultiGenerationPlan(sample());
+  const preparation = plan.preparation;
+  const evidence = { referentialPolicy: preparation.referentialPolicy, source: plan.source,
+    name: plan.name, primaryTable: plan.primaryTable, resources: preparation.resources,
+    diagnostics: preparation.diagnostics, recommendations: preparation.recommendations,
+    referentialEvidence: preparation.referentialEvidence, orderedTables: preparation.orderedTables,
+    artifacts: preparation.artifacts };
+  const crypto = require('node:crypto');
+  expect(preparation.fingerprint).toBe(crypto.createHash('sha256').update(JSON.stringify(evidence)).digest('hex'));
+  expect(preparation.recommendations).toEqual(createMultiRecommendations(preparation));
   expect(html).toContain('id="designer-multi-diagnostics-recommendations"');
   expect(js).toContain("addList('Recomendaciones'");
   expect(js).toContain('item.textContent = value');
