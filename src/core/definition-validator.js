@@ -1,7 +1,7 @@
 'use strict';
 const VALID_TYPES = new Set(['bigint','integer','smallint','uuid','boolean','varchar','character varying','text','json','jsonb','timestamp','timestamp without time zone','timestamp with time zone','date','numeric','decimal']);
 function assert(condition, message) { if (!condition) {throw new Error(`Definición inválida: ${message}`);} }
-function validateDefinition(definition) {
+function validateDefinition(definition, { reviewOnly = false } = {}) {
   assert(definition && typeof definition === 'object' && !Array.isArray(definition), 'debe ser un objeto.');
   assert(typeof definition.schema === 'string' && definition.schema.trim(), 'schema es obligatorio.');
   assert(typeof definition.table === 'string' && /^[a-z][a-z0-9_]*$/.test(definition.table), 'table debe usar snake_case minúsculo.');
@@ -57,7 +57,7 @@ function validateDefinition(definition) {
         new Set(group.columns.map(pair => pair.toColumn)).size === group.columns.length,
       'columnas de relación compuesta duplicadas.');
     }
-    assert(definition.compositeRelations.length === 0, 'relaciones compuestas aún no admitidas para generación ejecutable.');
+    assert(reviewOnly === true || definition.compositeRelations.length === 0, 'relaciones compuestas aún no admitidas para generación ejecutable.');
   }
   assert(definition.columns.some(c => c.primaryKey), 'se requiere al menos una llave primaria.');
   return true;
