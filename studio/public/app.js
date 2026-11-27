@@ -145,9 +145,17 @@ document.getElementById('designer-multi-build').addEventListener('click', () => 
         const groupKey = fk.name + ':' + fk.referencedTable;
         if (!groups.has(groupKey)) {
           groups.set(groupKey, { name: fk.name, fromTable: metadata.table,
-            toTable: fk.referencedTable, columns: [] });
+            toTable: fk.referencedTable, columns: [], evidence: {} });
         }
-        groups.get(groupKey).columns.push({ fromColumn: fk.column, toColumn: fk.referencedColumn });
+        const group = groups.get(groupKey);
+        for (const key of ['validated', 'deferrable', 'initiallyDeferred', 'matchType']) {
+          if (!group.columns.length) {
+            if (fk[key] !== undefined) { group.evidence[key] = fk[key]; }
+          } else if (group.evidence[key] !== fk[key]) {
+            delete group.evidence[key];
+          }
+        }
+        group.columns.push({ fromColumn: fk.column, toColumn: fk.referencedColumn });
       }
     }
     foreignKeyGroups.push(...groups.values());
