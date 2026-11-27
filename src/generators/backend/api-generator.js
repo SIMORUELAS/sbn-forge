@@ -822,6 +822,10 @@ function validateContext(context) {
 
   getModuleName(context);
 
+  if (context.reviewOnly === true || context.executable === false) {
+    throw new Error('ApiGenerator: contexto no ejecutable.');
+  }
+
   if (context.compositeRelations !== undefined &&
       (!Array.isArray(context.compositeRelations) || context.compositeRelations.length > 0)) {
     throw new Error('ApiGenerator: relaciones compuestas aún no admitidas para generación ejecutable.');
