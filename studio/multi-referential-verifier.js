@@ -7,6 +7,14 @@ async function verifyMultiReferentialEvidence(input, reader) {
     throw new TypeError('Se requiere lector PostgreSQL');
   }
   const results = [];
+  const columns = new Map();
+  async function readColumns(table) {
+    if (!columns.has(table)) {
+      columns.set(table, typeof reader.readColumns === 'function' ?
+        await reader.readColumns(definition.source.schema, table) : []);
+    }
+    return columns.get(table);
+  }
   const cache = new Map();
   for (const group of definition.foreignKeyGroups) {
     if (!cache.has(group.fromTable)) {
@@ -21,9 +29,25 @@ async function verifyMultiReferentialEvidence(input, reader) {
     const immediate = exact && rows.every(row => row.validated === true &&
       row.deferrable === false && row.initially_deferred === false &&
       ['s', 'f'].includes(row.match_type));
+    const sourceColumns = await readColumns(group.fromTable);
+    const targetColumns = await readColumns(group.toTable);
+    const sourceTenant = sourceColumns.find(column => column.column_name === 'organization_id');
+    const targetTenant = targetColumns.find(column => column.column_name === 'organization_id');
+    const paired = group.columns.some(pair => pair.fromColumn === 'organization_id' &&
+      pair.toColumn === 'organization_id');
+    const tenantStatus = !sourceTenant || !targetTenant ? 'scope-unverified' :
+      !paired ? 'tenant-key-missing' :
+        sourceTenant.is_nullable !== 'NO' || targetTenant.is_nullable !== 'NO' ? 'tenant-nullability-unverified' :
+          'tenant-pair-present';
+    const typesMatch = group.columns.every(pair => {
+      const from = sourceColumns.find(column => column.column_name === pair.fromColumn);
+      const to = targetColumns.find(column => column.column_name === pair.toColumn);
+      return Boolean(from && to && typeof from.data_type === 'string' &&
+        from.data_type === to.data_type && typeof from.udt_name === 'string' && from.udt_name === to.udt_name);
+    });
     results.push({ name: group.name, fromTable: group.fromTable, toTable: group.toTable,
       status: !exact ? 'catalog-mismatch' : immediate ? 'catalog-match' : 'catalog-policy-denied',
-      certified: false });
+      tenantStatus, typesMatch, certified: false });
   }
   return { kind: 'studio.multitable.referential-verification', version: 1,
     results, generationAuthorized: false, installationAuthorized: false, publicationAuthorized: false };
