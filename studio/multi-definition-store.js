@@ -128,7 +128,19 @@ function validateMultiDefinition(value) {
         new Set(group.columns.map(pair => pair.toColumn)).size !== group.columns.length) {
       throw new Error('Columnas de restricción duplicadas');
     }
+    const evidence = group.evidence;
+    if (evidence !== undefined && (!evidence || typeof evidence !== 'object' || Array.isArray(evidence) ||
+        ['validated', 'deferrable', 'initiallyDeferred'].some(key =>
+          evidence[key] !== undefined && typeof evidence[key] !== 'boolean') ||
+        (evidence.matchType !== undefined && !['s', 'f', 'p'].includes(evidence.matchType)))) {
+      throw new Error('Evidencia referencial inválida');
+    }
+    const cleanedEvidence = {};
+    for (const key of ['validated', 'deferrable', 'initiallyDeferred', 'matchType']) {
+      if (evidence?.[key] !== undefined) { cleanedEvidence[key] = evidence[key]; }
+    }
     return { name: group.name, fromTable: group.fromTable, toTable: group.toTable,
+      ...(evidence === undefined ? {} : { evidence: { ...cleanedEvidence, certified: false } }),
       columns: group.columns.map(pair => ({ fromColumn: pair.fromColumn, toColumn: pair.toColumn })) };
   });
   if (!Array.isArray(value.foreignKeyGroups || []) ||
