@@ -524,3 +524,14 @@ test.each([null, {}, [{ name: 'fk_composite' }]])(
       await fs.remove(output);
     }
   });
+
+test('rejects review-only context even without composite relations', async () => {
+  const output = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-review-guard-'));
+  try {
+    const context = createGeneratorContext(definition, { reviewOnly: true });
+    await expect(generateApi(context, { output })).rejects.toThrow('contexto no ejecutable');
+    expect(await fs.readdir(output)).toEqual([]);
+  } finally {
+    await fs.remove(output);
+  }
+});
