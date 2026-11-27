@@ -16,6 +16,17 @@ async function verifyMultiReferentialEvidence(input, reader) {
     return columns.get(table);
   }
   const cache = new Map();
+  const keys = new Map();
+  async function readKeys(table) {
+    if (!keys.has(table)) {
+      const primary = typeof reader.readPrimaryKey === 'function' ?
+        await reader.readPrimaryKey(definition.source.schema, table) : [];
+      const unique = typeof reader.readUniqueConstraints === 'function' ?
+        await reader.readUniqueConstraints(definition.source.schema, table) : [];
+      keys.set(table, { primary: primary.map(row => row.column_name), unique });
+    }
+    return keys.get(table);
+  }
   for (const group of definition.foreignKeyGroups) {
     if (!cache.has(group.fromTable)) {
       cache.set(group.fromTable, await reader.readForeignKeys(definition.source.schema, group.fromTable));
@@ -45,9 +56,22 @@ async function verifyMultiReferentialEvidence(input, reader) {
       return Boolean(from && to && typeof from.data_type === 'string' &&
         from.data_type === to.data_type && typeof from.udt_name === 'string' && from.udt_name === to.udt_name);
     });
+    const targetKeys = await readKeys(group.toTable);
+    const matches = names => Array.isArray(names) && names.length === group.columns.length &&
+      new Set(names).size === names.length && group.columns.every(pair => names.includes(pair.toColumn));
+    const targetKey = matches(targetKeys.primary) ? 'primary-key' :
+      targetKeys.unique.some(key => matches(key.columns)) ? 'unique-constraint' : 'unverified';
+    const mandatoryPairs = group.columns.every(pair =>
+      sourceColumns.find(column => column.column_name === pair.fromColumn)?.is_nullable === 'NO' &&
+      targetColumns.find(column => column.column_name === pair.toColumn)?.is_nullable === 'NO');
+    const safeActions = exact && rows.every(row =>
+      ['NO ACTION', 'RESTRICT'].includes(row.update_rule) &&
+      ['NO ACTION', 'RESTRICT'].includes(row.delete_rule));
+    const policyCompatible = immediate && tenantStatus === 'tenant-pair-present' &&
+      typesMatch && targetKey !== 'unverified' && mandatoryPairs && safeActions;
     results.push({ name: group.name, fromTable: group.fromTable, toTable: group.toTable,
-      status: !exact ? 'catalog-mismatch' : immediate ? 'catalog-match' : 'catalog-policy-denied',
-      tenantStatus, typesMatch, certified: false });
+      status: !exact ? 'catalog-mismatch' : policyCompatible ? 'catalog-match' : 'catalog-policy-denied',
+      tenantStatus, typesMatch, targetKey, mandatoryPairs, safeActions, certified: false });
   }
   return { kind: 'studio.multitable.referential-verification', version: 1,
     results, generationAuthorized: false, installationAuthorized: false, publicationAuthorized: false };
