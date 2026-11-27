@@ -59,7 +59,11 @@ class MetadataBuilder {
         referencedTable: foreignKey.referenced_table,
         referencedColumn: foreignKey.referenced_column,
         onDelete: foreignKey.delete_rule,
-        onUpdate: foreignKey.update_rule
+        onUpdate: foreignKey.update_rule,
+        ...(typeof foreignKey.validated === 'boolean' ? { validated: foreignKey.validated } : {}),
+        ...(typeof foreignKey.deferrable === 'boolean' ? { deferrable: foreignKey.deferrable } : {}),
+        ...(typeof foreignKey.initially_deferred === 'boolean' ? { initiallyDeferred: foreignKey.initially_deferred } : {}),
+        ...(['s', 'f', 'p'].includes(foreignKey.match_type) ? { matchType: foreignKey.match_type } : {})
       })),
 
       indexes: indexes.map((index) => ({
