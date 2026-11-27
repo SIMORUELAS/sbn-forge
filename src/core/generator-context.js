@@ -104,10 +104,15 @@ function createGeneratorContext(
   definition,
   {
     generatorVersion = '0.1.0',
-    generatedAt = new Date().toISOString()
+    generatedAt = new Date().toISOString(),
+    reviewOnly = false
   } = {}
 ) {
-  validateDefinition(definition);
+  validateDefinition(definition, { reviewOnly });
+  const compositeRelations = (definition.compositeRelations || []).map(group => ({
+    name: group.name, targetSchema: group.targetSchema, targetTable: group.targetTable,
+    columns: group.columns.map(pair => ({ fromColumn: pair.fromColumn, toColumn: pair.toColumn }))
+  }));
 
   const names = buildNames(definition.table);
 
@@ -293,6 +298,8 @@ function createGeneratorContext(
     createRequiredColumns,
 
     foreignKeys,
+
+    ...(reviewOnly === true ? { reviewOnly: true, compositeRelations, executable: false } : {}),
 
     capabilities,
 
