@@ -81,6 +81,10 @@ test('bridge and preparation retain composite evidence without enabling executio
   const resource = plan.bridge.resources.find(item => item.table === 'items');
   expect(resource.compositeRelations).toEqual(plan.adapter.resources.find(item => item.table === 'items').compositeRelations);
   expect(resource.contextPrepared).toBe(false);
+  expect(resource.referentialReview).toMatchObject({ executable: false,
+    definitionHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+    compositeRelations: [{ name: 'fk_items_products', targetSchema: 'product_hub',
+      targetTable: 'products', columns: input.foreignKeyGroups[0].columns }] });
   expect(plan.preparation.referentialEvidence).toEqual(plan.compatibility.referentialEvidence);
   const changed = fixture(true);
   expect(createMultiGenerationPlan(changed).preparation.fingerprint).not.toBe(plan.preparation.fingerprint);
@@ -99,6 +103,21 @@ describe('core composite relation generation guard', () => {
   });
   test('rejects even structurally valid composite contracts before creating executable context', () => {
     expect(() => createGeneratorContext(definition())).toThrow('relaciones compuestas aún no admitidas');
+  });
+  test('review context preserves ordered pairs without execution authority', () => {
+    const input = definition();
+    const context = createGeneratorContext(input, { reviewOnly: true });
+    expect(context).toMatchObject({ reviewOnly: true, executable: false,
+      compositeRelations: input.compositeRelations });
+    input.compositeRelations[0].columns.reverse();
+    expect(context.compositeRelations[0].columns[0].fromColumn).toBe('organization_id');
+    expect(createGeneratorContext(input, { reviewOnly: true }).source.definitionHash)
+      .not.toBe(context.source.definitionHash);
+  });
+  test('review mode still rejects invalid source columns', () => {
+    const input = definition();
+    input.compositeRelations[0].columns[0].fromColumn = 'missing';
+    expect(() => createGeneratorContext(input, { reviewOnly: true })).toThrow('columnas de relación compuesta inválidas');
   });
   test('rejects unknown source columns', () => {
     const input = definition();
