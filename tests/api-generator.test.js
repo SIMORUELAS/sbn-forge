@@ -512,3 +512,15 @@ describe('API Generator', () => {
     }
   );
 });
+
+test.each([null, {}, [{ name: 'fk_composite' }]])(
+  'rejects unsupported direct composite context before writing: %j', async compositeRelations => {
+    const output = await fs.mkdtemp(path.join(os.tmpdir(), 'forge-composite-guard-'));
+    try {
+      const context = { ...createGeneratorContext(definition), compositeRelations };
+      await expect(generateApi(context, { output })).rejects.toThrow('relaciones compuestas aún no admitidas');
+      expect(await fs.readdir(output)).toEqual([]);
+    } finally {
+      await fs.remove(output);
+    }
+  });
