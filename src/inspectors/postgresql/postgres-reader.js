@@ -92,6 +92,10 @@ class PostgresReader {
     const sql = `
       SELECT
         con.conname AS constraint_name,
+        con.convalidated AS validated,
+        con.condeferrable AS deferrable,
+        con.condeferred AS initially_deferred,
+        con.confmatchtype AS match_type,
         source_attribute.attname AS column_name,
         referenced_namespace.nspname AS referenced_schema,
         referenced_table.relname AS referenced_table,
