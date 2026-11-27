@@ -27,6 +27,13 @@ function createMultiEngineBridge(input) {
       }
       column.foreignKey = { schema: definition.schema, table: group.toTable, column: pair.toColumn };
     }
+    let reviewContext = null;
+    if (resource.compositeRelations.length) {
+      try {
+        reviewContext = createGeneratorContext({ ...definition, compositeRelations: resource.compositeRelations },
+          { reviewOnly: true, generatedAt: '1970-01-01T00:00:00.000Z' });
+      } catch (error) { reasons.push('Contexto referencial Forge: ' + error.message); }
+    }
     let context = null;
     if (!reasons.length) {
       try {
@@ -37,6 +44,8 @@ function createMultiEngineBridge(input) {
     return { table, status: reasons.length ? 'blocked' : 'context-ready',
       compositeRelations: resource.compositeRelations,
       contextPrepared: context !== null,
+      referentialReview: reviewContext ? { executable: false, definitionHash: reviewContext.source.definitionHash,
+        compositeRelations: reviewContext.compositeRelations } : null,
       definitionHash: context?.source.definitionHash || null,
       foreignKeys: context?.foreignKeys.length || 0,
       primaryKeys: context?.primaryKeys.length || 0,
