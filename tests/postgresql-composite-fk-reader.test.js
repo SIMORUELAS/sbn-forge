@@ -36,3 +36,18 @@ test('reads ordered unique constraints using parameterized catalog query', async
   expect(sql).toContain('ORDER BY keys.position');
   expect(sql).toContain('WITH ORDINALITY');
 });
+
+test('preserves explicit constraint evidence and does not invent missing evidence', () => {
+  const MetadataBuilder = require('../src/inspectors/postgresql/metadata-builder');
+  const row = { constraint_name: 'fk_org_module', column_name: 'organization_id',
+    referenced_schema: 'public', referenced_table: 'organization_modules',
+    referenced_column: 'organization_id' };
+  const metadata = new MetadataBuilder().build({ schemaName: 'public', tableName: 'items',
+    foreignKeys: [{ ...row, validated: false, deferrable: true, initially_deferred: false, match_type: 's' }, row] });
+  expect(metadata.foreignKeys[0]).toMatchObject({
+    validated: false, deferrable: true, initiallyDeferred: false, matchType: 's'
+  });
+  for (const key of ['validated', 'deferrable', 'initiallyDeferred', 'matchType']) {
+    expect(metadata.foreignKeys[1]).not.toHaveProperty(key);
+  }
+});
