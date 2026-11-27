@@ -43,9 +43,20 @@ function assessMultiCompatibility(input) {
     const typesMatch = group.columns.every(pair =>
       source.columns.find(column => column.name === pair.fromColumn).type.trim().toLowerCase() ===
       target.columns.find(column => column.name === pair.toColumn).type.trim().toLowerCase());
+    const evidence = group.evidence;
+    const constraintStatus = !evidence ? 'unknown' :
+      evidence.validated === false ? 'not-validated' :
+        evidence.deferrable === true || evidence.initiallyDeferred === true ? 'deferred' :
+          evidence.matchType !== undefined && !['s', 'f'].includes(evidence.matchType) ? 'unsupported-match' :
+            evidence.validated === true && evidence.deferrable === false &&
+            evidence.initiallyDeferred === false && ['s', 'f'].includes(evidence.matchType) ?
+              'declared-compatible' : 'unknown';
+    if (constraintStatus !== 'declared-compatible') {
+      warnings.push(group.name + ': evidencia de restricción (' + constraintStatus + ').');
+    }
     referentialEvidence.push({ name: group.name, fromTable: group.fromTable,
       toTable: group.toTable, targetKey, uniqueConstraint: unique?.name || null,
-      typesMatch, certified: false });
+      typesMatch, constraintStatus, certified: false });
     if (!typesMatch) {
       warnings.push(group.name + ': tipos de relación distintos; requiere revisión.');
     }
