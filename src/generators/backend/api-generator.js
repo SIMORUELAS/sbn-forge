@@ -822,6 +822,11 @@ function validateContext(context) {
 
   getModuleName(context);
 
+  if (context.compositeRelations !== undefined &&
+      (!Array.isArray(context.compositeRelations) || context.compositeRelations.length > 0)) {
+    throw new Error('ApiGenerator: relaciones compuestas aún no admitidas para generación ejecutable.');
+  }
+
   if (
     !Array.isArray(
       context.columns
