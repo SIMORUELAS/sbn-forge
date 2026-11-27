@@ -142,3 +142,18 @@ describe('core composite relation generation guard', () => {
     expect(validateDefinition(input)).toBe(true);
   });
 });
+
+test.each([
+  [{ validated: false }, 'not-validated'],
+  [{ validated: true, deferrable: true }, 'deferred'],
+  [{ validated: true }, 'unknown'],
+  [{ validated: true, deferrable: false, initiallyDeferred: false, matchType: 'p' }, 'unsupported-match'],
+  [{ validated: true, deferrable: false, initiallyDeferred: false, matchType: 's' }, 'declared-compatible']
+])('classifies declared evidence %j without granting authority', (evidence, status) => {
+  const input = fixture(true);
+  input.foreignKeyGroups[0].evidence = { ...evidence, certified: true };
+  const result = assessMultiCompatibility(input);
+  expect(result.referentialEvidence[0]).toMatchObject({ constraintStatus: status, certified: false });
+  expect(result.installationAuthorized).toBe(false);
+  expect(result.generationAuthorized).toBe(false);
+});
